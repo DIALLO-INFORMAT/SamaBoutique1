@@ -8,7 +8,7 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number;
+  price: number; // Assume price is in correct unit for XOF
   category: string;
   brand: string; // Ensure brand is included
 }
@@ -72,7 +72,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <CardFooter className="p-4 pt-2 flex justify-between items-center border-t border-border bg-muted/30">
         {/* Price */}
         <span className="text-xl font-semibold text-primary">
-          {product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+          {product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}
         </span>
         {/* Add to Cart Button */}
         <Button variant="destructive" size="sm" onClick={handleAddToCart}>

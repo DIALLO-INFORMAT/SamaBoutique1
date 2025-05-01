@@ -131,8 +131,8 @@ export default function CartPage() {
                          </Button>
                        </div>
                     </TableCell>
-                    <TableCell className="text-right">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</TableCell>
-                    <TableCell className="text-right font-semibold">{(item.price * item.quantity).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</TableCell>
+                    <TableCell className="text-right">{item.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</TableCell>
+                    <TableCell className="text-right font-semibold">{(item.price * item.quantity).toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</TableCell>
                     <TableCell className="text-right">
                        <AlertDialog>
                            <AlertDialogTrigger asChild>
@@ -166,7 +166,7 @@ export default function CartPage() {
           </CardContent>
           <CardFooter className="flex flex-col items-end space-y-4 pt-6">
             <div className="text-xl font-semibold">
-              Total: {totalPrice.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+              Total: {totalPrice.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}
             </div>
              <div className="flex gap-2">
                <AlertDialog>

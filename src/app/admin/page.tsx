@@ -3,13 +3,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DollarSign, ShoppingBag, Users, Box, Settings, ArrowRight, BarChart } from "lucide-react"; // Added BarChart
+import { DollarSign, ShoppingBag, Users, Box, Settings, ArrowRight, BarChart, Package } from "lucide-react"; // Added BarChart, Package
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext"; // Import useAuth to welcome the admin
 
 // Placeholder data - replace with actual data fetching
 const stats = {
-  revenue: 12500.50,
+  revenue: 1250050, // Assume price is in integer cents or smallest unit if not using floats
   orders: 350,
   customers: 120,
   products: 6,
@@ -44,7 +44,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.revenue.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+              {stats.revenue.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}
             </div>
              <p className="text-xs text-muted-foreground mt-1">
                Statistiques globales
@@ -102,6 +102,16 @@ export default function AdminDashboardPage() {
                        <div>
                            <span className="font-medium">Gérer les Produits</span>
                            <p className="text-xs text-muted-foreground">Ajouter, modifier, supprimer</p>
+                       </div>
+                       <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" />
+                   </Button>
+               </Link>
+                <Link href="/admin/orders" passHref legacyBehavior>
+                   <Button variant="outline" className="w-full justify-start gap-3 p-4 h-auto hover:bg-secondary transition-colors">
+                       <Package className="h-5 w-5 text-primary" />
+                        <div>
+                           <span className="font-medium">Gérer les Commandes</span>
+                            <p className="text-xs text-muted-foreground">Statuts et détails</p>
                        </div>
                        <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" />
                    </Button>

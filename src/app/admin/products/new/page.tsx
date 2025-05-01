@@ -64,9 +64,13 @@ export default function AddProductPage() {
     setIsSubmitting(true); // Start loading
     // Simulate adding product to database
     console.log("Adding Product:", values);
+    // Ensure price is handled correctly (e.g., convert to smallest unit if needed)
+    const priceToSave = values.price; // Assuming input is already in the correct unit (e.g., whole FCFA)
+    const productData = { ...values, price: priceToSave };
+
     // In a real app, send this data to your backend/API (e.g., using FormData if including files)
     // const formData = new FormData();
-    // Object.entries(values).forEach(([key, value]) => {
+    // Object.entries(productData).forEach(([key, value]) => {
     //   if (value instanceof File) {
     //     formData.append(key, value);
     //   } else if (value !== undefined && value !== null) {
@@ -155,9 +159,10 @@ export default function AddProductPage() {
                     name="price"
                     render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Prix (EUR)</FormLabel>
+                        <FormLabel>Prix (FCFA)</FormLabel>
                         <FormControl>
-                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                         {/* Use step="1" for whole numbers common in XOF */}
+                        <Input type="number" step="1" placeholder="0" {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>

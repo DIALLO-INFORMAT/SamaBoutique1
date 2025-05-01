@@ -39,21 +39,33 @@ interface ManagerProduct { // Assuming same structure
 }
 
 // Mock data fetching/updating (scoped for manager if needed)
+// Use the same mock data source as admin for simplicity now
 const fetchManagerProductById = async (productId: string): Promise<ManagerProduct | null> => {
     await new Promise(resolve => setTimeout(resolve, 700));
-    const storedProducts = localStorage.getItem('manager_products');
-    const products: ManagerProduct[] = storedProducts ? JSON.parse(storedProducts) : [];
-    return products.find(p => p.id === productId) || null;
+    // Reusing admin fetch function logic for now
+    const mockProducts: ManagerProduct[] = [
+        { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" },
+        { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices" },
+        { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" },
+        { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", brand: "SamaServices" },
+        { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A" },
+        { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C" },
+    ];
+    const storedProducts = localStorage.getItem('manager_products'); // Or use the same key as admin if manager edits all products
+    const currentProducts = storedProducts ? JSON.parse(storedProducts) : mockProducts; // Fallback to mock if needed
+    return currentProducts.find((p: ManagerProduct) => p.id === productId) || null;
 };
+
 
 const updateManagerProductAPI = async (productId: string, values: z.infer<typeof productFormSchema>): Promise<void> => {
     console.log("Manager updating Product via API:", productId, values);
     await new Promise(resolve => setTimeout(resolve, 1200));
     // Update in localStorage or call API
-    const storedProducts = localStorage.getItem('manager_products');
+    const storageKey = 'manager_products'; // Or same as admin key
+    const storedProducts = localStorage.getItem(storageKey);
     let products: ManagerProduct[] = storedProducts ? JSON.parse(storedProducts) : [];
     products = products.map(p => p.id === productId ? { ...p, ...values } : p);
-    localStorage.setItem('manager_products', JSON.stringify(products));
+    localStorage.setItem(storageKey, JSON.stringify(products));
 };
 
 // Example categories and brands
@@ -113,7 +125,8 @@ export default function ManagerEditProductPage() {
     if (!product) return;
     setIsSubmitting(true);
     try {
-        await updateManagerProductAPI(productId, values);
+        const priceToSave = values.price; // Assuming input is correct unit
+        await updateManagerProductAPI(productId, { ...values, price: priceToSave });
         toast({ title: "Produit Modifié!", description: `"${values.name}" a été mis à jour.`, className: "bg-primary text-primary-foreground border-primary" });
         router.push('/dashboard/products');
     } catch (error) {
@@ -160,7 +173,7 @@ export default function ManagerEditProductPage() {
             <Card className="shadow-md border-border">
                  <CardHeader className="bg-muted/30 border-b"><CardTitle>Prix & Catégorisation</CardTitle></CardHeader>
                  <CardContent className="p-6 grid md:grid-cols-3 gap-6">
-                     <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <FormLabel>Prix (€)</FormLabel> <FormControl><Input type="number" step="0.01" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                     <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <FormLabel>Prix (FCFA)</FormLabel> <FormControl><Input type="number" step="1" placeholder="0" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                      <FormField control={form.control} name="category" render={({ field }) => ( <FormItem> <FormLabel>Catégorie</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl><SelectTrigger><SelectValue placeholder="..." /></SelectTrigger></FormControl> <SelectContent>{categories.map(c=><SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent> </Select> <FormMessage /> </FormItem> )} />
                      <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem> <FormLabel>Marque</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl><SelectTrigger><SelectValue placeholder="..." /></SelectTrigger></FormControl> <SelectContent>{brands.map(b=><SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent> </Select> <FormMessage /> </FormItem> )} />
                  </CardContent>

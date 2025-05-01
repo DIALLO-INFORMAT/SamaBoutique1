@@ -4,10 +4,11 @@ import Image from 'next/image';
 import { ShoppingBag } from 'lucide-react';
 
 // Mock product data (replace with actual data later)
+// Ensure prices are in XOF format
 const featuredFooterProducts = [
-  { id: '1', name: "T-Shirt Classique", price: 19.99 },
-  { id: '3', name: "Casquette Logo", price: 24.99 },
-  { id: '6', name: "Mug Personnalisé", price: 14.99 },
+  { id: '1', name: "T-Shirt Classique", price: 10000 },
+  { id: '3', name: "Casquette Logo", price: 15000 },
+  { id: '6', name: "Mug Personnalisé", price: 8000 },
 ];
 
 export function Footer() {
@@ -56,7 +57,7 @@ export function Footer() {
                    />
                    <div>
                      <Link href="/boutique" className="text-sm hover:text-primary transition-colors">{product.name}</Link>
-                     <p className="text-xs text-muted-foreground">{product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</p>
+                     <p className="text-xs text-muted-foreground">{product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</p>
                    </div>
                 </li>
               ))}

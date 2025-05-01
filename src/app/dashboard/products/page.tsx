@@ -30,23 +30,26 @@ export interface ManagerProduct {
   id: string;
   name: string;
   description: string;
-  price: number;
+  price: number; // Assuming price is correct unit for XOF
   category: string;
   brand: string;
 }
 
 // Mock data fetching/deleting functions (similar to admin page, but potentially scoped)
+const storageKey = 'manager_products'; // Or use the same key as admin if permissions allow
+
 const fetchManagerProductsFromAPI = async (): Promise<ManagerProduct[]> => {
    await new Promise(resolve => setTimeout(resolve, 1000));
    // In a real app, this might fetch products the manager specifically has rights to edit,
    // or it might be the same endpoint as admin depending on backend logic.
-   const storedProducts = localStorage.getItem('manager_products'); // Use a separate key or same as admin
-   return storedProducts ? JSON.parse(storedProducts) : [
-        // Example data if none exists
-      { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 19.99, category: "Vêtements", brand: "Marque A" },
-      { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 24.99, category: "Accessoires", brand: "Marque B" },
-      { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 45.00, category: "Vêtements", brand: "Marque A" },
+   const storedProducts = localStorage.getItem(storageKey); // Use a separate key or same as admin
+   const demoProducts = [
+        // Example data if none exists (ensure prices are in XOF)
+      { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" },
+      { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" },
+      { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A" },
    ];
+   return storedProducts ? JSON.parse(storedProducts) : demoProducts;
 }
 
 const deleteManagerProductFromAPI = async (productId: string): Promise<void> => {
@@ -55,7 +58,7 @@ const deleteManagerProductFromAPI = async (productId: string): Promise<void> => 
     // Update localStorage or call API
      let products = await fetchManagerProductsFromAPI();
      products = products.filter(p => p.id !== productId);
-     localStorage.setItem('manager_products', JSON.stringify(products)); // Example update
+     localStorage.setItem(storageKey, JSON.stringify(products)); // Example update
 }
 
 
@@ -82,19 +85,18 @@ export default function ManagerProductsPage() {
         const loadProducts = async () => {
             setIsLoading(true);
             try {
-                const fetchedProducts = await fetchManagerProductsFromAPI();
+                let fetchedProducts = await fetchManagerProductsFromAPI();
                 // Simulate adding products if localStorage is empty for demo
-                if (fetchedProducts.length === 0 && !localStorage.getItem('manager_products')) {
-                    const demoProducts = [
-                          { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 19.99, category: "Vêtements", brand: "Marque A" },
-                          { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 24.99, category: "Accessoires", brand: "Marque B" },
-                          { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 45.00, category: "Vêtements", brand: "Marque A" },
+                if (fetchedProducts.length === 0 && !localStorage.getItem(storageKey)) {
+                     const demoProducts = [
+                          { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" },
+                          { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" },
+                          { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A" },
                     ];
-                    localStorage.setItem('manager_products', JSON.stringify(demoProducts));
-                    setProducts(demoProducts);
-                } else {
-                    setProducts(fetchedProducts);
+                    localStorage.setItem(storageKey, JSON.stringify(demoProducts));
+                    fetchedProducts = demoProducts; // Use demo products if storage was empty
                 }
+                 setProducts(fetchedProducts);
 
             } catch (error) {
                 console.error("Failed to fetch products:", error);
@@ -187,7 +189,7 @@ export default function ManagerProductsPage() {
                     <TableCell className="font-medium px-6 py-3">{product.name}</TableCell>
                     <TableCell className="px-6 py-3">{product.category}</TableCell>
                      <TableCell className="hidden md:table-cell px-6 py-3">{product.brand}</TableCell>
-                    <TableCell className="text-right px-6 py-3">{product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</TableCell>
+                    <TableCell className="text-right px-6 py-3">{product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</TableCell>
                     <TableCell className="text-right px-6 py-3">
                       <AlertDialog>
                            <DropdownMenu>
@@ -206,6 +208,7 @@ export default function ManagerProductsPage() {
                                         </Link>
                                    </DropdownMenuItem>
                                    {/* Manager might not have delete permission, or only for products they added */}
+                                    {/* NOTE: Delete functionality is currently commented out for Managers */}
                                    {/* <DropdownMenuSeparator />
                                    <AlertDialogTrigger asChild>
                                       <Button variant="ghost" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
@@ -217,8 +220,16 @@ export default function ManagerProductsPage() {
 
                            {/* Delete Confirmation (If managers can delete) */}
                             {/* <AlertDialogContent>
-                                <AlertDialogHeader> ... </AlertDialogHeader>
-                                <AlertDialogFooter> ... </AlertDialogFooter>
+                                <AlertDialogHeader>
+                                      <AlertDialogTitle>Supprimer "{product.name}"?</AlertDialogTitle>
+                                      <AlertDialogDescription>Action irréversible.</AlertDialogDescription>
+                                 </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                     <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                     <AlertDialogAction onClick={() => handleDeleteProduct(product.id, product.name)} className={buttonVariants({ variant: "destructive" })} disabled={isDeleting === product.id}>
+                                        {isDeleting === product.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Supprimer
+                                     </AlertDialogAction>
+                                 </AlertDialogFooter>
                            </AlertDialogContent> */}
                        </AlertDialog>
                     </TableCell>

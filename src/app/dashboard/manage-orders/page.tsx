@@ -1,7 +1,7 @@
 // src/app/dashboard/manage-orders/page.tsx (Manager's View)
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createElement } from 'react'; // Import React and createElement
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -155,13 +155,16 @@ export default function ManagerOrdersPage() {
 
     const getStatusBadge = (status: OrderStatus) => {
         const config = statusConfig[status] || { label: status, icon: HelpCircle, variant: 'outline', colorClass: 'text-muted-foreground' };
+         // Ensure config.icon is a valid component type
+        const IconComponent = config.icon && typeof config.icon !== 'string' ? config.icon : HelpCircle;
         return (
             <Badge variant={config.variant} className={cn("flex items-center gap-1 whitespace-nowrap", config.colorClass, `border-${config.colorClass.replace('text-', '')}`)}>
-                <config.icon className="h-3 w-3" />
+                {createElement(IconComponent, { className: "h-3 w-3" })}
                 {config.label}
             </Badge>
         );
     };
+
 
      // Render loading or unauthorized state
     if (isLoading || authLoading) {
@@ -208,7 +211,7 @@ export default function ManagerOrdersPage() {
                                         </TableCell>
                                         <TableCell className="text-center px-6 py-3">{getStatusBadge(order.status)}</TableCell>
                                         <TableCell className="text-right px-6 py-3 font-medium">
-                                            {order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                                            {order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}
                                         </TableCell>
                                         <TableCell className="text-right px-6 py-3">
                                             <DropdownMenu>
@@ -226,18 +229,23 @@ export default function ManagerOrdersPage() {
                                                             <DropdownMenuSubContent>
                                                                 <DropdownMenuLabel>Nouveau Statut</DropdownMenuLabel>
                                                                 <DropdownMenuSeparator />
-                                                                {managerAllowedStatuses.map(status => (
+                                                                {managerAllowedStatuses.map(status => {
+                                                                    const config = statusConfig[status] || { icon: HelpCircle };
+                                                                     // Ensure config.icon is a valid component type
+                                                                    const IconComponent = config.icon && typeof config.icon !== 'string' ? config.icon : HelpCircle;
+                                                                    return (
                                                                     <DropdownMenuItem
                                                                         key={status}
                                                                         disabled={order.status === status || isUpdating === order.id}
                                                                         onClick={() => handleStatusChange(order.id, status)}
                                                                         className={cn("flex items-center gap-2", statusConfig[status]?.colorClass)}
                                                                     >
-                                                                        {React.createElement(statusConfig[status]?.icon || HelpCircle, { className: "h-4 w-4" })}
+                                                                         {createElement(IconComponent, { className: "h-4 w-4" })}
                                                                         {status}
                                                                         {order.status === status && <CheckCircle className="ml-auto h-4 w-4 text-green-500" />}
                                                                     </DropdownMenuItem>
-                                                                ))}
+                                                                    );
+                                                                })}
                                                                 {/* Optionally show disallowed statuses as disabled */}
                                                                 {/* {availableStatuses.filter(s => !managerAllowedStatuses.includes(s)).map(status => (
                                                                     <DropdownMenuItem key={status} disabled className="flex items-center gap-2 text-muted-foreground">

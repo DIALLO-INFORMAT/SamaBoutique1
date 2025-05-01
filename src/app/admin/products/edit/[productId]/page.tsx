@@ -56,10 +56,12 @@ interface AdminProduct {
 const fetchProductById = async (productId: string): Promise<AdminProduct | null> => {
     console.log(`Fetching product ${productId}...`);
     await new Promise(resolve => setTimeout(resolve, 700)); // Simulate network delay
+    // Assuming price is stored in the smallest currency unit (e.g., cents for EUR/USD)
+    // Or already as the correct value for XOF
     const mockProducts: AdminProduct[] = [
-        { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 19.99, category: "Vêtements", brand: "Marque A" /*, imageUrl: `https://picsum.photos/seed/1/400/300` */ },
-        { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 499.00, category: "Services", brand: "SamaServices" /*, imageUrl: `https://picsum.photos/seed/2/400/300` */ },
-        { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 24.99, category: "Accessoires", brand: "Marque B" /*, imageUrl: `https://picsum.photos/seed/3/400/300` */ },
+        { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" /*, imageUrl: `https://picsum.photos/seed/1/400/300` */ },
+        { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices" /*, imageUrl: `https://picsum.photos/seed/2/400/300` */ },
+        { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" /*, imageUrl: `https://picsum.photos/seed/3/400/300` */ },
         // Add other mock products if needed
     ];
     return mockProducts.find(p => p.id === productId) || null;
@@ -115,7 +117,7 @@ export default function EditProductPage() {
           form.reset({
             name: foundProduct.name,
             description: foundProduct.description,
-            price: foundProduct.price,
+            price: foundProduct.price, // Assume price is fetched in the correct unit
             category: foundProduct.category,
             brand: foundProduct.brand,
           });
@@ -144,7 +146,9 @@ export default function EditProductPage() {
     setIsSubmitting(true);
 
     try {
-        await updateProductAPI(productId, values);
+        // Ensure price is handled correctly (e.g., if input is in main unit, convert to smallest if needed)
+        const priceToSave = values.price; // Assuming the input 'price' is already in the correct format/unit for saving
+        await updateProductAPI(productId, { ...values, price: priceToSave });
         toast({
           title: "Produit Modifié!",
           description: `Le produit "${values.name}" a été mis à jour.`,
@@ -265,9 +269,10 @@ export default function EditProductPage() {
                          name="price"
                          render={({ field }) => (
                          <FormItem>
-                             <FormLabel>Prix (EUR)</FormLabel>
+                             <FormLabel>Prix (FCFA)</FormLabel>
                              <FormControl>
-                             <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                             {/* Using type="number" but without step="0.01" for whole numbers often used in XOF */}
+                             <Input type="number" step="1" placeholder="0" {...field} />
                              </FormControl>
                              <FormMessage />
                          </FormItem>

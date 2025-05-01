@@ -166,7 +166,7 @@ export default function CheckoutPage() {
             address: values.address,
         },
         items: cart,
-        total: totalPrice,
+        total: totalPrice, // Assuming getTotalPrice returns value in the correct unit (e.g., whole FCFA)
         status: 'En attente de paiement', // All orders start pending payment confirmation
         paymentMethod: values.paymentMethod, // Save selected method
         notes: values.notes || '',
@@ -388,14 +388,14 @@ export default function CheckoutPage() {
                             <p className="text-muted-foreground">Qté: {item.quantity}</p>
                          </div>
                       </div>
-                      <p className="font-medium">{(item.price * item.quantity).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</p>
+                      <p className="font-medium">{(item.price * item.quantity).toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</p>
                    </div>
                  ))}
              </div>
             <Separator />
             <div className="flex justify-between font-semibold text-lg">
               <span>Total</span>
-              <span>{totalPrice.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</span>
+              <span>{totalPrice.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</span>
             </div>
              {/* Display Selected Payment Method */}
             {selectedPaymentMethod && (

@@ -46,11 +46,13 @@ const addManagerProductAPI = async (values: z.infer<typeof productFormSchema>): 
     await new Promise(resolve => setTimeout(resolve, 1500));
     // Add to localStorage or call API endpoint for managers
     const newProduct = { ...values, id: `prod-${Date.now()}` };
-    const storedProducts = localStorage.getItem('manager_products');
+    const storageKey = 'manager_products'; // Or use the same key as admin if needed
+    const storedProducts = localStorage.getItem(storageKey);
     const products = storedProducts ? JSON.parse(storedProducts) : [];
     products.push(newProduct);
-    localStorage.setItem('manager_products', JSON.stringify(products));
+    localStorage.setItem(storageKey, JSON.stringify(products));
 };
+
 
 export default function ManagerAddProductPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -74,7 +76,8 @@ export default function ManagerAddProductPage() {
   async function onSubmit(values: z.infer<typeof productFormSchema>) {
     setIsSubmitting(true);
     try {
-        await addManagerProductAPI(values);
+         const priceToSave = values.price; // Assuming input is correct unit
+         await addManagerProductAPI({ ...values, price: priceToSave });
         toast({
           title: "Produit Ajouté!",
           description: `"${values.name}" a été ajouté.`,
@@ -130,7 +133,7 @@ export default function ManagerAddProductPage() {
                 <CardTitle>Prix et Catégorisation</CardTitle>
             </CardHeader>
             <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                 <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <FormLabel>Prix (€)</FormLabel> <FormControl><Input type="number" step="0.01" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
+                 <FormField control={form.control} name="price" render={({ field }) => ( <FormItem> <FormLabel>Prix (FCFA)</FormLabel> <FormControl><Input type="number" step="1" placeholder="0" {...field} /></FormControl> <FormMessage /> </FormItem> )} />
                  <FormField control={form.control} name="category" render={({ field }) => ( <FormItem> <FormLabel>Catégorie</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl><SelectTrigger><SelectValue placeholder="Sélectionnez..." /></SelectTrigger></FormControl> <SelectContent>{categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent> </Select> <FormMessage /> </FormItem> )} />
                  <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem> <FormLabel>Marque</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl><SelectTrigger><SelectValue placeholder="Sélectionnez..." /></SelectTrigger></FormControl> <SelectContent>{brands.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent> </Select> <FormMessage /> </FormItem> )} />
             </CardContent>

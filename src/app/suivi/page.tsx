@@ -21,6 +21,7 @@ import { Search, Clock, Truck, PackageCheck, PackageX, RefreshCw, CircleDollarSi
 import type { Order, OrderStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge'; // Import Badge
+import Link from 'next/link'; // Import Link
 
 const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 
@@ -96,9 +97,10 @@ export default function OrderTrackingPage() {
 
     const getStatusBadge = (status: OrderStatus) => {
         const config = statusConfig[status] || { label: status, icon: HelpCircle, variant: 'outline', colorClass: 'text-muted-foreground' };
+        const IconComponent = config.icon && typeof config.icon !== 'string' ? config.icon : HelpCircle;
         return (
             <Badge variant={config.variant} className={cn("flex items-center gap-1 whitespace-nowrap text-sm px-3 py-1", config.colorClass, `border-${config.colorClass.replace('text-', '')}`)}>
-                <config.icon className="h-4 w-4" />
+                <IconComponent className="h-4 w-4" />
                 {config.label}
             </Badge>
         );
@@ -182,12 +184,12 @@ export default function OrderTrackingPage() {
                  <ul className="space-y-1 text-sm list-disc list-inside text-muted-foreground">
                      {order.items.map(item => (
                          <li key={item.id}>
-                             {item.name} (x{item.quantity}) - {(item.price * item.quantity).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                             {item.name} (x{item.quantity}) - {(item.price * item.quantity).toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}
                          </li>
                      ))}
                  </ul>
                 <p className="mt-2 font-semibold text-right">
-                     Total : {order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                     Total : {order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}
                  </p>
             </div>
 
