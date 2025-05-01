@@ -1,7 +1,6 @@
 'use client';
 
 import type {Metadata} from 'next';
-// Removed GeistSans import as it's not installed
 import './globals.css';
 import {Toaster} from '@/components/ui/toaster';
 import {Header} from '@/components/Header';
@@ -24,7 +23,6 @@ export default function RootLayout({
       <head>
       </head>
       <body
-        // Removed GeistSans.className
         className={cn('antialiased flex flex-col min-h-screen')}
       >
         <AuthProvider>
