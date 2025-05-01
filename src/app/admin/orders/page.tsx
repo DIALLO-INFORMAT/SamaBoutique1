@@ -18,12 +18,13 @@ import {
     DropdownMenuSubContent,
     DropdownMenuPortal
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle, Clock, Truck, XCircle, RefreshCw, DollarSign, PackageCheck, PackageSearch, PackageX, CircleDollarSign, HelpCircle } from "lucide-react"; // Added HelpCircle
+import { MoreHorizontal, CheckCircle, Clock, Truck, XCircle, RefreshCw, DollarSign, PackageCheck, PackageSearch, PackageX, CircleDollarSign, HelpCircle, Eye } from "lucide-react"; // Added HelpCircle, Eye
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Order, OrderStatus } from '@/lib/types'; // Import Order types
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import { OrderDetailsDialog } from '@/components/OrderDetailsDialog'; // Import the dialog
 
 const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 
@@ -98,6 +99,8 @@ export default function AdminOrdersPage() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState<string | null>(null); // Track which order is being updated
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null); // State for the selected order for details
+    const [isDialogOpen, setIsDialogOpen] = useState(false); // State to control the dialog
     const { toast } = useToast();
     const { t, currentLocale } = useTranslation(); // Use translation hook
 
@@ -120,8 +123,11 @@ export default function AdminOrdersPage() {
          const handleOrderUpdate = (event: Event) => {
              const { orderId, newStatus } = (event as CustomEvent).detail;
              setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, updatedAt: new Date() } : o));
+              // Update selectedOrder if it's the one being updated
+             setSelectedOrder(prev => prev?.id === orderId ? { ...prev, status: newStatus, updatedAt: new Date() } : prev);
          };
          window.addEventListener('order-updated', handleOrderUpdate);
+
          // Listen for new orders placed by users/guests
          const handleNewOrder = (event: Event) => {
               const newOrder = (event as CustomEvent).detail as Order;
@@ -141,7 +147,8 @@ export default function AdminOrdersPage() {
         setIsUpdating(orderId);
         try {
             await updateOrderStatusAPI(orderId, newStatus);
-            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, updatedAt: new Date() } : o));
+            // State update handled by 'order-updated' event listener now
+            // setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus, updatedAt: new Date() } : o));
             toast({ title: t('admin_orders_toast_status_success_title'), description: t('admin_orders_toast_status_success_description', { orderId: orderNumber, status: t(statusConfig[newStatus]?.labelKey || newStatus) }), className: "bg-primary text-primary-foreground border-primary" });
         } catch (error) {
             console.error("Failed to update status:", error);
@@ -161,6 +168,11 @@ export default function AdminOrdersPage() {
                 {t(config.labelKey)} {/* Translate the label */}
             </Badge>
         );
+    };
+
+     const handleViewDetails = (order: Order) => {
+        setSelectedOrder(order);
+        setIsDialogOpen(true);
     };
 
 
@@ -236,8 +248,11 @@ export default function AdminOrdersPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>{t('admin_orders_action_label')}</DropdownMenuLabel>
-                                                    {/* View Details (Future) */}
-                                                    {/* <DropdownMenuItem>Voir Détails</DropdownMenuItem> */}
+                                                    {/* View Details */}
+                                                    <DropdownMenuItem onClick={() => handleViewDetails(order)} className="flex items-center gap-2 cursor-pointer">
+                                                         <Eye className="h-4 w-4"/> {t('dashboard_my_orders_view_details')}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
                                                     <DropdownMenuSub>
                                                         <DropdownMenuSubTrigger>
                                                             <span>{t('admin_orders_change_status_label')}</span>
@@ -282,7 +297,16 @@ export default function AdminOrdersPage() {
                 </CardContent>
                  {/* Optional: Pagination */}
             </Card>
+
+             {/* Order Details Dialog */}
+            <OrderDetailsDialog
+                order={selectedOrder}
+                isOpen={isDialogOpen}
+                onClose={() => setIsDialogOpen(false)}
+                // Admin view doesn't need modify/cancel actions directly in dialog
+                showModifyCancelActions={false}
+                // Admin can change status via the dropdown, so no actions needed here
+            />
         </div>
     );
 }
-

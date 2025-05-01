@@ -23,13 +23,15 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import React, { createElement } from 'react'; // Import React and createElement
 
 const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 
 // Adjust schema validation for shorter order number format (e.g., SB-XXXXXX)
 const createTrackingSchema = (t: Function) => z.object({
-  orderNumber: z.string().min(9, { message: t('track_order_input_placeholder') + " doit être au format SB-XXXXXX." })
-                       .regex(/^SB-[A-Z0-9]{6}$/i, { message: "Format invalide (ex: SB-ABC123)." }) // Regex for SB-XXXXXX
+  orderNumber: z.string()
+                       .min(9, { message: t('track_order_invalid_format') }) // Use specific key
+                       .regex(/^SB-[A-Z0-9]{6}$/i, { message: t('track_order_invalid_format') }) // Use specific key
                        .trim(),
 });
 
@@ -89,12 +91,7 @@ export default function OrderTrackingPage() {
     setOrder(null);
 
     setTimeout(() => {
-      // Ensure the input matches the expected format before searching
-      if (!/^SB-[A-Z0-9]{6}$/i.test(values.orderNumber)) {
-          setError("Format de numéro de commande invalide (ex: SB-ABC123).");
-          setIsLoading(false);
-          return;
-      }
+      // Validation is now handled by Zod schema, just find the order
       const foundOrder = findOrder(values.orderNumber);
       if (foundOrder) {
         setOrder(foundOrder);
@@ -136,7 +133,7 @@ export default function OrderTrackingPage() {
                        {/* Ensure placeholder reflects the new format */}
                       <Input placeholder={t('track_order_input_placeholder_format')} {...field} />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage /> {/* Displays Zod validation message */}
                   </FormItem>
                 )}
               />
