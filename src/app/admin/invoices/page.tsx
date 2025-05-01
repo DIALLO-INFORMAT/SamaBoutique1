@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Printer, Download, Share2 } from "lucide-react"; // Icons for actions - Added Download
+import { Eye, Printer, Share2 } from "lucide-react"; // Icons for actions - Removed Download
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Order, OrderStatus } from '@/lib/types'; // Use Order type as base for invoice data
@@ -40,11 +40,11 @@ const fetchInvoiceableOrdersFromAPI = async (): Promise<Order[]> => {
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort newest first
 };
 
-// Function for viewing/downloading/sharing invoice
-const handleInvoiceAction = async (order: Order, action: 'view' | 'download' | 'share') => {
+// Function for viewing/sharing invoice
+const handleInvoiceAction = async (order: Order, action: 'view' | 'share') => {
     const { t } = useTranslation(); // Get t function inside the handler
 
-    if (action === 'view' || action === 'download') {
+    if (action === 'view') {
         try {
             // Generate the PDF blob
             const pdfBlob = await generateInvoicePDF(order, t);
@@ -52,21 +52,11 @@ const handleInvoiceAction = async (order: Order, action: 'view' | 'download' | '
             // Create a URL for the blob
             const pdfUrl = URL.createObjectURL(pdfBlob);
 
-            if (action === 'view') {
-                // Open the PDF in a new tab for viewing/printing
-                window.open(pdfUrl, '_blank');
-                // Revoke the URL after a short delay to allow the new tab to load
-                setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
-            } else if (action === 'download') {
-                // Create a temporary link to trigger download
-                const link = document.createElement('a');
-                link.href = pdfUrl;
-                link.download = `facture-${order.number}.pdf`; // Set the filename
-                document.body.appendChild(link); // Append to body (needed for Firefox)
-                link.click(); // Trigger download
-                document.body.removeChild(link); // Remove the link
-                URL.revokeObjectURL(pdfUrl); // Clean up the blob URL
-            }
+            // Open the PDF in a new tab for viewing/printing
+            window.open(pdfUrl, '_blank');
+            // Revoke the URL after a short delay to allow the new tab to load
+            setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+
         } catch (error) {
             console.error("Error generating or handling PDF:", error);
             alert(t('invoice_generate_error')); // Show a user-friendly error
@@ -76,8 +66,8 @@ const handleInvoiceAction = async (order: Order, action: 'view' | 'download' | '
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: `${t('invoice_share_title')} ${order.number}`,
-                    text: `${t('invoice_share_text')} ${order.number}. Total: ${order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 })}`,
+                    title: `${t('invoice_share_title')} ${order.orderNumber}`,
+                    text: `${t('invoice_share_text')} ${order.orderNumber}. Total: ${order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 })}`,
                     // url: window.location.href // Or a link to the order tracking page
                 });
             } catch (error) {
@@ -131,7 +121,7 @@ export default function AdminInvoicesPage() {
                                     <Skeleton className="h-4 w-1/4" />
                                     <Skeleton className="h-4 w-1/6 hidden md:block" />
                                     <Skeleton className="h-6 w-20" />
-                                    <Skeleton className="h-8 w-24 ml-auto" /> {/* Adjusted size for two buttons */}
+                                    <Skeleton className="h-8 w-24 ml-auto" /> {/* Adjusted size for one button */}
                                 </div>
                             ))}
                         </div>
@@ -145,14 +135,14 @@ export default function AdminInvoicesPage() {
                                     <TableHead className="px-6">{t('admin_invoices_table_customer')}</TableHead>
                                     <TableHead className="hidden md:table-cell px-6">{t('admin_invoices_table_order_date')}</TableHead>
                                     <TableHead className="text-right px-6">{t('admin_invoices_table_total')}</TableHead>
-                                    <TableHead className="text-right px-6 w-[180px]">{t('admin_invoices_table_actions')}</TableHead> {/* Adjusted width */}
+                                    <TableHead className="text-right px-6 w-[120px]">{t('admin_invoices_table_actions')}</TableHead> {/* Adjusted width */}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {invoices.map((invoice) => (
                                     <TableRow key={invoice.id} className="hover:bg-muted/50">
                                         <TableCell className="font-medium px-6 py-3">
-                                            <span className="font-mono text-xs">{invoice.number}</span>
+                                            <span className="font-mono text-xs">{invoice.orderNumber}</span>
                                         </TableCell>
                                         <TableCell className="px-6 py-3">
                                             <div>{invoice.customerInfo.name}</div>
@@ -176,19 +166,9 @@ export default function AdminInvoicesPage() {
                                                 <Printer className="h-4 w-4" />
                                                 <span className="hidden sm:inline">{t('invoice_action_view')}</span>
                                             </Button>
-                                            {/* Download Button */}
-                                            <Button
-                                                 variant="outline"
-                                                 size="sm"
-                                                 title={t('invoice_download_button')}
-                                                 onClick={() => handleInvoiceAction(invoice, 'download')}
-                                                 className="flex items-center gap-1"
-                                            >
-                                                 <Download className="h-4 w-4" />
-                                                 <span className="hidden sm:inline">{t('invoice_download_button')}</span>
-                                            </Button>
+                                            {/* Download Button Removed */}
                                             {/* Optional Share Button Placeholder */}
-                                            {/* <Button variant="ghost" size="icon" title={t('invoice_share_button_soon')} onClick={() => handleInvoiceAction(invoice.number, 'share')}>
+                                            {/* <Button variant="ghost" size="icon" title={t('invoice_share_button_soon')} onClick={() => handleInvoiceAction(invoice.orderNumber, 'share')}>
                                                 <Share2 className="h-4 w-4 text-muted-foreground" />
                                             </Button> */}
                                         </TableCell>
@@ -203,5 +183,3 @@ export default function AdminInvoicesPage() {
         </div>
     );
 }
-
-    

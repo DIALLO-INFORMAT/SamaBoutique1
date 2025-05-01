@@ -27,10 +27,10 @@ export function ProductList({ initialProducts, viewMode }: ProductListProps) {
   const searchParams = useSearchParams();
 
   const filteredAndSortedProducts = useMemo(() => {
-    setIsLoading(true);
+    setIsLoading(true); // Start loading when filters change
 
-    const categoryFilter = searchParams.get('category')?.toLowerCase() || 'all';
-    const brandFilters = searchParams.getAll('brand');
+    const categoryFilter = searchParams.get('category') || 'all'; // Use original case from URL
+    const brandFilters = searchParams.getAll('brand'); // Use original case from URL
     const minPriceFilter = searchParams.get('minPrice');
     const maxPriceFilter = searchParams.get('maxPrice');
     const searchTermFilter = searchParams.get('search')?.toLowerCase() || '';
@@ -38,6 +38,7 @@ export function ProductList({ initialProducts, viewMode }: ProductListProps) {
 
     let result = [...products];
 
+    // Search Filter (apply first if present)
     if (searchTermFilter.length >= 2) {
         result = result.filter(p =>
             p.name.toLowerCase().includes(searchTermFilter) ||
@@ -47,14 +48,17 @@ export function ProductList({ initialProducts, viewMode }: ProductListProps) {
         );
     }
 
-    if (categoryFilter !== 'all') {
-      result = result.filter(p => p.category.toLowerCase() === categoryFilter);
+    // Category Filter
+    if (categoryFilter && categoryFilter !== 'all') {
+      result = result.filter(p => p.category === categoryFilter); // Match original case
     }
 
+    // Brand Filter
     if (brandFilters.length > 0) {
-      result = result.filter(p => brandFilters.includes(p.brand.toLowerCase()));
+      result = result.filter(p => brandFilters.includes(p.brand)); // Match original case
     }
 
+    // Price Filter
     const minPriceNum = minPriceFilter ? parseFloat(minPriceFilter) : null;
     const maxPriceNum = maxPriceFilter ? parseFloat(maxPriceFilter) : null;
 
@@ -65,6 +69,7 @@ export function ProductList({ initialProducts, viewMode }: ProductListProps) {
         result = result.filter(p => p.price <= maxPriceNum);
     }
 
+    // Sorting
     switch (sort) {
       case 'price_asc': result.sort((a, b) => a.price - b.price); break;
       case 'price_desc': result.sort((a, b) => b.price - a.price); break;
@@ -72,24 +77,29 @@ export function ProductList({ initialProducts, viewMode }: ProductListProps) {
       case 'name_asc': default: result.sort((a, b) => a.name.localeCompare(a.name)); break;
     }
 
-    // Reset to page 1 when filters change
-    setCurrentPage(1);
+    // Reset to page 1 whenever filters change significantly (search, category, brand, price)
+     const currentFilterKey = `${categoryFilter}-${brandFilters.join(',')}-${minPriceFilter}-${maxPriceFilter}-${searchTermFilter}`;
+     // Use a ref or state to store the previous key if needed, but for simplicity,
+     // we'll just reset to page 1 on every filter evaluation.
+     setCurrentPage(1);
 
-    // Simulate delay
+
+    // Simulate loading delay AFTER filtering/sorting is done
     const timer = setTimeout(() => setIsLoading(false), 300);
+    // Cleanup function for the timer is handled in the useEffect below
 
     return result;
 
   }, [products, searchParams]);
 
-  // Cleanup effect for the timer in useMemo
+  // Separate useEffect for loading state management based on filter changes
    useEffect(() => {
-     let timerId: NodeJS.Timeout | null = null;
-     if (isLoading) {
-       timerId = setTimeout(() => setIsLoading(false), 300);
-     }
-     return () => { if (timerId) clearTimeout(timerId); };
-   }, [isLoading]);
+     // This effect triggers whenever filteredAndSortedProducts recalculates
+     // which happens when searchParams changes.
+     setIsLoading(true); // Assume loading starts
+     const timer = setTimeout(() => setIsLoading(false), 300); // Set timeout to end loading
+     return () => clearTimeout(timer); // Cleanup timeout
+   }, [searchParams]); // Depend only on searchParams
 
   const totalPages = Math.ceil(filteredAndSortedProducts.length / ITEMS_PER_PAGE);
   const paginatedProducts = useMemo(() => {
@@ -198,4 +208,3 @@ export function ProductList({ initialProducts, viewMode }: ProductListProps) {
     </div>
   );
 }
-

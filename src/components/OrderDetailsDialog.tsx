@@ -15,7 +15,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { HelpCircle, Clock, Truck, PackageCheck, PackageX, RefreshCw, CircleDollarSign, Pencil, Trash2, Loader2, Download } from 'lucide-react'; // Status icons + Action icons
+import { HelpCircle, Clock, Truck, PackageCheck, PackageX, RefreshCw, CircleDollarSign, Pencil, Trash2, Loader2 } from 'lucide-react'; // Status icons + Action icons - Removed Download
 import React, { createElement } from "react"; // Import createElement
 import {
   AlertDialog,
@@ -29,7 +29,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"; // Import AlertDialog
 import { buttonVariants } from '@/components/ui/button'; // For styling AlertDialogAction
-import { generateInvoicePDF } from '@/lib/invoice-pdf'; // Import PDF generation utility
+// PDF Generation import removed as download functionality is removed
+// import { generateInvoicePDF } from '@/lib/invoice-pdf';
 
 
 interface OrderDetailsDialogProps {
@@ -62,28 +63,8 @@ const statusConfig: Record<Order['status'], StatusConfig> = {
     'Remboursé': { labelKey: 'order_status_refunded', icon: RefreshCw, variant: 'destructive', colorClass: 'text-gray-500' },
 };
 
-// Function for viewing/downloading invoice (moved from pages for reuse)
-const handleInvoiceDownload = async (order: Order | null, t: (key: string, options?: any) => string) => {
-     if (!order) return; // Guard against null order
-     try {
-        // Generate the PDF blob
-        const pdfBlob = await generateInvoicePDF(order, t);
-        // Create a URL for the blob
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        // Create a temporary link to trigger download
-        const link = document.createElement('a');
-        link.href = pdfUrl;
-        link.download = `facture-${order.orderNumber}.pdf`; // Set the filename
-        document.body.appendChild(link); // Append to body
-        link.click(); // Trigger download
-        document.body.removeChild(link); // Remove the link
-        URL.revokeObjectURL(pdfUrl); // Clean up the blob URL
-     } catch (error) {
-         console.error("Error generating or downloading PDF:", error);
-         // Use t function safely
-         alert(t('invoice_generate_error') || "Erreur lors de la génération de la facture PDF.");
-     }
-};
+// Download function removed
+// const handleInvoiceDownload = async (order: Order | null, t: (key: string, options?: any) => string) => { ... };
 
 
 export function OrderDetailsDialog({
@@ -113,8 +94,8 @@ export function OrderDetailsDialog({
         );
     };
 
-    // Check if invoice is downloadable based on status
-    const isInvoiceDownloadable = ['Payé', 'Expédié', 'Livraison en cours', 'Livré'].includes(order.status);
+    // Invoice download check removed
+    // const isInvoiceDownloadable = ['Payé', 'Expédié', 'Livraison en cours', 'Livré'].includes(order.status);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -212,21 +193,8 @@ export function OrderDetailsDialog({
                 </div>
            </div>
              <Separator />
-            {/* Invoice Download Button */}
-            <div className="text-center">
-                <Button
-                    variant="outline"
-                    onClick={() => handleInvoiceDownload(order, t)} // Pass t function
-                    className="flex items-center gap-1"
-                    disabled={!isInvoiceDownloadable} // Disable if not downloadable
-                >
-                    <Download className="h-4 w-4" />
-                    {t('invoice_download_button')}
-                </Button>
-                 {!isInvoiceDownloadable && (
-                    <p className="text-xs text-muted-foreground mt-1">{t('invoice_download_disabled_tooltip')}</p>
-                 )}
-            </div>
+            {/* Invoice Download Button Removed */}
+            {/* <div className="text-center"> ... </div> */}
         </div>
 
          {/* Actions (Modify/Cancel) - Shown conditionally */}
@@ -271,6 +239,3 @@ export function OrderDetailsDialog({
     </Dialog>
   );
 }
-
-
-    

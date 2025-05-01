@@ -25,12 +25,14 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [minPrice, setMinPrice] = useState<string>('');
-  const [maxPrice, setMaxPrice] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  // State to hold current filter values, initialized from URL params
+  const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get('category') || 'all');
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(searchParams.getAll('brand') || []);
+  const [minPrice, setMinPrice] = useState<string>(searchParams.get('minPrice') || '');
+  const [maxPrice, setMaxPrice] = useState<string>(searchParams.get('maxPrice') || '');
+  const [searchTerm, setSearchTerm] = useState<string>(searchParams.get('search') || '');
 
+  // Sync state with URL parameters when they change (e.g., back/forward navigation)
   useEffect(() => {
     setSelectedCategory(searchParams.get('category') || 'all');
     setSelectedBrands(searchParams.getAll('brand') || []);
@@ -39,51 +41,77 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
     setSearchTerm(searchParams.get('search') || '');
   }, [searchParams]);
 
+   // Function to update URL parameters based on current state
    const updateUrlParams = useCallback(() => {
-       const params = new URLSearchParams(searchParams);
+       const params = new URLSearchParams(searchParams); // Start with current params
 
-       if (selectedCategory !== 'all') params.set('category', selectedCategory);
-       else params.delete('category');
+       // Update category
+       if (selectedCategory && selectedCategory !== 'all') {
+           params.set('category', selectedCategory);
+       } else {
+           params.delete('category');
+       }
 
-       params.delete('brand');
+       // Update brands (handle multiple values)
+       params.delete('brand'); // Clear existing brand params first
        selectedBrands.forEach(brand => params.append('brand', brand));
 
+       // Update price range
        if (minPrice) params.set('minPrice', minPrice);
        else params.delete('minPrice');
-
        if (maxPrice) params.set('maxPrice', maxPrice);
        else params.delete('maxPrice');
 
-       if (searchTerm.length >= 2) params.set('search', searchTerm);
+       // Update search term (only if >= 2 chars)
+       if (searchTerm.trim().length >= 2) params.set('search', searchTerm.trim());
        else params.delete('search');
 
+       // Push the new URL, preserving existing sort order if any
        router.push(`${pathname}?${params.toString()}`, { scroll: false });
    }, [selectedCategory, selectedBrands, minPrice, maxPrice, searchTerm, pathname, router, searchParams]);
 
+   // Handlers for filter changes
    const handleCategoryChange = (value: string) => {
        setSelectedCategory(value);
+       // Apply immediately or wait for Apply button? Wait for Apply button.
    };
 
    const handleBrandChange = (brand: string, checked: boolean | string) => {
        setSelectedBrands(prev =>
            checked ? [...prev, brand] : prev.filter(b => b !== brand)
        );
+        // Apply immediately or wait for Apply button? Wait for Apply button.
    };
 
     const handlePriceChange = (type: 'min' | 'max', value: string) => {
+        // Allow only numbers
         const numericValue = value.replace(/[^0-9]/g, '');
         if (type === 'min') setMinPrice(numericValue);
         else setMaxPrice(numericValue);
+         // Apply immediately or wait for Apply button? Wait for Apply button.
     };
 
      const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-         setSearchTerm(event.target.value);
+         const newSearchTerm = event.target.value;
+         setSearchTerm(newSearchTerm);
+         // Trigger URL update only if term is >= 2 chars or empty
+         if (newSearchTerm.trim().length >= 2 || newSearchTerm.trim().length === 0) {
+             const params = new URLSearchParams(searchParams);
+             if (newSearchTerm.trim().length >= 2) {
+                 params.set('search', newSearchTerm.trim());
+             } else {
+                 params.delete('search');
+             }
+             router.push(`${pathname}?${params.toString()}`, { scroll: false });
+         }
      };
 
+     // Apply all filters when the button is clicked
      const applyFilters = () => {
          updateUrlParams();
      };
 
+     // Clear all filters and update URL
      const clearFilters = () => {
          setSelectedCategory('all');
          setSelectedBrands([]);
@@ -91,6 +119,7 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
          setMaxPrice('');
          setSearchTerm('');
 
+         // Preserve only the sort parameter if it exists
          const params = new URLSearchParams();
          const currentSort = searchParams.get('sort');
           if (currentSort) {
@@ -117,7 +146,7 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
                      id="search-filter"
                      placeholder={t('shop_search_placeholder')}
                      value={searchTerm}
-                     onChange={handleSearchChange}
+                     onChange={handleSearchChange} // Live update for search
                      className="pr-8"
                  />
                  <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -137,7 +166,7 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
             </div>
             {categories.map(category => (
               <div key={category} className="flex items-center space-x-2">
-                <RadioGroupItem value={category.toLowerCase()} id={`cat-${category.toLowerCase()}`} />
+                <RadioGroupItem value={category} id={`cat-${category.toLowerCase()}`} />
                 <Label htmlFor={`cat-${category.toLowerCase()}`} className="font-normal cursor-pointer">{category}</Label> {/* Category names usually not translated */}
               </div>
             ))}
@@ -153,8 +182,8 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
             <div key={brand} className="flex items-center space-x-2">
               <Checkbox
                 id={`brand-${brand.toLowerCase()}`}
-                checked={selectedBrands.includes(brand.toLowerCase())}
-                onCheckedChange={(checked) => handleBrandChange(brand.toLowerCase(), checked)}
+                checked={selectedBrands.includes(brand)} // Check against original brand name
+                onCheckedChange={(checked) => handleBrandChange(brand, checked)} // Pass original brand name
               />
               <Label htmlFor={`brand-${brand.toLowerCase()}`} className="font-normal cursor-pointer">{brand}</Label> {/* Brand names usually not translated */}
             </div>
