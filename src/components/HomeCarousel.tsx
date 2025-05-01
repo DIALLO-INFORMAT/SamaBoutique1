@@ -20,8 +20,9 @@ interface HomeCarouselProps {
 }
 
 export function HomeCarousel({ images }: HomeCarouselProps) { // Destructure images prop
-  const plugin = React.useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: true })
+  // Initialize the Autoplay plugin with desired options
+  const autoplayPlugin = React.useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: false, stopOnMouseEnter: true }) // Stop on hover, but restart on leave
   );
 
   // Handle case where no images are provided
@@ -35,17 +36,16 @@ export function HomeCarousel({ images }: HomeCarouselProps) { // Destructure ima
 
   return (
     <Carousel
-      plugins={[plugin.current]}
+      plugins={[autoplayPlugin.current]} // Pass the initialized plugin here
       className="w-full"
       opts={{
         loop: true,
       }}
-      onMouseEnter={plugin.current.stop}
-      onMouseLeave={plugin.current.reset}
+      // Removed mouse enter/leave handlers here as stopOnMouseEnter handles it
     >
       <CarouselContent>
         {images.map((image, index) => ( // Use the images prop
-          <CarouselItem key={index}>
+          <CarouselItem key={image.src + index}> {/* Use a more stable key */}
             <div className="p-1">
               <Card className="overflow-hidden border-none shadow-none rounded-lg">
                 <CardContent className="flex aspect-[12/5] items-center justify-center p-0">
@@ -73,3 +73,4 @@ export function HomeCarousel({ images }: HomeCarouselProps) { // Destructure ima
     </Carousel>
   );
 }
+
