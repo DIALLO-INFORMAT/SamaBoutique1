@@ -1,54 +1,59 @@
+
 'use client';
 
-import type {Metadata} from 'next';
 import './globals.css';
-import {Toaster} from '@/components/ui/toaster';
-import {Header} from '@/components/Header';
-import {Footer} from '@/components/Footer'; // Import Footer
-import {cn} from '@/lib/utils';
-import {CartProvider} from '@/context/CartContext'; // Import CartProvider
-import {AuthProvider} from '@/context/AuthContext'; // Import AuthProvider
-import {WelcomePopup} from '@/components/WelcomePopup'; // Import WelcomePopup
-import React, { useEffect, useState } from 'react';
-import { useSettings } from '@/hooks/useSettings'; // Import useSettings
+import { Toaster } from '@/components/ui/toaster';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
+import { cn } from '@/lib/utils';
+import { CartProvider } from '@/context/CartContext';
+import { AuthProvider } from '@/context/AuthContext';
+import { LocaleProvider } from '@/context/LocaleContext'; // Import LocaleProvider
+import { WelcomePopup } from '@/components/WelcomePopup';
+import React, { useEffect } from 'react';
+import { useSettings } from '@/hooks/useSettings';
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
+  // Settings hook is now moved inside a component that will be wrapped by LocaleProvider
   return (
-    <html lang="fr">
+    // HTML lang and dir will be set by LocaleProvider's useEffect
+    <html>
       <head>
-        {/* Favicon link will be dynamically added in ClientLayout if configured */}
+        {/* Favicon link will be dynamically added in ClientLayoutContent if configured */}
       </head>
       <body
-        className={cn('antialiased flex flex-col min-h-screen')}
+        className={cn(
+          'antialiased flex flex-col min-h-screen'
+          // Tailwind classes for LTR/RTL can be added here if needed,
+          // but setting dir attribute on <html> is usually sufficient
+        )}
       >
-        <AuthProvider>
-          {' '}
-          {/* Wrap with AuthProvider */}
-          <CartProvider>
-            {' '}
-            {/* Wrap with CartProvider */}
-            {/* ClientLayout now manages Header and Footer to access settings */}
-            <ClientLayout>
+        {/* Wrap everything with LocaleProvider */}
+        <LocaleProvider>
+          <AuthProvider>
+            <CartProvider>
+              <ClientLayoutContent>
                 {children}
-            </ClientLayout>
-            <Toaster />
-          </CartProvider>{' '}
-          {/* Close CartProvider */}
-        </AuthProvider>{' '}
-        {/* Close AuthProvider */}
+              </ClientLayoutContent>
+              <Toaster />
+            </CartProvider>
+          </AuthProvider>
+        </LocaleProvider>
       </body>
     </html>
   );
 }
 
-function ClientLayout({ children }: { children: React.ReactNode }) {
-    // Call useSettings hook directly in the component body
+// Renamed ClientLayout to ClientLayoutContent to avoid confusion
+// This component now sits inside all providers, including LocaleProvider
+function ClientLayoutContent({ children }: { children: React.ReactNode }) {
+    // Now we can safely use hooks that depend on LocaleProvider
     const settings = useSettings();
+    // const { isLoading: localeLoading } = useLocale(); // Get locale loading state if needed
 
     useEffect(() => {
         // Update CSS variable for primary color
@@ -67,59 +72,48 @@ function ClientLayout({ children }: { children: React.ReactNode }) {
                  head.appendChild(faviconLink);
              }
              faviconLink.setAttribute('href', settings.faviconUrl);
-             // Optionally set sizes or type if needed based on the URL or settings
-             faviconLink.setAttribute('sizes', 'any'); // Example
+             faviconLink.setAttribute('sizes', 'any');
         } else if (faviconLink) {
-             // Remove favicon if URL is cleared
              head.removeChild(faviconLink);
         }
 
-    }, [settings.primaryColor, settings.faviconUrl]); // Rerun effect if these settings change
+    }, [settings.primaryColor, settings.faviconUrl]);
 
-    // Set document title
     useEffect(() => {
+        // Set document title based on settings and potentially locale
+        // You might integrate useTranslation here later
         document.title = settings.storeName || 'SamaBoutique';
     }, [settings.storeName]);
 
-    if (settings.isLoading) {
-        // Optionally show a loading state for the whole layout
+    // Show loading if settings OR locale are loading
+    if (settings.isLoading /*|| localeLoading*/) {
         return (
-            <div className="flex flex-col min-h-screen">
-                 {/* Basic header/footer structure might be needed even during loading */}
-                 <header className="bg-secondary shadow-md sticky top-0 z-50 h-16"></header>
-                 <main className="flex-grow flex justify-center items-center">Loading settings...</main>
-                 <footer className="bg-secondary text-secondary-foreground mt-16 border-t border-border h-40"></footer>
-             </div>
+             <div className="fixed inset-0 bg-background z-[9999] flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
         );
     }
 
     if (settings.enableMaintenance) {
-       // Render maintenance mode page (simple example)
+        // Render maintenance mode page
         return (
              <div className="flex flex-col min-h-screen justify-center items-center text-center p-4 bg-background">
                  <h1 className="text-3xl font-bold text-primary mb-4">Site en Maintenance</h1>
                  <p className="text-muted-foreground">Nous serons bientôt de retour. Merci de votre patience.</p>
-                 {/* You could add the support email here */}
-                  {settings.supportEmail && <p className="mt-4 text-sm">Contact: {settings.supportEmail}</p>}
+                 {settings.supportEmail && <p className="mt-4 text-sm">Contact: {settings.supportEmail}</p>}
              </div>
         );
     }
 
+    // Render the actual layout once everything is loaded
     return (
         <>
-            {/* Pass settings to Header */}
             <Header />
             <main className="flex-grow px-4 py-8">{children}</main>
-            <WelcomePopup /> {/* Add WelcomePopup here */}
-            {/* Pass settings to Footer */}
+            <WelcomePopup />
             <Footer />
         </>
     );
 }
 
-// Removed metadata export as it cannot be used with 'use client'
-// export const metadata: Metadata = {
-//   title: 'SamaBoutique', // This will be overridden by ClientLayout effect
-//   description: 'Gérez votre boutique et présentez vos produits et services.',
-// };
-
+// Metadata is removed as it cannot be exported from a client component

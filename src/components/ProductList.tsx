@@ -1,30 +1,30 @@
+
 // src/components/ProductList.tsx
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-// Use the specific Product type from boutique page or a shared location
-import type { Product } from '@/app/boutique/page'; // Assuming Product includes brand
+import type { Product } from '@/app/boutique/page';
 import { ProductCard } from './ProductCard';
 import { useSearchParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Filter } from 'lucide-react'; // Import Filter icon
+import { Filter, Loader2 } from 'lucide-react'; // Import Filter and Loader2 icon
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
 interface ProductListProps {
-  initialProducts: Product[]; // Expecting products with brand
+  initialProducts: Product[];
 }
 
 export function ProductList({ initialProducts }: ProductListProps) {
-  const [products] = useState<Product[]>(initialProducts); // Keep initial products as the base dataset
-  const [isLoading, setIsLoading] = useState(false); // Manage loading state for simulated delay
+  const { t } = useTranslation(); // Use translation hook
+  const [products] = useState<Product[]>(initialProducts);
+  const [isLoading, setIsLoading] = useState(false); // Start with false, set true during calculation
   const searchParams = useSearchParams();
 
-  // Re-run filtering/sorting whenever searchParams change
   const filteredAndSortedProducts = useMemo(() => {
-    setIsLoading(true); // Set loading true when recalculating
+    setIsLoading(true); // Set loading true when starting calculation
 
-    // Extract filter parameters from URL
     const categoryFilter = searchParams.get('category')?.toLowerCase() || 'all';
-    const brandFilters = searchParams.getAll('brand'); // Already lowercase from sidebar
+    const brandFilters = searchParams.getAll('brand');
     const minPriceFilter = searchParams.get('minPrice');
     const maxPriceFilter = searchParams.get('maxPrice');
     const searchTermFilter = searchParams.get('search')?.toLowerCase() || '';
@@ -32,7 +32,6 @@ export function ProductList({ initialProducts }: ProductListProps) {
 
     let result = [...products];
 
-    // Apply Search Filter (only if >= 2 chars)
     if (searchTermFilter.length >= 2) {
         result = result.filter(p =>
             p.name.toLowerCase().includes(searchTermFilter) ||
@@ -42,17 +41,14 @@ export function ProductList({ initialProducts }: ProductListProps) {
         );
     }
 
-    // Apply Category Filter
     if (categoryFilter !== 'all') {
       result = result.filter(p => p.category.toLowerCase() === categoryFilter);
     }
 
-    // Apply Brand Filter (Multiple)
     if (brandFilters.length > 0) {
       result = result.filter(p => brandFilters.includes(p.brand.toLowerCase()));
     }
 
-    // Apply Price Filter
     const minPriceNum = minPriceFilter ? parseFloat(minPriceFilter) : null;
     const maxPriceNum = maxPriceFilter ? parseFloat(maxPriceFilter) : null;
 
@@ -63,42 +59,45 @@ export function ProductList({ initialProducts }: ProductListProps) {
         result = result.filter(p => p.price <= maxPriceNum);
     }
 
-
-    // Sort
     switch (sort) {
-      case 'price_asc':
-        result.sort((a, b) => a.price - b.price);
-        break;
-      case 'price_desc':
-        result.sort((a, b) => b.price - a.price);
-        break;
-      case 'name_desc':
-        result.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case 'name_asc':
-      default:
-        result.sort((a, b) => a.name.localeCompare(a.name));
-        break;
+      case 'price_asc': result.sort((a, b) => a.price - b.price); break;
+      case 'price_desc': result.sort((a, b) => b.price - a.price); break;
+      case 'name_desc': result.sort((a, b) => b.name.localeCompare(a.name)); break;
+      case 'name_asc': default: result.sort((a, b) => a.name.localeCompare(a.name)); break;
     }
 
-    // Simulate delay for loading indicator
-     const timer = setTimeout(() => {
-       setIsLoading(false);
-     }, 300); // Short delay
+    // Simulate filtering/sorting delay ONLY for visual feedback
+    // In a real app with server-side filtering, the loading state would be managed differently.
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500); // Adjust delay as needed
 
-    // Return result immediately for responsiveness, loading handles visual delay
-    return result;
+    // We need to return result immediately for responsiveness, but also cleanup timer
+    // This approach might cause a flash if calculation is faster than delay.
+    // A better approach involves signaling completion from the calculation itself.
+    // For now, we'll rely on this simple delay.
+
+    // Cleanup function for the timer
+    // This runs if dependencies change before timeout finishes or on unmount
+    const cleanup = () => clearTimeout(timer);
+    // Attaching cleanup to the effect that depends on isLoading, or use a separate effect
+
+    return result; // Return the calculated result
 
   }, [products, searchParams]); // Depend on base products and searchParams
 
-  // Cleanup timer on unmount or if dependencies change before timeout
+   // Effect to manage the loading state based on the calculation finishing
    useEffect(() => {
-     // This effect is primarily for cleanup if needed, main logic is in useMemo
-     let timer: NodeJS.Timeout;
-     if(isLoading){
-        timer = setTimeout(() => setIsLoading(false), 300); // Ensure loading resets
-     }
-     return () => clearTimeout(timer);
+      // This effect helps ensure isLoading becomes false after the calculation delay
+      let timerId: NodeJS.Timeout | null = null;
+      if (isLoading) {
+          timerId = setTimeout(() => {
+              setIsLoading(false);
+          }, 500); // Match the delay in useMemo
+      }
+      return () => {
+          if (timerId) clearTimeout(timerId);
+      };
    }, [isLoading]);
 
 
@@ -127,8 +126,8 @@ export function ProductList({ initialProducts }: ProductListProps) {
     return (
         <div className="text-center py-16 text-muted-foreground bg-secondary rounded-lg">
             <Filter className="h-12 w-12 mx-auto mb-4 text-primary/50"/>
-            <p className="text-lg font-medium">Aucun produit trouvé.</p>
-            <p>Essayez d'ajuster vos filtres de recherche.</p>
+            <p className="text-lg font-medium">{t('shop_no_products_found')}</p>
+            <p>{t('shop_adjust_filters')}</p>
         </div>
     );
   }

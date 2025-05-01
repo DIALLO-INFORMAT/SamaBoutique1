@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,27 +18,35 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-// Removed Mail import from lucide-react
+import { Loader2 } from "lucide-react"; // Import Loader2
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
-const formSchema = z.object({
+// Re-define schema outside component if needed elsewhere, or keep inline if only used here
+const createFormSchema = (t: Function) => z.object({
   name: z.string().min(2, {
-    message: "Le nom doit contenir au moins 2 caractères.",
+    message: t('contact_form_name') + " must contain at least 2 characters.", // Example: combine key and static text
   }),
   email: z.string().email({
-    message: "Veuillez entrer une adresse email valide.",
+    message: t('contact_form_email') + " must be a valid email address.",
   }),
   subject: z.string().min(5, {
-    message: "Le sujet doit contenir au moins 5 caractères.",
+    message: t('contact_form_subject') + " must contain at least 5 characters.",
   }),
   message: z.string().min(10, {
-    message: "Le message doit contenir au moins 10 caractères.",
+    message: t('contact_form_message') + " must contain at least 10 characters.",
   }).max(500, {
-    message: "Le message ne peut pas dépasser 500 caractères."
+    message: t('contact_form_message') + " cannot exceed 500 characters."
   }),
 });
 
+
 export default function ContactPage() {
   const { toast } = useToast();
+  const { t } = useTranslation(); // Use the translation hook
+
+  // Initialize schema inside the component to access `t`
+  const formSchema = createFormSchema(t);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -51,28 +60,22 @@ export default function ContactPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     // Simulate sending the message
     console.log("Form submitted:", values);
-    // In a real app, you would send this data to your backend/API
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network request
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     toast({
-      title: "Message Envoyé!",
-      description: "Merci de nous avoir contactés. Nous vous répondrons bientôt.",
-      variant: "default", // Using default which uses primary color accents
-      className: "bg-primary text-primary-foreground border-primary", // Custom styling for success
+      title: t('contact_toast_success_title'),
+      description: t('contact_toast_success_description'),
+      className: "bg-primary text-primary-foreground border-primary",
     });
-    form.reset(); // Reset form after successful submission
+    form.reset();
   }
 
   return (
-    // Added container and max-width here
     <div className="container mx-auto max-w-4xl flex justify-center py-8">
       <Card className="w-full max-w-2xl shadow-lg">
         <CardHeader className="text-center">
-          {/* Removed Mail icon */}
-          <CardTitle className="text-2xl font-bold text-primary">Contactez-nous</CardTitle>
-          <CardDescription>
-            Remplissez le formulaire ci-dessous pour nous envoyer un message.
-          </CardDescription>
+          <CardTitle className="text-2xl font-bold text-primary">{t('contact_page_title')}</CardTitle>
+          <CardDescription>{t('contact_page_description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -83,9 +86,9 @@ export default function ContactPage() {
                    name="name"
                    render={({ field }) => (
                      <FormItem>
-                       <FormLabel>Nom</FormLabel>
+                       <FormLabel>{t('contact_form_name')}</FormLabel>
                        <FormControl>
-                         <Input placeholder="Votre nom" {...field} />
+                         <Input placeholder={t('contact_form_name_placeholder')} {...field} />
                        </FormControl>
                        <FormMessage />
                      </FormItem>
@@ -96,9 +99,9 @@ export default function ContactPage() {
                    name="email"
                    render={({ field }) => (
                      <FormItem>
-                       <FormLabel>Email</FormLabel>
+                       <FormLabel>{t('contact_form_email')}</FormLabel>
                        <FormControl>
-                         <Input type="email" placeholder="Votre email" {...field} />
+                         <Input type="email" placeholder={t('contact_form_email_placeholder')} {...field} />
                        </FormControl>
                        <FormMessage />
                      </FormItem>
@@ -110,9 +113,9 @@ export default function ContactPage() {
                 name="subject"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sujet</FormLabel>
+                    <FormLabel>{t('contact_form_subject')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Sujet de votre message" {...field} />
+                      <Input placeholder={t('contact_form_subject_placeholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -123,17 +126,17 @@ export default function ContactPage() {
                 name="message"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Message</FormLabel>
+                    <FormLabel>{t('contact_form_message')}</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Tapez votre message ici..."
+                        placeholder={t('contact_form_message_placeholder')}
                         className="resize-none"
                         rows={5}
                         {...field}
                       />
                     </FormControl>
                      <FormDescription className="text-right">
-                        {field.value.length}/500
+                        {t('contact_form_char_count', { count: field.value?.length ?? 0 })}
                      </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -142,11 +145,11 @@ export default function ContactPage() {
               <Button
                  type="submit"
                  className="w-full"
-                 style={{ backgroundColor: 'hsl(35, 100%, 63%)', color: 'white' }} // Consider using variant="destructive" instead of inline style
                  disabled={form.formState.isSubmitting}
-                 variant="destructive" // Use destructive variant for consistency
+                 variant="destructive"
               >
-                 {form.formState.isSubmitting ? 'Envoi en cours...' : 'Envoyer le Message'}
+                 {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                 {form.formState.isSubmitting ? t('contact_form_sending') : t('contact_form_send')}
               </Button>
             </form>
           </Form>
