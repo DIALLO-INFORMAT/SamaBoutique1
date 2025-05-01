@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Select components are no longer needed for category/brand
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -26,7 +27,7 @@ import Link from "next/link";
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 import Image from 'next/image'; // Import Image for preview
 
-// Define Zod schema for form validation
+// Define Zod schema for form validation - Changed category/brand to string input
 const createProductSchema = (t: Function) => z.object({
   name: z.string().min(3, {
     message: t('admin_add_product_form_name') + " " + t('validation_min_chars', { count: 3 }),
@@ -37,14 +38,14 @@ const createProductSchema = (t: Function) => z.object({
   price: z.coerce.number().positive({ // coerce converts string input to number
     message: t('admin_add_product_form_price') + " " + t('validation_positive_number'),
   }),
-  category: z.string().min(1, { message: t('validation_required_field', { field: t('admin_add_product_form_category') }) }),
-  brand: z.string().min(2, { message: t('admin_add_product_form_brand') + " " + t('validation_min_chars', { count: 2 }) }), // Added brand
+  category: z.string().min(1, { message: t('validation_required_field', { field: t('admin_add_product_form_category') }) }), // Now a string input
+  brand: z.string().min(2, { message: t('admin_add_product_form_brand') + " " + t('validation_min_chars', { count: 2 }) }), // Now a string input
   image: z.instanceof(File).optional().nullable(), // Optional image upload, allow null
 });
 
-// Example categories and brands - fetch or define elsewhere in a real app
-const categories = ["Vêtements", "Services", "Accessoires", "Autre"];
-const brands = ["Marque A", "Marque B", "Marque C", "SamaServices", "Autre"]; // Example brands
+// Removed static categories and brands arrays
+// const categories = ["Vêtements", "Services", "Accessoires", "Autre"];
+// const brands = ["Marque A", "Marque B", "Marque C", "SamaServices", "Autre"];
 
 const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products'; // Use a consistent key for admin
 
@@ -98,8 +99,8 @@ export default function AddProductPage() {
       name: "",
       description: "",
       price: 0,
-      category: "",
-      brand: "", // Added brand default
+      category: "", // Default to empty string
+      brand: "", // Default to empty string
       image: null, // Initialize as null
     },
   });
@@ -222,50 +223,30 @@ export default function AddProductPage() {
                     )}
                 />
 
+                {/* Category Input */}
                 <FormField
                     control={form.control}
                     name="category"
                     render={({ field }) => (
                     <FormItem>
                         <FormLabel>{t('admin_add_product_form_category')}</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder={t('general_select_placeholder')} />
-                            </SelectTrigger>
+                         <Input placeholder="Ex: Vêtements, Services" {...field} />
                         </FormControl>
-                        <SelectContent>
-                            {categories.map(cat => (
-                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                            ))}
-                        </SelectContent>
-                        </Select>
                         <FormMessage />
                     </FormItem>
                     )}
                 />
 
+                {/* Brand Input */}
                 <FormField
                     control={form.control}
                     name="brand"
                     render={({ field }) => (
                     <FormItem>
                         <FormLabel>{t('admin_add_product_form_brand')}</FormLabel>
-                         {/* Can be Input or Select depending on how brands are managed */}
                         <FormControl>
-                            {/* <Input placeholder="Nom de la marque" {...field} /> */}
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder={t('general_select_placeholder')} />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {brands.map(brand => (
-                                        <SelectItem key={brand} value={brand}>{brand}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Input placeholder="Ex: Marque A, SamaServices" {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -346,7 +327,3 @@ export default function AddProductPage() {
     </div>
   );
 }
-
-
-
-    
