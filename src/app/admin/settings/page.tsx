@@ -23,26 +23,30 @@ import {useEffect, useState} from 'react';
 import Image from 'next/image';
 import {ImageIcon, Loader2} from 'lucide-react';
 import { useSettings, saveSettings } from '@/hooks/useSettings'; // Import useSettings and saveSettings
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
 // Define Zod schema for settings form validation
-const settingsSchema = z.object({
-  storeName: z.string().min(3, {message: 'Le nom de la boutique doit comporter au moins 3 caractères.'}),
-  supportEmail: z.string().email({message: 'Veuillez entrer une adresse email valide.'}),
+const createSettingsSchema = (t: Function) => z.object({
+  storeName: z.string().min(3, {message: t('admin_settings_form_store_name') + " doit comporter au moins 3 caractères."}),
+  supportEmail: z.string().email({message: t('admin_settings_form_support_email') + " doit être une adresse email valide."}),
   enableMaintenance: z.boolean().default(false),
   storeDescription: z.string().max(200, {
-    message: 'La description ne peut pas dépasser 200 caractères.',
+    message: t('admin_settings_form_store_description') + " ne peut pas dépasser 200 caractères.",
   }),
   primaryColor: z.string().regex(/^hsl\(\s*\d+\s*,\s*\d+%?\s*,\s*\d+%?\s*\)$/i, { // Allow spaces and optional %
-    message: 'Doit être une valeur HSL valide (ex: hsl(154, 50%, 50%)).',
+    message: t('admin_settings_form_primary_color') + ' Doit être une valeur HSL valide (ex: hsl(154, 50%, 50%)).',
   }),
-  logoUrl: z.string().url({message: 'Doit être une URL valide.'}).or(z.literal('')).optional(), // Allow empty string
-  faviconUrl: z.string().url({message: 'Doit être une URL valide.'}).or(z.literal('')).optional(), // Allow empty string
+  logoUrl: z.string().url({message: t('admin_settings_form_logo_url') + ' Doit être une URL valide.'}).or(z.literal('')).optional(), // Allow empty string
+  faviconUrl: z.string().url({message: t('admin_settings_form_favicon_url') + ' Doit être une URL valide.'}).or(z.literal('')).optional(), // Allow empty string
 });
 
 export default function AdminSettingsPage() {
   const { toast } = useToast();
+  const { t } = useTranslation(); // Use translation hook
   const currentSettings = useSettings(); // Use the hook to get current settings
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const settingsSchema = createSettingsSchema(t); // Create schema with translation
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
@@ -71,7 +75,8 @@ export default function AdminSettingsPage() {
               faviconUrl: currentSettings.faviconUrl || '', // Ensure empty string
           });
       }
-  }, [currentSettings, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only run when settings load/change, not on form reference change
+  }, [currentSettings]);
 
 
   // Preview states
@@ -100,20 +105,20 @@ export default function AdminSettingsPage() {
         await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
 
         toast({
-            title: 'Paramètres Enregistrés!',
-            description: 'Vos paramètres ont été mis à jour avec succès.',
+            title: t('admin_settings_toast_save_success_title'),
+            description: t('admin_settings_toast_save_success_description'),
             className: 'bg-primary text-primary-foreground border-primary',
         });
 
-        // Force reload or trigger context update if necessary
-        // Might not be needed if useSettings updates via storage event
-        // window.location.reload(); // Or a more subtle update
+        // Optional: Force reload or trigger context update if necessary
+        // This might help ensure color changes apply immediately everywhere
+        // window.location.reload(); // Uncomment if settings don't seem to apply immediately
 
     } catch (error) {
         console.error("Failed to save settings:", error);
          toast({
-             title: 'Erreur',
-             description: 'Impossible d\'enregistrer les paramètres.',
+             title: t('admin_settings_toast_save_error_title'),
+             description: t('admin_settings_toast_save_error_description'),
              variant: 'destructive',
          });
     } finally {
@@ -125,7 +130,7 @@ export default function AdminSettingsPage() {
    if (currentSettings.isLoading) {
         return (
              <div className="space-y-8">
-                 <h1 className="text-3xl font-bold text-primary">Paramètres de la Boutique</h1>
+                 <h1 className="text-3xl font-bold text-primary">{t('admin_settings_page_title')}</h1>
                  <Card className="max-w-3xl">
                      <CardHeader>
                          <CardTitle><div className="h-6 w-3/5 bg-muted rounded animate-pulse"></div></CardTitle>
@@ -138,7 +143,7 @@ export default function AdminSettingsPage() {
                                <div className="h-10 w-full bg-muted rounded animate-pulse"></div>
                            </div>
                          ))}
-                         <div className="h-10 w-36 bg-muted rounded animate-pulse"></div>
+                         <div className="h-10 w-36 bg-muted rounded animate-pulse ml-auto"></div>
                      </CardContent>
                  </Card>
              </div>
@@ -147,41 +152,41 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-primary">Paramètres de la Boutique</h1>
+      <h1 className="text-3xl font-bold text-primary">{t('admin_settings_page_title')}</h1>
 
       <Card className="max-w-3xl shadow-md border-border">
         <CardHeader>
-          <CardTitle>Paramètres Généraux</CardTitle>
+          <CardTitle>{t('admin_settings_general_title')}</CardTitle>
           <CardDescription>
-            Configurez les informations de base et les options de votre boutique.
+             {t('admin_settings_description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               {/* Store Name */}
-              <FormField control={form.control} name="storeName" render={({ field }) => ( <FormItem> <FormLabel>Nom Boutique</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+              <FormField control={form.control} name="storeName" render={({ field }) => ( <FormItem> <FormLabel>{t('admin_settings_form_store_name')}</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
               {/* Support Email */}
-              <FormField control={form.control} name="supportEmail" render={({ field }) => ( <FormItem> <FormLabel>Email Support</FormLabel> <FormControl><Input type="email" {...field} /></FormControl> <FormDescription>Email affiché pour le support.</FormDescription> <FormMessage /> </FormItem> )}/>
+              <FormField control={form.control} name="supportEmail" render={({ field }) => ( <FormItem> <FormLabel>{t('admin_settings_form_support_email')}</FormLabel> <FormControl><Input type="email" {...field} /></FormControl> <FormDescription>{t('admin_settings_form_support_email_desc')}</FormDescription> <FormMessage /> </FormItem> )}/>
               {/* Store Description */}
-              <FormField control={form.control} name="storeDescription" render={({ field }) => ( <FormItem> <FormLabel>Description Boutique</FormLabel> <FormControl><Textarea {...field} rows={3} /></FormControl> <FormDescription>Courte description (footer).</FormDescription> <FormMessage /> </FormItem> )}/>
+              <FormField control={form.control} name="storeDescription" render={({ field }) => ( <FormItem> <FormLabel>{t('admin_settings_form_store_description')}</FormLabel> <FormControl><Textarea {...field} rows={3} /></FormControl> <FormDescription>{t('admin_settings_form_store_description_desc')}</FormDescription> <FormMessage /> </FormItem> )}/>
 
               <Separator />
 
               {/* Logo URL */}
               <FormField control={form.control} name="logoUrl" render={({ field }) => (
                   <FormItem>
-                      <FormLabel>URL du Logo</FormLabel>
+                      <FormLabel>{t('admin_settings_form_logo_url')}</FormLabel>
                       <FormControl><Input type="url" placeholder="https://.../logo.png" {...field} /></FormControl>
-                      <FormDescription>URL de l'image (PNG, JPG, SVG).</FormDescription>
+                      <FormDescription>{t('admin_settings_form_logo_url_desc')}</FormDescription>
                       <FormMessage />
                       {logoPreviewUrl ? (
                           <div className="mt-2">
-                              <p className="text-sm font-medium">Aperçu:</p>
+                              <p className="text-sm font-medium">{t('admin_settings_form_preview_label')}</p>
                               <Image src={logoPreviewUrl} alt="Logo Preview" width={100} height={50} className="rounded border object-contain mt-1" onError={() => setLogoPreviewUrl(undefined)} />
                           </div>
                       ) : field.value && (
-                           <p className="text-xs text-muted-foreground mt-1">Aperçu non disponible ou URL invalide.</p>
+                           <p className="text-xs text-muted-foreground mt-1">{t('admin_settings_form_preview_error')}</p>
                       )}
                   </FormItem>
               )}/>
@@ -189,17 +194,17 @@ export default function AdminSettingsPage() {
                {/* Favicon URL */}
               <FormField control={form.control} name="faviconUrl" render={({ field }) => (
                   <FormItem>
-                      <FormLabel>URL du Favicon</FormLabel>
+                      <FormLabel>{t('admin_settings_form_favicon_url')}</FormLabel>
                       <FormControl><Input type="url" placeholder="https://.../favicon.ico" {...field} /></FormControl>
-                      <FormDescription>URL du favicon (ICO, PNG).</FormDescription>
+                      <FormDescription>{t('admin_settings_form_favicon_url_desc')}</FormDescription>
                       <FormMessage />
                       {faviconPreviewUrl ? (
                           <div className="mt-2">
-                              <p className="text-sm font-medium">Aperçu:</p>
+                              <p className="text-sm font-medium">{t('admin_settings_form_preview_label')}</p>
                               <Image src={faviconPreviewUrl} alt="Favicon Preview" width={32} height={32} className="rounded border object-contain mt-1" onError={() => setFaviconPreviewUrl(undefined)}/>
                           </div>
                       ): field.value && (
-                           <p className="text-xs text-muted-foreground mt-1">Aperçu non disponible ou URL invalide.</p>
+                           <p className="text-xs text-muted-foreground mt-1">{t('admin_settings_form_preview_error')}</p>
                       )}
                   </FormItem>
               )}/>
@@ -209,12 +214,12 @@ export default function AdminSettingsPage() {
               {/* Primary Color */}
               <FormField control={form.control} name="primaryColor" render={({ field }) => (
                   <FormItem>
-                      <FormLabel>Couleur Primaire (HSL)</FormLabel>
+                      <FormLabel>{t('admin_settings_form_primary_color')}</FormLabel>
                       <div className="flex items-center gap-2">
                           <FormControl><Input type="text" placeholder="hsl(154, 50%, 50%)" {...field} /></FormControl>
                           <div className="w-8 h-8 rounded border" style={{ backgroundColor: field.value }}></div>
                       </div>
-                      <FormDescription>Couleur principale (thème). Format: hsl(H, S%, L%)</FormDescription>
+                      <FormDescription>{t('admin_settings_form_primary_color_desc')}</FormDescription>
                       <FormMessage />
                   </FormItem>
               )}/>
@@ -225,8 +230,8 @@ export default function AdminSettingsPage() {
               <FormField control={form.control} name="enableMaintenance" render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                       <div className="space-y-0.5">
-                          <FormLabel className="text-base">Mode Maintenance</FormLabel>
-                          <FormDescription>Activer pour afficher une page de maintenance.</FormDescription>
+                          <FormLabel className="text-base">{t('admin_settings_form_maintenance_mode')}</FormLabel>
+                          <FormDescription>{t('admin_settings_form_maintenance_mode_desc')}</FormDescription>
                       </div>
                       <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                   </FormItem>
@@ -234,7 +239,7 @@ export default function AdminSettingsPage() {
 
               <Button type="submit" variant="destructive" disabled={isSubmitting} className="min-w-[180px]">
                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                 {isSubmitting ? 'Enregistrement...' : 'Enregistrer Paramètres'}
+                 {isSubmitting ? t('admin_settings_form_saving_button') : t('admin_settings_form_save_button')}
               </Button>
             </form>
           </Form>
