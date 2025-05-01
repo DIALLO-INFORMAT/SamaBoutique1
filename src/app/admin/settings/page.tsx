@@ -43,50 +43,42 @@ const createSettingsSchema = (t: Function) => z.object({
 export default function AdminSettingsPage() {
   const { toast } = useToast();
   const { t } = useTranslation(); // Use translation hook
-  const { isLoading: settingsLoading, ...currentSettings } = useSettings(); // Destructure settings
+  const currentSettings = useSettings(); // Destructure settings, isLoading is implicit
+  const settingsLoading = currentSettings.isLoading;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const settingsSchema = createSettingsSchema(t); // Create schema with translation
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
-    // Default values will be set by useEffect based on currentSettings
+    // Default values are set based on DEFAULT_SETTINGS in useSettings initially
     defaultValues: {
-        storeName: '',
-        supportEmail: '',
-        enableMaintenance: false,
-        storeDescription: '',
-        primaryColor: '',
-        logoUrl: '',
-        faviconUrl: '',
+        storeName: currentSettings.storeName,
+        supportEmail: currentSettings.supportEmail,
+        enableMaintenance: currentSettings.enableMaintenance,
+        storeDescription: currentSettings.storeDescription,
+        primaryColor: currentSettings.primaryColor,
+        logoUrl: currentSettings.logoUrl || '', // Ensure empty string if null/undefined
+        faviconUrl: currentSettings.faviconUrl || '', // Ensure empty string
     },
   });
 
-  // Load current settings into the form when they are available or change
+  // Reset form with loaded settings only once when loading finishes
   useEffect(() => {
       if (!settingsLoading) {
-          form.reset({
-              storeName: currentSettings.storeName,
-              supportEmail: currentSettings.supportEmail,
-              enableMaintenance: currentSettings.enableMaintenance,
-              storeDescription: currentSettings.storeDescription,
-              primaryColor: currentSettings.primaryColor,
-              logoUrl: currentSettings.logoUrl || '', // Ensure empty string if null/undefined
-              faviconUrl: currentSettings.faviconUrl || '', // Ensure empty string
-          });
+          const settingsToApply = {
+                storeName: currentSettings.storeName,
+                supportEmail: currentSettings.supportEmail,
+                enableMaintenance: currentSettings.enableMaintenance,
+                storeDescription: currentSettings.storeDescription,
+                primaryColor: currentSettings.primaryColor,
+                logoUrl: currentSettings.logoUrl || '',
+                faviconUrl: currentSettings.faviconUrl || '',
+            };
+          form.reset(settingsToApply);
       }
-  // Use specific setting values in the dependency array
-  }, [
-      settingsLoading,
-      currentSettings.storeName,
-      currentSettings.supportEmail,
-      currentSettings.enableMaintenance,
-      currentSettings.storeDescription,
-      currentSettings.primaryColor,
-      currentSettings.logoUrl,
-      currentSettings.faviconUrl,
-      form // form.reset is stable, include form itself
-  ]);
+  // Depend only on the loading state and the reset function reference
+  }, [settingsLoading, form.reset, currentSettings]);
 
 
   // Preview states
@@ -243,7 +235,13 @@ export default function AdminSettingsPage() {
                           <FormLabel className="text-base">{t('admin_settings_form_maintenance_mode')}</FormLabel>
                           <FormDescription>{t('admin_settings_form_maintenance_mode_desc')}</FormDescription>
                       </div>
-                      <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                      {/* Use Controller component from react-hook-form for controlled Switch */}
+                      <FormControl>
+                         <Switch
+                             checked={field.value}
+                             onCheckedChange={field.onChange}
+                         />
+                      </FormControl>
                   </FormItem>
               )}/>
 
