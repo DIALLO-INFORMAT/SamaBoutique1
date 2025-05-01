@@ -1,3 +1,4 @@
+
 'use client';
 
 import {zodResolver} from '@hookform/resolvers/zod';
@@ -19,14 +20,14 @@ import {useToast} from '@/hooks/use-toast';
 import {Switch} from '@/components/ui/switch';
 import {Separator} from '@/components/ui/separator';
 import {Textarea} from '@/components/ui/textarea';
-import {useEffect, useState} from 'react';
+import {useEffect, useState, useCallback} from 'react'; // Import useCallback
 import Image from 'next/image';
-import {ImageIcon, Loader2} from 'lucide-react';
-import { useSettings, saveSettings } from '@/hooks/useSettings'; // Import useSettings and saveSettings
+import {ImageIcon, Loader2, Trash2, PlusCircle} from 'lucide-react'; // Added Trash2, PlusCircle
+import { useSettings, saveSettings, CarouselImage, PartnerLogo } from '@/hooks/useSettings'; // Import settings hooks and types
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 
-// Define Zod schema for settings form validation
+// Define Zod schema for CORE settings form validation (excluding image lists)
 const createSettingsSchema = (t: Function) => z.object({
   storeName: z.string().min(3, {message: t('admin_settings_form_store_name') + " doit comporter au moins 3 caractères."}),
   supportEmail: z.string().email({message: t('admin_settings_form_support_email') + " doit être une adresse email valide."}),
@@ -41,31 +42,167 @@ const createSettingsSchema = (t: Function) => z.object({
   faviconUrl: z.string().url({message: t('admin_settings_form_favicon_url') + ' Doit être une URL valide.'}).or(z.literal('')).optional(), // Allow empty string
 });
 
+// --- Helper: Image Management Card ---
+interface ImageItem {
+  id?: string; // Optional ID for partner logos
+  src: string;
+  alt: string;
+  hint: string;
+}
+
+interface ImageManagementCardProps<T extends ImageItem> {
+  title: string;
+  description: string;
+  images: T[];
+  onImagesChange: (images: T[]) => void;
+  itemType: 'carousel' | 'partner'; // To handle ID for partners
+}
+
+function ImageManagementCard<T extends ImageItem>({
+  title,
+  description,
+  images,
+  onImagesChange,
+  itemType,
+}: ImageManagementCardProps<T>) {
+    const { t } = useTranslation();
+    const [newImageUrl, setNewImageUrl] = useState('');
+    const [newImageAlt, setNewImageAlt] = useState('');
+    const [newImageHint, setNewImageHint] = useState('');
+    const [error, setError] = useState('');
+
+    const handleAddImage = () => {
+        setError('');
+        // Basic URL validation (can be more robust)
+        if (!newImageUrl.startsWith('http://') && !newImageUrl.startsWith('https://')) {
+            setError(t('admin_settings_form_image_url_invalid'));
+            return;
+        }
+        if (!newImageAlt) {
+             setError(t('admin_settings_form_alt_text_required'));
+             return;
+        }
+        if (!newImageHint) {
+            setError(t('admin_settings_form_ai_hint_required'));
+             return;
+        }
+
+        const newItem: T = {
+            src: newImageUrl,
+            alt: newImageAlt,
+            hint: newImageHint,
+            ...(itemType === 'partner' && { id: `logo-${Date.now()}` }), // Add ID for partners
+        } as T;
+
+        onImagesChange([...images, newItem]);
+        setNewImageUrl('');
+        setNewImageAlt('');
+        setNewImageHint('');
+    };
+
+    const handleRemoveImage = (index: number) => {
+        onImagesChange(images.filter((_, i) => i !== index));
+    };
+
+    return (
+        <Card className="shadow-md border-border">
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {/* List Current Images */}
+                {images.length > 0 ? (
+                    <div className="space-y-3 max-h-60 overflow-y-auto pr-2 border rounded-md p-3">
+                        {images.map((img, index) => (
+                            <div key={img.id || index} className="flex items-center justify-between gap-2 border-b pb-2 last:border-b-0">
+                                <div className="flex items-center gap-2 flex-grow min-w-0">
+                                    <Image
+                                        src={img.src}
+                                        alt={img.alt}
+                                        width={itemType === 'carousel' ? 80 : 60}
+                                        height={itemType === 'carousel' ? 40 : 30}
+                                        className="rounded border object-contain bg-muted"
+                                        onError={(e) => (e.currentTarget.style.display = 'none')} // Hide if image fails
+                                    />
+                                    <div className="text-xs flex-grow min-w-0">
+                                        <p className="font-medium truncate" title={img.alt}>{img.alt}</p>
+                                        <p className="text-muted-foreground truncate" title={img.src}>{img.src}</p>
+                                        <p className="text-muted-foreground truncate" title={img.hint}>Hint: {img.hint}</p>
+                                    </div>
+                                </div>
+                                <Button variant="ghost" size="icon" onClick={() => handleRemoveImage(index)} className="text-destructive h-7 w-7">
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground text-center py-4">{t('admin_settings_no_images')}</p>
+                )}
+
+                <Separator />
+
+                {/* Add New Image Form */}
+                <div className="space-y-2">
+                    <Label className="text-sm font-medium">{t('admin_settings_add_new_image')}</Label>
+                     <Input
+                         type="url"
+                         placeholder={t('admin_settings_form_image_url')}
+                         value={newImageUrl}
+                         onChange={(e) => setNewImageUrl(e.target.value)}
+                     />
+                     <Input
+                         type="text"
+                         placeholder={t('admin_settings_form_alt_text')}
+                         value={newImageAlt}
+                         onChange={(e) => setNewImageAlt(e.target.value)}
+                         maxLength={50}
+                     />
+                      <Input
+                         type="text"
+                         placeholder={t('admin_settings_form_ai_hint')}
+                         value={newImageHint}
+                         onChange={(e) => setNewImageHint(e.target.value)}
+                         maxLength={30}
+                         />
+                     {error && <p className="text-xs text-destructive">{error}</p>}
+                     <Button size="sm" variant="outline" onClick={handleAddImage} disabled={!newImageUrl || !newImageAlt || !newImageHint} className="w-full sm:w-auto">
+                         <PlusCircle className="mr-2 h-4 w-4" /> {t('admin_settings_add_image_button')}
+                     </Button>
+                     <FormDescription className="text-xs">
+                        {itemType === 'carousel' ? t('admin_settings_carousel_hint_desc') : t('admin_settings_partner_hint_desc')}
+                     </FormDescription>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+
+// --- Main Settings Page Component ---
 export default function AdminSettingsPage() {
   const { toast } = useToast();
-  const { t } = useTranslation(); // Use translation hook
-  const currentSettings = useSettings(); // Destructure settings, isLoading is implicit
+  const { t } = useTranslation();
+  const currentSettings = useSettings();
   const settingsLoading = currentSettings.isLoading;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const settingsSchema = createSettingsSchema(t); // Create schema with translation
+  // Local state for image lists, initialized from global settings
+  const [carouselImages, setCarouselImages] = useState<CarouselImage[]>([]);
+  const [partnerLogos, setPartnerLogos] = useState<PartnerLogo[]>([]);
+
+  const settingsSchema = createSettingsSchema(t);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
-    // Default values are set based on DEFAULT_SETTINGS in useSettings initially
-    // These will be updated by the useEffect once settings are loaded
     defaultValues: {
-        storeName: '',
-        supportEmail: '',
-        enableMaintenance: false,
-        storeDescription: '',
-        primaryColor: '',
-        logoUrl: '',
-        faviconUrl: '',
+        storeName: '', supportEmail: '', enableMaintenance: false,
+        storeDescription: '', primaryColor: '', logoUrl: '', faviconUrl: '',
     },
   });
 
-  // Reset form with loaded settings only once when loading finishes
+  // Initialize form and local image states when settings load
   useEffect(() => {
       if (!settingsLoading) {
           const settingsToApply = {
@@ -77,19 +214,11 @@ export default function AdminSettingsPage() {
                 logoUrl: currentSettings.logoUrl || '',
                 faviconUrl: currentSettings.faviconUrl || '',
             };
-           // Check if the form has already been populated/reset with these settings
-           // This prevents unnecessary resets if the user navigates away and back or if currentSettings reference changes unnecessarily
-           const currentFormValues = form.getValues();
-           if (JSON.stringify(currentFormValues) !== JSON.stringify(settingsToApply)) {
-              form.reset(settingsToApply);
-           }
+           form.reset(settingsToApply);
+           setCarouselImages(currentSettings.carouselImages || []); // Initialize local state
+           setPartnerLogos(currentSettings.partnerLogos || []);     // Initialize local state
       }
-  // Depend only on the loading state finishing and the settings object reference.
-  // This ensures it runs once after loading completes, but not on subsequent re-renders
-  // unless `currentSettings` reference *itself* changes (which it shouldn't if memoized).
-  // Added form.getValues to dependencies as required by react-hooks/exhaustive-deps.
-  }, [settingsLoading, currentSettings, form.reset, form.getValues]);
-
+  }, [settingsLoading, currentSettings, form.reset]); // Removed form from deps, added form.reset
 
   // Preview states
    const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | undefined>(undefined);
@@ -98,22 +227,33 @@ export default function AdminSettingsPage() {
    // Update previews based on form values
    useEffect(() => {
      const subscription = form.watch((value, { name }) => {
-       if (name === 'logoUrl') {
-         setLogoPreviewUrl(value.logoUrl || undefined);
-       }
-       if (name === 'faviconUrl') {
-         setFaviconPreviewUrl(value.faviconUrl || undefined);
-       }
+       if (name === 'logoUrl') setLogoPreviewUrl(value.logoUrl || undefined);
+       if (name === 'faviconUrl') setFaviconPreviewUrl(value.faviconUrl || undefined);
      });
      return () => subscription.unsubscribe();
    }, [form]);
 
 
-  async function onSubmit(values: z.infer<typeof settingsSchema>) {
+  const handleSaveAllSettings = useCallback(async () => {
     setIsSubmitting(true);
+    // Validate core settings form
+    const coreValuesValid = await form.trigger();
+    if (!coreValuesValid) {
+        toast({ title: t('general_error'), description: t('admin_settings_validation_error'), variant: 'destructive' });
+        setIsSubmitting(false);
+        return;
+    }
+    const coreValues = form.getValues();
+
     try {
-        // Use the imported saveSettings function
-        saveSettings(values);
+        // Combine core settings with the current state of image lists
+        const allSettingsToSave: Partial<Settings> = {
+            ...coreValues,
+            carouselImages: carouselImages, // Use local state
+            partnerLogos: partnerLogos,     // Use local state
+        };
+
+        saveSettings(allSettingsToSave);
         await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
 
         toast({
@@ -121,11 +261,6 @@ export default function AdminSettingsPage() {
             description: t('admin_settings_toast_save_success_description'),
             className: 'bg-primary text-primary-foreground border-primary',
         });
-
-        // Optional: Force reload or trigger context update if necessary
-        // This might help ensure color changes apply immediately everywhere
-        // window.location.reload(); // Uncomment if settings don't seem to apply immediately
-
     } catch (error) {
         console.error("Failed to save settings:", error);
          toast({
@@ -136,28 +271,31 @@ export default function AdminSettingsPage() {
     } finally {
         setIsSubmitting(false);
     }
-  }
+  }, [form, carouselImages, partnerLogos, t, toast]);
+
 
    // Show loading skeleton if settings are loading
    if (settingsLoading) {
         return (
              <div className="space-y-8">
                  <h1 className="text-3xl font-bold text-primary">{t('admin_settings_page_title')}</h1>
-                 <Card className="max-w-3xl">
-                     <CardHeader>
-                         <CardTitle><Skeleton className="h-6 w-3/5 bg-muted rounded animate-pulse"></Skeleton></CardTitle>
-                         <CardDescription><Skeleton className="h-4 w-4/5 bg-muted rounded animate-pulse mt-1"></Skeleton></CardDescription>
-                     </CardHeader>
-                     <CardContent className="space-y-6">
-                         {[...Array(7)].map((_, i) => ( // Increased to 7 for favicon
-                           <div key={i} className="space-y-2">
-                               <Skeleton className="h-4 w-1/4 bg-muted rounded animate-pulse"></Skeleton>
-                               <Skeleton className="h-10 w-full bg-muted rounded animate-pulse"></Skeleton>
-                           </div>
-                         ))}
-                         <Skeleton className="h-10 w-36 bg-muted rounded animate-pulse ml-auto"></Skeleton>
-                     </CardContent>
-                 </Card>
+                 {[...Array(3)].map((_, i) => ( // Skeleton for 3 cards
+                     <Card key={i} className="max-w-3xl">
+                         <CardHeader>
+                             <Skeleton className="h-6 w-2/5 bg-muted" />
+                             <Skeleton className="h-4 w-4/5 bg-muted mt-1" />
+                         </CardHeader>
+                         <CardContent className="space-y-6">
+                             {[...Array(i === 0 ? 7 : 4)].map((_, j) => ( // More skeletons for first card
+                                 <div key={j} className="space-y-2">
+                                     <Skeleton className="h-4 w-1/4 bg-muted" />
+                                     <Skeleton className="h-10 w-full bg-muted" />
+                                 </div>
+                             ))}
+                         </CardContent>
+                     </Card>
+                 ))}
+                  <Skeleton className="h-10 w-40 bg-muted rounded ml-auto" /> {/* Save button skeleton */}
              </div>
         );
    }
@@ -166,6 +304,7 @@ export default function AdminSettingsPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-primary">{t('admin_settings_page_title')}</h1>
 
+      {/* Core Settings Form */}
       <Card className="max-w-3xl shadow-md border-border">
         <CardHeader>
           <CardTitle>{t('admin_settings_general_title')}</CardTitle>
@@ -175,7 +314,7 @@ export default function AdminSettingsPage() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form id="core-settings-form" className="space-y-8"> {/* No onSubmit here */}
               {/* Store Name */}
               <FormField control={form.control} name="storeName" render={({ field }) => ( <FormItem> <FormLabel>{t('admin_settings_form_store_name')}</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
               {/* Support Email */}
@@ -245,7 +384,6 @@ export default function AdminSettingsPage() {
                           <FormLabel className="text-base">{t('admin_settings_form_maintenance_mode')}</FormLabel>
                           <FormDescription>{t('admin_settings_form_maintenance_mode_desc')}</FormDescription>
                       </div>
-                      {/* Use Controller component from react-hook-form for controlled Switch */}
                       <FormControl>
                          <Switch
                              checked={field.value}
@@ -255,15 +393,42 @@ export default function AdminSettingsPage() {
                   </FormItem>
               )}/>
 
-              <Button type="submit" variant="destructive" disabled={isSubmitting || settingsLoading} className="min-w-[180px]">
-                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                 {isSubmitting ? t('admin_settings_form_saving_button') : t('admin_settings_form_save_button')}
-              </Button>
+              {/* Removed Save Button from here */}
             </form>
           </Form>
         </CardContent>
       </Card>
+
+       {/* Carousel Image Management Card */}
+       <ImageManagementCard<CarouselImage>
+          title={t('admin_settings_carousel_title')}
+          description={t('admin_settings_carousel_description')}
+          images={carouselImages}
+          onImagesChange={setCarouselImages}
+          itemType="carousel"
+       />
+
+        {/* Partner Logos Management Card */}
+        <ImageManagementCard<PartnerLogo>
+           title={t('admin_settings_partners_title')}
+           description={t('admin_settings_partners_description')}
+           images={partnerLogos}
+           onImagesChange={setPartnerLogos}
+           itemType="partner"
+        />
+
+      {/* Global Save Button */}
+      <div className="flex justify-end max-w-3xl">
+         <Button
+             onClick={handleSaveAllSettings}
+             variant="destructive"
+             disabled={isSubmitting || settingsLoading}
+             className="min-w-[200px]"
+         >
+             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+             {isSubmitting ? t('admin_settings_form_saving_button') : t('admin_settings_form_save_button')}
+         </Button>
+      </div>
     </div>
   );
 }
-

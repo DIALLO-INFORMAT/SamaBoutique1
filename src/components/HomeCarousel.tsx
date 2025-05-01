@@ -1,3 +1,4 @@
+
 // src/components/HomeCarousel.tsx
 'use client';
 
@@ -11,46 +12,55 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel"; // Assuming carousel is installed via ShadCN
+} from "@/components/ui/carousel";
+import type { CarouselImage } from "@/hooks/useSettings"; // Import the type
 
-// Placeholder images - Replace with your actual image paths or URLs
-const carouselImages = [
-    { src: "https://picsum.photos/seed/carousel1/1200/500", alt: "Promotion 1", hint: "sale discount offer" },
-    { src: "https://picsum.photos/seed/carousel2/1200/500", alt: "New Arrivals", hint: "new collection fashion" },
-    { src: "https://picsum.photos/seed/carousel3/1200/500", alt: "Featured Service", hint: "web design service" },
-    { src: "https://picsum.photos/seed/carousel4/1200/500", alt: "Best Sellers", hint: "popular products clothing" },
-    { src: "https://picsum.photos/seed/carousel5/1200/500", alt: "Special Event", hint: "event announcement community" },
-];
+interface HomeCarouselProps {
+    images: CarouselImage[]; // Accept images as a prop
+}
 
-export function HomeCarousel() {
+export function HomeCarousel({ images }: HomeCarouselProps) { // Destructure images prop
   const plugin = React.useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: true }) // Autoplay every 4 seconds
+    Autoplay({ delay: 4000, stopOnInteraction: true })
   );
+
+  // Handle case where no images are provided
+  if (!images || images.length === 0) {
+      return (
+          <div className="w-full aspect-[12/5] bg-muted flex items-center justify-center text-muted-foreground">
+              (No carousel images configured)
+          </div>
+      );
+  }
 
   return (
     <Carousel
       plugins={[plugin.current]}
-      className="w-full" // Take full width of its container
+      className="w-full"
       opts={{
-        loop: true, // Enable looping
+        loop: true,
       }}
       onMouseEnter={plugin.current.stop}
       onMouseLeave={plugin.current.reset}
     >
       <CarouselContent>
-        {carouselImages.map((image, index) => (
+        {images.map((image, index) => ( // Use the images prop
           <CarouselItem key={index}>
-            <div className="p-1"> {/* Optional padding */}
-              <Card className="overflow-hidden border-none shadow-none rounded-lg"> {/* No border/shadow for seamless look */}
-                <CardContent className="flex aspect-[12/5] items-center justify-center p-0"> {/* Adjusted aspect ratio */}
+            <div className="p-1">
+              <Card className="overflow-hidden border-none shadow-none rounded-lg">
+                <CardContent className="flex aspect-[12/5] items-center justify-center p-0">
                    <Image
                      src={image.src}
                      alt={image.alt}
                      width={1200}
                      height={500}
-                     className="object-cover w-full h-full" // Ensure image covers the area
-                     priority={index === 0} // Prioritize loading the first image
+                     className="object-cover w-full h-full"
+                     priority={index === 0}
                      data-ai-hint={image.hint}
+                     onError={(e) => { // Basic fallback or hide
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          // Or set a placeholder: e.currentTarget.src = '/placeholder.png';
+                     }}
                    />
                 </CardContent>
               </Card>

@@ -10,6 +10,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { useTranslation } from '@/hooks/useTranslation'; // Import the hook
+import { useSettings } from '@/hooks/useSettings'; // Import useSettings
 
 // Mock product data (replace with actual data fetching later)
 // Ensure Product interface includes imageUrl
@@ -37,23 +38,22 @@ const allProducts: Product[] = [
 
 const featuredProducts = allProducts.slice(0, 3);
 
-const partnerLogos = [
-    { id: 'logo1', src: "https://picsum.photos/seed/logo1/100/50", alt: "Partner Logo 1", hint: "partner technology" },
-    { id: 'logo2', src: "https://picsum.photos/seed/logo2/100/50", alt: "Partner Logo 2", hint: "partner business" },
-    { id: 'logo3', src: "https://picsum.photos/seed/logo3/100/50", alt: "Partner Logo 3", hint: "partner finance" },
-    { id: 'logo4', src: "https://picsum.photos/seed/logo4/100/50", alt: "Partner Logo 4", hint: "partner innovation" },
-    { id: 'logo5', src: "https://picsum.photos/seed/logo5/100/50", alt: "Partner Logo 5", hint: "partner solutions" },
-    { id: 'logo6', src: "https://picsum.photos/seed/logo6/100/50", alt: "Partner Logo 6", hint: "partner network" },
-];
+// Partner logos are now fetched from settings
 
 export default function Home() {
   const { t } = useTranslation(); // Use the translation hook
+  const { carouselImages, partnerLogos, isLoading: settingsLoading } = useSettings(); // Get images from settings
+
+  // Handle loading state for settings if needed
+  if (settingsLoading) {
+      return <div>{t('loading')}</div>; // Or a skeleton loader
+  }
 
   return (
     <div className="space-y-10 md:space-y-16">
       {/* Hero Section */}
       <section>
-        <HomeCarousel />
+        <HomeCarousel images={carouselImages} /> {/* Pass images to carousel */}
       </section>
 
       {/* Featured Products Section */}
@@ -63,7 +63,7 @@ export default function Home() {
         <ProductList initialProducts={featuredProducts} viewMode="grid" />
         <div className="text-center mt-6 md:mt-8">
            <Link href="/boutique" >
-             <Button variant="destructive" size="default" className="sm:size-lg">
+             <Button variant="destructive" size="lg">
                {t('home_view_all_products')} <ArrowRight className="ml-2 h-5 w-5" />
              </Button>
            </Link>
@@ -103,6 +103,7 @@ export default function Home() {
                 height={70}
                 className="object-contain w-full h-full"
                 data-ai-hint={logo.hint}
+                 onError={(e) => (e.currentTarget.style.display = 'none')} // Hide if image fails
               />
             </div>
           ))}
@@ -111,5 +112,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
