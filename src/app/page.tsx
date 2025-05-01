@@ -32,10 +32,24 @@ const allProducts: Product[] = [
   { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C", imageUrl: `https://picsum.photos/seed/6/400/300` },
   { id: '7', name: "Chemise Élégante", description: "Chemise pour occasions spéciales.", price: 35000, category: "Vêtements", brand: "Marque B", imageUrl: `https://picsum.photos/seed/7/400/300` },
   { id: '8', name: "Maintenance Site Web", description: "Pack maintenance mensuel.", price: 50000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/8/400/300` },
+  { id: '9', name: "Autocollants Logo", description: "Lot de 50 autocollants.", price: 5000, category: "Accessoires", brand: "Marque C", imageUrl: `https://picsum.photos/seed/9/400/300` },
+  { id: '10', name: "Pantalon Cargo", description: "Pantalon pratique et résistant.", price: 30000, category: "Vêtements", brand: "Marque A", imageUrl: `https://picsum.photos/seed/10/400/300` },
+  { id: '11', name: "Rédaction Contenu Web", description: "Service de rédaction SEO (500 mots).", price: 25000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/11/400/300` },
+  { id: '12', name: "Porte-clés Design", description: "Porte-clés en métal.", price: 3000, category: "Accessoires", brand: "Marque B", imageUrl: `https://picsum.photos/seed/12/400/300` },
 ];
 
 
-const featuredProducts = allProducts.slice(0, 3);
+// Simulate fetching the 6 "most purchased" products
+// In a real app, this would involve fetching data based on sales metrics
+const featuredProducts = [
+    allProducts[4], // Sweat
+    allProducts[0], // T-Shirt
+    allProducts[6], // Chemise
+    allProducts[2], // Casquette
+    allProducts[9], // Pantalon
+    allProducts[7]  // Maintenance
+];
+
 
 // Partner logos are now fetched from settings
 
@@ -65,8 +79,9 @@ export default function Home() {
 
       {/* Featured Products Section */}
       <section className="container mx-auto px-4">
-        <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-primary">{t('home_featured_products')}</h2>
-        {/* Pass featuredProducts, viewMode, and the link generator function */}
+        {/* Updated title */}
+        <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-primary">{t('footer_popular_products')}</h2>
+        {/* Pass featuredProducts (now 6 items), viewMode, and the link generator function */}
         <ProductList
             initialProducts={featuredProducts}
             viewMode="grid"
@@ -123,3 +138,4 @@ export default function Home() {
     </div>
   );
 }
+

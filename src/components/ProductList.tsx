@@ -17,7 +17,7 @@ interface ProductListProps {
   getProductHref?: (product: Product) => string | undefined; // Optional href generator
 }
 
-const ITEMS_PER_PAGE = 9; // Number of products per page
+const ITEMS_PER_PAGE = 12; // Increased items per page
 
 export function ProductList({ initialProducts, viewMode, getProductHref }: ProductListProps) {
   const { t } = useTranslation();
@@ -212,3 +212,4 @@ export function ProductList({ initialProducts, viewMode, getProductHref }: Produ
     </div>
   );
 }
+
