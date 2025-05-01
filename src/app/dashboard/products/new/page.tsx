@@ -103,7 +103,7 @@ export default function ManagerAddProductPage() {
   return (
     <div className="space-y-8">
        <div className="flex items-center gap-4 mb-6">
-           <Link href="/dashboard/products" passHref legacyBehavior> {/* Link back to manager's product list */}
+           <Link href="/dashboard/products" > {/* Link back to manager's product list */}
                <Button variant="outline" size="icon" aria-label="Retour aux produits">
                    <ArrowLeft className="h-4 w-4" />
                </Button>

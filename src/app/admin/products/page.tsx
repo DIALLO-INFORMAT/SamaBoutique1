@@ -119,7 +119,7 @@ export default function AdminProductsPage() {
             <h1 className="text-3xl font-bold text-primary">Gestion des Produits</h1>
             <p className="text-muted-foreground">Ajoutez, modifiez ou supprimez vos produits et services.</p>
         </div>
-        <Link href="/admin/products/new" passHref legacyBehavior>
+        <Link href="/admin/products/new" >
           <Button variant="destructive" size="sm"> {/* Smaller button */}
             <PlusCircle className="mr-2 h-4 w-4" /> Ajouter
           </Button>

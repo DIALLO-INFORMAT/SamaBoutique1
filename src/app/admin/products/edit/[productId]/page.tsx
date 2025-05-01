@@ -202,7 +202,7 @@ export default function EditProductPage() {
   return (
     <div className="space-y-8">
        <div className="flex items-center gap-4 mb-6">
-           <Link href="/admin/products" passHref legacyBehavior>
+           <Link href="/admin/products" >
                <Button variant="outline" size="icon" aria-label="Retour aux produits">
                    <ArrowLeft className="h-4 w-4" />
                </Button>

@@ -147,7 +147,7 @@ export default function ManagerProductsPage() {
             <h1 className="text-3xl font-bold text-primary">Gestion des Produits (Gestionnaire)</h1>
             <p className="text-muted-foreground">Ajoutez ou modifiez les produits.</p>
         </div>
-        <Link href="/dashboard/products/new" passHref legacyBehavior> {/* Link to manager's add page */}
+        <Link href="/dashboard/products/new" > {/* Link to manager's add page */}
           <Button variant="destructive" size="sm">
             <PlusCircle className="mr-2 h-4 w-4" /> Ajouter Produit
           </Button>

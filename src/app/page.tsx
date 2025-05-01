@@ -49,9 +49,11 @@ export default function Home() {
       {/* Featured Products Section */}
       <section className="container mx-auto px-4">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-primary">{t('home_featured_products')}</h2>
-        <ProductList initialProducts={featuredProducts} />
+        {/* Assume initialProducts are passed correctly */}
+        {/* Add a default viewMode or fetch it if needed */}
+        <ProductList initialProducts={featuredProducts} viewMode="grid" />
         <div className="text-center mt-6 md:mt-8">
-           <Link href="/boutique" passHref legacyBehavior>
+           <Link href="/boutique" >
              <Button variant="destructive" size="default" className="sm:size-lg">
                {t('home_view_all_products')} <ArrowRight className="ml-2 h-5 w-5" />
              </Button>
@@ -69,10 +71,10 @@ export default function Home() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4">
-            <Link href="/boutique" passHref legacyBehavior>
+            <Link href="/boutique" >
                <Button variant="destructive" size="default" className="w-full sm:w-auto">{t('home_cta_explore')}</Button>
              </Link>
-             <Link href="/contact" passHref legacyBehavior>
+             <Link href="/contact" >
                <Button variant="outline" size="default" className="w-full sm:w-auto">{t('home_cta_contact')}</Button>
              </Link>
           </CardContent>

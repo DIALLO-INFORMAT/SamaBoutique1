@@ -65,7 +65,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     <SidebarContent className="p-2">
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <Link href="/admin" passHref legacyBehavior>
+                                <Link href="/admin" >
                                     <SidebarMenuButton tooltip="Tableau de bord" className="text-sm" isActive={pathname === '/admin'}>
                                         <LayoutGrid />
                                         <span>Tableau de bord</span>
@@ -73,7 +73,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                 </Link>
                             </SidebarMenuItem>
                              <SidebarMenuItem>
-                                <Link href="/admin/products" passHref legacyBehavior>
+                                <Link href="/admin/products" >
                                     <SidebarMenuButton tooltip="Produits" className="text-sm" isActive={pathname?.startsWith('/admin/products')}>
                                         <Box />
                                         <span>Produits</span>
@@ -82,7 +82,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             </SidebarMenuItem>
                              {/* Orders Link */}
                              <SidebarMenuItem>
-                                <Link href="/admin/orders" passHref legacyBehavior>
+                                <Link href="/admin/orders" >
                                     <SidebarMenuButton tooltip="Commandes" className="text-sm" isActive={pathname?.startsWith('/admin/orders')}>
                                         <Package />
                                         <span>Commandes</span>
@@ -91,7 +91,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             </SidebarMenuItem>
                              {/* Invoices Link */}
                              <SidebarMenuItem>
-                                <Link href="/admin/invoices" passHref legacyBehavior>
+                                <Link href="/admin/invoices" >
                                     <SidebarMenuButton tooltip="Factures" className="text-sm" isActive={pathname?.startsWith('/admin/invoices')}>
                                         <FileText />
                                         <span>Factures</span>
@@ -99,7 +99,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                 </Link>
                             </SidebarMenuItem>
                              <SidebarMenuItem>
-                                <Link href="/admin/users" passHref legacyBehavior>
+                                <Link href="/admin/users" >
                                     <SidebarMenuButton tooltip="Utilisateurs" className="text-sm" isActive={pathname === '/admin/users'}>
                                         <Users />
                                         <span>Utilisateurs</span>
@@ -108,7 +108,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             </SidebarMenuItem>
                             {/* Statistics Link */}
                              <SidebarMenuItem>
-                                <Link href="/admin/statistics" passHref legacyBehavior>
+                                <Link href="/admin/statistics" >
                                     <SidebarMenuButton tooltip="Statistiques" className="text-sm" isActive={pathname === '/admin/statistics'}>
                                         <BarChart3 />
                                         <span>Statistiques</span>
@@ -116,7 +116,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                 </Link>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <Link href="/admin/settings" passHref legacyBehavior>
+                                <Link href="/admin/settings" >
                                     <SidebarMenuButton tooltip="Paramètres" className="text-sm" isActive={pathname === '/admin/settings'}>
                                         <Settings />
                                         <span>Paramètres</span>

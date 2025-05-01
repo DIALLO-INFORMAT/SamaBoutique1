@@ -96,7 +96,7 @@ export default function AdminDashboardPage() {
                <CardDescription>Accès direct aux sections clés.</CardDescription>
            </CardHeader>
            <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"> {/* Adjusted grid for more items */}
-               <Link href="/admin/products" passHref legacyBehavior>
+               <Link href="/admin/products" >
                    <Button variant="outline" className="w-full justify-start gap-3 p-4 h-auto hover:bg-secondary transition-colors">
                        <Box className="h-5 w-5 text-primary" />
                        <div>
@@ -106,7 +106,7 @@ export default function AdminDashboardPage() {
                        <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" />
                    </Button>
                </Link>
-                <Link href="/admin/orders" passHref legacyBehavior>
+                <Link href="/admin/orders" >
                    <Button variant="outline" className="w-full justify-start gap-3 p-4 h-auto hover:bg-secondary transition-colors">
                        <Package className="h-5 w-5 text-primary" />
                         <div>
@@ -116,7 +116,7 @@ export default function AdminDashboardPage() {
                        <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" />
                    </Button>
                </Link>
-                 <Link href="/admin/invoices" passHref legacyBehavior>
+                 <Link href="/admin/invoices" >
                    <Button variant="outline" className="w-full justify-start gap-3 p-4 h-auto hover:bg-secondary transition-colors">
                        <FileText className="h-5 w-5 text-primary" />
                         <div>
@@ -126,7 +126,7 @@ export default function AdminDashboardPage() {
                        <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" />
                    </Button>
                </Link>
-               <Link href="/admin/users" passHref legacyBehavior>
+               <Link href="/admin/users" >
                    <Button variant="outline" className="w-full justify-start gap-3 p-4 h-auto hover:bg-secondary transition-colors">
                        <Users className="h-5 w-5 text-primary" />
                         <div>
@@ -137,7 +137,7 @@ export default function AdminDashboardPage() {
                    </Button>
                </Link>
                 {/* Statistics Link */}
-                <Link href="/admin/statistics" passHref legacyBehavior>
+                <Link href="/admin/statistics" >
                    <Button variant="outline" className="w-full justify-start gap-3 p-4 h-auto hover:bg-secondary transition-colors">
                        <BarChart3 className="h-5 w-5 text-primary" />
                         <div>
@@ -147,7 +147,7 @@ export default function AdminDashboardPage() {
                        <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" />
                    </Button>
                </Link>
-                <Link href="/admin/settings" passHref legacyBehavior>
+                <Link href="/admin/settings" >
                    <Button variant="outline" className="w-full justify-start gap-3 p-4 h-auto hover:bg-secondary transition-colors">
                        <Settings className="h-5 w-5 text-primary" />
                        <div>

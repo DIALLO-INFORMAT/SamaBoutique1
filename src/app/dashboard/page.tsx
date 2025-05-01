@@ -117,7 +117,7 @@ export default function UserDashboardPage() {
               </CardHeader>
               <CardContent>
                 <CardDescription>{t('dashboard_manage_products_description')}</CardDescription>
-                <Link href="/dashboard/products" passHref legacyBehavior>
+                <Link href="/dashboard/products" >
                   <Button variant="link" className="px-0 mt-2 text-primary">
                     {t('dashboard_manage_products_link')} <ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
@@ -134,7 +134,7 @@ export default function UserDashboardPage() {
                </CardHeader>
                <CardContent>
                  <CardDescription>{t('dashboard_manage_orders_description')}</CardDescription>
-                 <Link href="/dashboard/manage-orders" passHref legacyBehavior>
+                 <Link href="/dashboard/manage-orders" >
                    <Button variant="link" className="px-0 mt-2 text-primary">
                      {t('dashboard_manage_orders_link')} <ArrowRight className="ml-1 h-4 w-4" />
                    </Button>
@@ -151,7 +151,7 @@ export default function UserDashboardPage() {
                </CardHeader>
                <CardContent>
                  <CardDescription>{t('dashboard_my_orders_description')}</CardDescription>
-                 <Link href="/dashboard/orders" passHref legacyBehavior>
+                 <Link href="/dashboard/orders" >
                    <Button variant="link" className="px-0 mt-2 text-primary">
                      {t('dashboard_my_orders_link')} <ArrowRight className="ml-1 h-4 w-4" />
                    </Button>
@@ -167,7 +167,7 @@ export default function UserDashboardPage() {
           </CardHeader>
           <CardContent>
             <CardDescription>{t('dashboard_my_profile_description')}</CardDescription>
-            <Link href="/dashboard/profile" passHref legacyBehavior>
+            <Link href="/dashboard/profile" >
               <Button variant="link" className="px-0 mt-2 text-primary">
                 {t('dashboard_my_profile_link')} <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
@@ -207,7 +207,7 @@ export default function UserDashboardPage() {
                 </li>
               ))}
                <div className="mt-4 text-center">
-                     <Link href={user.role === 'manager' ? "/dashboard/manage-orders" : "/dashboard/orders"} passHref legacyBehavior>
+                     <Link href={user.role === 'manager' ? "/dashboard/manage-orders" : "/dashboard/orders"} >
                        <Button variant="outline" size="sm">{t('dashboard_recent_orders_view_all')}</Button>
                     </Link>
                 </div>

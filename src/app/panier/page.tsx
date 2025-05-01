@@ -61,7 +61,7 @@ export default function CartPage() {
            <CardContent className="flex flex-col items-center gap-4">
              <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4"/>
              <p className="text-xl text-muted-foreground">{t('cart_page_empty_message')}</p>
-             <Link href="/boutique" passHref>
+             <Link href="/boutique" >
                  <Button variant="destructive">{t('cart_page_start_shopping')}</Button>
              </Link>
            </CardContent>
@@ -271,7 +271,7 @@ export default function CartPage() {
                    </AlertDialogFooter>
                  </AlertDialogContent>
                </AlertDialog>
-               <Link href="/checkout" passHref className="w-full sm:w-auto">
+               <Link href="/checkout" className="w-full sm:w-auto">
                  <Button variant="destructive" disabled={cart.length === 0} className="w-full">
                    <CreditCard className="mr-2 h-4 w-4" /> {t('cart_checkout')}
                  </Button>

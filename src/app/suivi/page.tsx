@@ -187,9 +187,9 @@ export default function OrderTrackingPage() {
             </div>
           </CardContent>
            <CardFooter className="text-xs text-muted-foreground">
-               {t('track_order_contact_prompt', {
-                   link: <Link href="/contact" className="text-primary hover:underline">{t('track_order_contact_link_text')}</Link>
-               })}
+               {/* Use a simple interpolation without the Link component inside t() */}
+               {t('track_order_contact_prompt', { link: '' })} {/* Pass empty string for the link placeholder initially */}
+               <Link href="/contact" className="text-primary hover:underline ml-1">{t('track_order_contact_link_text')}</Link>.
            </CardFooter>
         </Card>
       )}

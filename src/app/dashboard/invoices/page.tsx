@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { Order, OrderStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
+import Link from 'next/link'; // Import Link
 
 const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 
@@ -111,7 +112,7 @@ export default function UserInvoicesPage() {
                    <p className="font-semibold text-lg">Accès non autorisé</p>
                    <p>Veuillez vous connecter pour consulter vos factures.</p>
                    <Button variant="destructive" asChild className="mt-2">
-                       <a href="/account">Se connecter</a>
+                       <Link href="/account">Se connecter</Link>
                    </Button>
                </CardContent>
            </Card>

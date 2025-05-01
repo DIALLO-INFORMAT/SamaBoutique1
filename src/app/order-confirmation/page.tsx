@@ -45,7 +45,7 @@ export default function OrderConfirmationPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center pb-8 space-y-6">
-          <Link href="/" passHref>
+          <Link href="/" >
             <Button variant="destructive" size="lg" className="w-full sm:w-auto">
               {t('order_confirmation_back_home')}
             </Button>

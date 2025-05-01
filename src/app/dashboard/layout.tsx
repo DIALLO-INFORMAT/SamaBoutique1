@@ -59,7 +59,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
      const commonLinks = (
         <>
             <SidebarMenuItem>
-                <Link href="/dashboard/orders" passHref legacyBehavior>
+                <Link href="/dashboard/orders" >
                     <SidebarMenuButton tooltip="Mes Commandes" className="text-sm" isActive={pathname === '/dashboard/orders'}>
                         <Package />
                         <span>Mes Commandes</span>
@@ -67,7 +67,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                 </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <Link href="/dashboard/invoices" passHref legacyBehavior>
+                <Link href="/dashboard/invoices" >
                     <SidebarMenuButton tooltip="Mes Factures" className="text-sm" isActive={pathname === '/dashboard/invoices'}>
                         <FileText />
                         <span>Mes Factures</span>
@@ -75,7 +75,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                 </Link>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <Link href="/dashboard/profile" passHref legacyBehavior>
+                <Link href="/dashboard/profile" >
                     <SidebarMenuButton tooltip="Mon Profil" className="text-sm" isActive={pathname === '/dashboard/profile'}>
                         <User />
                         <span>Mon Profil</span>
@@ -89,7 +89,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
      const managerLinks = (
          <>
              <SidebarMenuItem>
-                 <Link href="/dashboard/products" passHref legacyBehavior>
+                 <Link href="/dashboard/products" >
                      <SidebarMenuButton tooltip="Gérer Produits" className="text-sm" isActive={pathname?.startsWith('/dashboard/products')}>
                          <Box />
                          <span>Gérer Produits</span>
@@ -97,7 +97,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                  </Link>
              </SidebarMenuItem>
              <SidebarMenuItem>
-                 <Link href="/dashboard/manage-orders" passHref legacyBehavior>
+                 <Link href="/dashboard/manage-orders" >
                      <SidebarMenuButton tooltip="Gérer Commandes" className="text-sm" isActive={pathname?.startsWith('/dashboard/manage-orders')}>
                          <Package />
                          <span>Gérer Commandes</span>
@@ -120,7 +120,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                     <SidebarContent className="p-2">
                         <SidebarMenu>
                              <SidebarMenuItem>
-                                <Link href="/dashboard" passHref legacyBehavior>
+                                <Link href="/dashboard" >
                                     <SidebarMenuButton tooltip="Tableau de bord" className="text-sm" isActive={pathname === '/dashboard'}>
                                         <LayoutDashboard />
                                         <span>Tableau de bord</span>

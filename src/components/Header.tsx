@@ -11,7 +11,6 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { useSettings } from '@/hooks/useSettings';
-// import { LanguageSwitcher } from '@/components/LanguageSwitcher'; // Removed LanguageSwitcher import
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
 import { cn } from '@/lib/utils';
@@ -68,29 +67,29 @@ export function Header() {
         {/* Desktop Navigation Links */}
         {!isMobile && (
             <div className="hidden md:flex items-center gap-1">
-                <Link href="/" passHref>
+                <Link href="/" >
                     <Button variant="ghost" className="px-3 md:px-4 text-sm">{t('header_home')}</Button>
                 </Link>
-                <Link href="/boutique" passHref>
+                <Link href="/boutique" >
                     <Button variant="ghost" className="px-3 md:px-4 text-sm">{t('header_shop')}</Button>
                 </Link>
-                <Link href="/suivi" passHref>
+                <Link href="/suivi" >
                     <Button variant="ghost" className="px-3 md:px-4 text-sm">{t('header_track_order')}</Button>
                 </Link>
-                 <Link href="/account" passHref>
+                 <Link href="/account" >
                     <Button variant="ghost" className="px-3 md:px-4 text-sm">{t('header_account')}</Button>
                 </Link>
-                <Link href="/contact" passHref>
+                <Link href="/contact" >
                     <Button variant="ghost" className="px-3 md:px-4 text-sm">{t('header_contact')}</Button>
                 </Link>
                 {/* Conditional Dashboard Link for Desktop */}
                 {userRole === 'admin' && (
-                     <Link href="/admin" passHref>
+                     <Link href="/admin" >
                          <Button variant="ghost" className="px-3 md:px-4 text-sm text-primary">{t('header_admin_dashboard')}</Button>
                     </Link>
                  )}
                  {(userRole === 'customer' || userRole === 'manager') && (
-                     <Link href="/dashboard" passHref>
+                     <Link href="/dashboard" >
                          <Button variant="ghost" className="px-3 md:px-4 text-sm text-primary">{t('header_user_dashboard')}</Button>
                      </Link>
                  )}
@@ -102,7 +101,7 @@ export function Header() {
         {/* Keep Cart and Logout always visible */}
         <div className="flex items-center gap-1 sm:gap-2">
           {/* Removed LanguageSwitcher */}
-          <Link href="/panier" passHref>
+          <Link href="/panier" >
             <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-10 sm:w-10">
               <ShoppingCart className="h-5 w-5" />
               {itemCount > 0 && (
@@ -134,35 +133,35 @@ export function Header() {
        {/* Mobile Navigation Bar (at the bottom) */}
        {isMobile && (
           <div className="flex justify-around items-center py-1 bg-background text-xs">
-             <Link href="/" passHref>
+             <Link href="/" >
                 <Button variant="ghost" size="sm" className="flex flex-col h-auto px-1 py-1 space-y-0.5">
                     <Home className="h-4 w-4"/><span>{t('header_home')}</span>
                 </Button>
              </Link>
-             <Link href="/boutique" passHref>
+             <Link href="/boutique" >
                  <Button variant="ghost" size="sm" className="flex flex-col h-auto px-1 py-1 space-y-0.5">
                     <Package className="h-4 w-4"/><span>{t('header_shop')}</span>
                  </Button>
              </Link>
-             <Link href="/suivi" passHref>
+             <Link href="/suivi" >
                  <Button variant="ghost" size="sm" className="flex flex-col h-auto px-1 py-1 space-y-0.5">
                     <Package className="h-4 w-4 transform rotate-45"/><span>{t('header_track_order')}</span>
                  </Button>
              </Link>
               {userRole === 'guest' ? (
-                  <Link href="/account" passHref>
+                  <Link href="/account" >
                       <Button variant="ghost" size="sm" className="flex flex-col h-auto px-1 py-1 space-y-0.5">
                          <UserIcon className="h-4 w-4"/><span>{t('header_account')}</span>
                       </Button>
                   </Link>
               ) : (
-                   <Link href={userRole === 'admin' ? "/admin" : "/dashboard"} passHref>
+                   <Link href={userRole === 'admin' ? "/admin" : "/dashboard"} >
                        <Button variant="ghost" size="sm" className="flex flex-col h-auto px-1 py-1 space-y-0.5 text-primary">
                            <LayoutDashboard className="h-4 w-4"/><span>{t('header_user_dashboard')}</span>
                        </Button>
                    </Link>
               )}
-             <Link href="/contact" passHref>
+             <Link href="/contact" >
                  <Button variant="ghost" size="sm" className="flex flex-col h-auto px-1 py-1 space-y-0.5">
                     <Phone className="h-4 w-4"/><span>{t('header_contact')}</span>
                  </Button>
@@ -172,4 +171,3 @@ export function Header() {
     </header>
   );
 }
-
