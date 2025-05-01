@@ -1,7 +1,7 @@
-
+// src/app/admin/products/edit/[productId]/page.tsx
 'use client';
 
-import { useEffect, useState, ChangeEvent } from 'react'; // Added ChangeEvent
+import { useEffect, useState, ChangeEvent } from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -17,90 +17,76 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-// Select components are no longer needed for category/brand
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { useRouter, useParams } from 'next/navigation'; // use useParams to get productId
-import { ArrowLeft, Loader2, Image as ImageIcon, LinkIcon } from "lucide-react"; // Added LinkIcon
+import { useRouter, useParams } from 'next/navigation';
+import { ArrowLeft, Loader2, Image as ImageIcon, LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from '@/components/ui/skeleton';
-import Image from 'next/image'; // Import Image for display
-import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs" // Import Tabs
+import Image from 'next/image';
+import { useTranslation } from '@/hooks/useTranslation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { AdminProduct, Category, Tag } from '@/lib/types'; // Import types
+import { MultiSelect } from '@/components/ui/multi-select'; // Import MultiSelect
 
+// Storage keys (assuming they are the same for now)
+const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products';
+const CATEGORIES_STORAGE_KEY = 'sama_boutique_categories';
+const TAGS_STORAGE_KEY = 'sama_boutique_tags';
 
-// Define Zod schema for form validation - Changed category/brand to string input
+// --- Zod Schema Update ---
 const createProductSchema = (t: Function) => z.object({
-  name: z.string().min(3, {
-    message: t('admin_add_product_form_name') + " " + t('validation_min_chars', { count: 3 }),
-  }),
-  description: z.string().min(10, {
-    message: t('admin_add_product_form_description') + " " + t('validation_min_chars', { count: 10 }),
-  }).max(500, { message: t('admin_add_product_form_description') + " " + t('validation_max_chars', { count: 500 }) }),
-  price: z.coerce.number().positive({
-    message: t('admin_add_product_form_price') + " " + t('validation_positive_number'),
-  }),
-  category: z.string().min(1, { message: t('validation_required_field', { field: t('admin_add_product_form_category') }) }), // Now a string input
-  brand: z.string().min(2, { message: t('admin_add_product_form_brand') + " " + t('validation_min_chars', { count: 2 }) }), // Now a string input
-  imageUrl: z.string().url({ message: t('admin_add_product_form_image_url_invalid') }).or(z.literal('')).optional(), // Optional image URL
-  imageFile: z.instanceof(File).optional().nullable(), // Optional image file upload
+  name: z.string().min(3, { message: t('admin_add_product_form_name') + " " + t('validation_min_chars', { count: 3 }) }),
+  description: z.string().min(10, { message: t('admin_add_product_form_description') + " " + t('validation_min_chars', { count: 10 }) }).max(500, { message: t('admin_add_product_form_description') + " " + t('validation_max_chars', { count: 500 }) }),
+  price: z.coerce.number().positive({ message: t('admin_add_product_form_price') + " " + t('validation_positive_number') }),
+  category: z.string().min(1, { message: t('validation_required_field', { field: t('admin_add_product_form_category') }) }), // Keep as string ID/name
+  brand: z.string().min(2, { message: t('admin_add_product_form_brand') + " " + t('validation_min_chars', { count: 2 }) }),
+  tags: z.array(z.string()).optional(), // Array of tag IDs/names
+  imageUrl: z.string().url({ message: t('admin_add_product_form_image_url_invalid') }).or(z.literal('')).optional(),
+  imageFile: z.instanceof(File).optional().nullable(),
 }).superRefine((data, ctx) => {
-  // Ensure only one image source is provided if either is present
   if (data.imageUrl && data.imageFile) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: t('admin_add_product_form_image_source_error'),
-      path: ["imageUrl"], // Or path: ["imageFile"]
-    });
-     ctx.addIssue({ // Add to both fields for clarity
-       code: z.ZodIssueCode.custom,
-       message: t('admin_add_product_form_image_source_error'),
-       path: ["imageFile"],
-     });
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: t('admin_add_product_form_image_source_error'), path: ["imageUrl"] });
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: t('admin_add_product_form_image_source_error'), path: ["imageFile"] });
   }
 });
 
 
-// Mock product data type
-interface AdminProduct {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  brand: string; // Added brand
-  imageUrl?: string; // Optional existing image URL
-}
-
-const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products';
-
-// Mock data fetching function
+// --- Mock Data Fetching Functions ---
 const fetchProductById = async (productId: string): Promise<AdminProduct | null> => {
-    console.log(`Fetching product ${productId}...`);
     await new Promise(resolve => setTimeout(resolve, 700));
-
     if (typeof window !== 'undefined') {
         const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
         const products: AdminProduct[] = storedProducts ? JSON.parse(storedProducts) : [];
         const foundProduct = products.find(p => p.id === productId);
         if (foundProduct) {
-             // Simulate having an imageUrl if not present (using picsum)
-             if (!foundProduct.imageUrl) {
-                 foundProduct.imageUrl = `https://picsum.photos/seed/${productId}/400/300`;
-             }
+             if (!foundProduct.imageUrl) foundProduct.imageUrl = `https://picsum.photos/seed/${productId}/400/300`;
             return foundProduct;
         }
     }
-    // Fallback if not in localStorage (should not happen if products are managed)
     return null;
+};
+
+const fetchCategories = async (): Promise<Category[]> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof window === 'undefined') return [];
+    const stored = localStorage.getItem(CATEGORIES_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+};
+
+const fetchTags = async (): Promise<Tag[]> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (typeof window === 'undefined') return [];
+    const stored = localStorage.getItem(TAGS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
 };
 
 
 // Simulate API call to update product
 const updateProductAPI = async (productId: string, values: z.infer<ReturnType<typeof createProductSchema>>, originalImageUrl?: string): Promise<void> => {
     console.log("Admin Updating Product via API:", productId, values);
-    await new Promise(resolve => setTimeout(resolve, 1200)); // Simulate network request
+    await new Promise(resolve => setTimeout(resolve, 1200));
 
     if (typeof window !== 'undefined') {
         const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
@@ -108,30 +94,19 @@ const updateProductAPI = async (productId: string, values: z.infer<ReturnType<ty
         const productIndex = products.findIndex(p => p.id === productId);
 
         if (productIndex !== -1) {
-            // Create the updated product data excluding the file upload field
             const { imageFile, ...productDataToSave } = values;
+            let finalImageUrl = originalImageUrl;
 
-            let finalImageUrl = originalImageUrl; // Start with the original URL
-
-            if (values.imageUrl) {
-                // If URL is provided, use it
-                finalImageUrl = values.imageUrl;
-            } else if (values.imageFile) {
-                // If file is provided, simulate upload and get a new URL
-                // In a real app, upload imageFile here and get a new imageUrl
-                // For simulation, we'll just generate a new picsum URL
-                finalImageUrl = `https://picsum.photos/seed/prod-updated-${Date.now()}/400/300`;
-                console.log("Simulating image upload for update, using new picsum URL.");
-            } else if (values.imageUrl === '') {
-                 // If URL field is explicitly cleared (and no file uploaded), remove the image URL
-                finalImageUrl = undefined;
-            }
+            if (values.imageUrl) finalImageUrl = values.imageUrl;
+            else if (values.imageFile) finalImageUrl = `https://picsum.photos/seed/prod-updated-${Date.now()}/400/300`;
+            else if (values.imageUrl === '') finalImageUrl = undefined;
 
             products[productIndex] = {
-                ...products[productIndex], // Keep existing fields like ID
-                ...productDataToSave,    // Apply other form updates
-                price: Number(productDataToSave.price), // Ensure price is number
-                imageUrl: finalImageUrl, // Set the determined image URL
+                ...products[productIndex],
+                ...productDataToSave,
+                price: Number(productDataToSave.price),
+                imageUrl: finalImageUrl,
+                tags: values.tags || [], // Ensure tags array exists
             };
             localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(products));
         }
@@ -139,13 +114,9 @@ const updateProductAPI = async (productId: string, values: z.infer<ReturnType<ty
 };
 
 
-// Removed static categories and brands arrays
-// const categories = ["Vêtements", "Services", "Accessoires", "Autre"];
-// const brands = ["Marque A", "Marque B", "Marque C", "SamaServices", "Autre"];
-
 export default function EditProductPage() {
-  const { t } = useTranslation(); // Use translation hook
-  const productSchema = createProductSchema(t); // Create schema
+  const { t } = useTranslation();
+  const productSchema = createProductSchema(t);
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
@@ -154,14 +125,16 @@ export default function EditProductPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [product, setProduct] = useState<AdminProduct | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null); // State for image preview
-  const [imageSourceType, setImageSourceType] = useState<'url' | 'file'>('url'); // Default to URL
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageSourceType, setImageSourceType] = useState<'url' | 'file'>('url');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
 
   const form = useForm<z.infer<ReturnType<typeof createProductSchema>>>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: "", description: "", price: 0, category: "", brand: "",
-      imageUrl: "", imageFile: null,
+      tags: [], imageUrl: "", imageFile: null,
     },
   });
 
@@ -171,77 +144,63 @@ export default function EditProductPage() {
 
     useEffect(() => {
       if (imageSourceType === 'file' && watchedImageFile instanceof File) {
-        const reader = new FileReader();
-        reader.onloadend = () => setImagePreview(reader.result as string);
-        reader.readAsDataURL(watchedImageFile);
-      } else if (imageSourceType === 'url' && watchedImageUrl) {
-        setImagePreview(watchedImageUrl);
-      } else {
-         // If URL is empty or no file, show original product image or nothing
-         setImagePreview(product?.imageUrl || null);
-      }
+        const reader = new FileReader(); reader.onloadend = () => setImagePreview(reader.result as string); reader.readAsDataURL(watchedImageFile);
+      } else if (imageSourceType === 'url' && watchedImageUrl) { setImagePreview(watchedImageUrl); }
+      else { setImagePreview(product?.imageUrl || null); }
     }, [watchedImageUrl, watchedImageFile, imageSourceType, product?.imageUrl]);
 
 
-  // Fetch product data on mount
+  // Fetch product, categories, and tags data on mount
   useEffect(() => {
     if (!productId) return;
     setIsLoading(true);
-    const loadProduct = async () => {
+    const loadData = async () => {
       try {
-        const foundProduct = await fetchProductById(productId);
+        const [foundProduct, fetchedCategories, fetchedTags] = await Promise.all([
+            fetchProductById(productId),
+            fetchCategories(),
+            fetchTags()
+        ]);
+
+        setCategories(fetchedCategories);
+        setTags(fetchedTags);
+
         if (foundProduct) {
           setProduct(foundProduct);
-          // Reset form with fetched product data
           form.reset({
-            name: foundProduct.name,
-            description: foundProduct.description,
-            price: foundProduct.price,
-            category: foundProduct.category,
+            name: foundProduct.name, description: foundProduct.description, price: foundProduct.price,
+            category: foundProduct.category, // Use category name/ID directly
             brand: foundProduct.brand,
-            imageUrl: foundProduct.imageUrl || '', // Pre-fill URL field
-            imageFile: null, // Reset file field on load
+            tags: foundProduct.tags || [], // Initialize tags
+            imageUrl: foundProduct.imageUrl || '', imageFile: null,
           });
-           setImagePreview(foundProduct.imageUrl || null); // Set initial preview
-           // Decide initial source type based on existing URL
+           setImagePreview(foundProduct.imageUrl || null);
            setImageSourceType(foundProduct.imageUrl ? 'url' : 'file');
         } else {
           toast({ title: t('general_error'), description: t('admin_edit_product_not_found_description'), variant: "destructive" });
           router.replace('/admin/products');
         }
       } catch (error) {
-         console.error("Failed to fetch product:", error);
+         console.error("Failed to fetch data:", error);
          toast({ title: t('general_error'), description: t('admin_products_toast_load_error_description'), variant: "destructive" });
          router.replace('/admin/products');
-      } finally {
-        setIsLoading(false);
-      }
+      } finally { setIsLoading(false); }
     };
-    loadProduct();
-    // Don't include imagePreview in dependencies to avoid loops
-  }, [productId, form.reset, router, toast, t]);
+    loadData();
+  }, [productId, form, router, toast, t]); // form.reset removed from deps
 
 
   async function onSubmit(values: z.infer<ReturnType<typeof createProductSchema>>) {
     if (!product) return;
     setIsSubmitting(true);
-
     try {
-        // Determine which image source to use based on the active tab/selection
         const finalValues = { ...values };
-        if (imageSourceType === 'url') {
-            finalValues.imageFile = null; // Clear file if URL is the source
-        } else {
-            finalValues.imageUrl = ''; // Clear URL if file is the source
-        }
+        if (imageSourceType === 'url') finalValues.imageFile = null;
+        else finalValues.imageUrl = '';
 
         await updateProductAPI(productId, finalValues, product.imageUrl);
-        toast({
-          title: t('admin_edit_product_toast_success_title'),
-          description: t('admin_edit_product_toast_success_description', { productName: values.name }),
-           className: "bg-primary text-primary-foreground border-primary",
-        });
-        router.push('/admin/products'); // Redirect back to the products list
+        toast({ title: t('admin_edit_product_toast_success_title'), description: t('admin_edit_product_toast_success_description', { productName: values.name }), className: "bg-primary text-primary-foreground border-primary" });
+        router.push('/admin/products');
     } catch (error) {
         console.error("Failed to update product:", error);
         toast({ title: t('general_error'), description: t('admin_edit_product_toast_error_description'), variant: "destructive" });
@@ -249,84 +208,39 @@ export default function EditProductPage() {
     }
   }
 
-    // Handle image file selection
+  // Image Management Handlers (same as before)
    const handleImageFileChange = (event: ChangeEvent<HTMLInputElement>) => {
      const file = event.target.files?.[0];
-     if (file) {
-       form.setValue('imageFile', file, { shouldValidate: true }); // Set file and trigger validation
-       form.setValue('imageUrl', '', { shouldValidate: true }); // Clear URL field
-       setImageSourceType('file'); // Switch to file source
-     } else {
-       form.setValue('imageFile', null, { shouldValidate: true }); // Clear file
-       // Revert preview to original product image if file is cleared
+     if (file) { form.setValue('imageFile', file, { shouldValidate: true }); form.setValue('imageUrl', '', { shouldValidate: true }); setImageSourceType('file'); }
+     else { form.setValue('imageFile', null, { shouldValidate: true }); setImagePreview(product?.imageUrl || null); }
+   };
+   const handleImageUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
+       const url = event.target.value; form.setValue('imageUrl', url, { shouldValidate: true });
+       if (url) { form.setValue('imageFile', null, { shouldValidate: true }); setImageSourceType('url'); }
+       else { setImagePreview(product?.imageUrl || null); }
+   };
+   const handleImageSourceChange = (value: string) => {
+       const newType = value as 'url' | 'file'; setImageSourceType(newType);
+       if (newType === 'url') form.setValue('imageFile', null, { shouldValidate: true });
+       else form.setValue('imageUrl', '', { shouldValidate: true });
        setImagePreview(product?.imageUrl || null);
-     }
    };
 
-    // Handle Image URL input change
-    const handleImageUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const url = event.target.value;
-        form.setValue('imageUrl', url, { shouldValidate: true });
-        if (url) {
-             form.setValue('imageFile', null, { shouldValidate: true }); // Clear file field if URL is entered
-             setImageSourceType('url');
-        } else {
-            // If URL is cleared, reset preview to original (or null)
-            setImagePreview(product?.imageUrl || null);
-        }
-    };
-
-    // Handle tab change for image source
-    const handleImageSourceChange = (value: string) => {
-        const newType = value as 'url' | 'file';
-        setImageSourceType(newType);
-        // Optionally clear the other field when switching tabs
-        if (newType === 'url') {
-            form.setValue('imageFile', null, { shouldValidate: true });
-        } else {
-            form.setValue('imageUrl', '', { shouldValidate: true });
-        }
-         setImagePreview(product?.imageUrl || null); // Reset preview on tab switch initially
-    };
+   // Prepare options for Select components
+   const categoryOptions = categories.map(cat => ({ value: cat.name, label: cat.name })); // Using name as value for simplicity
+   const tagOptions = tags.map(tag => ({ value: tag.name, label: tag.name })); // Using name as value
 
 
   if (isLoading) {
-    // Restore the skeleton code here
     return (
          <div className="space-y-8">
               <div className="flex items-center gap-4 mb-6">
-                  <Skeleton className="h-10 w-10 rounded" />
-                  <div className="space-y-2">
-                      <Skeleton className="h-8 w-64" />
-                      <Skeleton className="h-4 w-80" />
-                  </div>
+                  <Skeleton className="h-10 w-10 rounded" /><div className="space-y-2"><Skeleton className="h-8 w-64" /><Skeleton className="h-4 w-80" /></div>
               </div>
-              <Card className="shadow-md border-border overflow-hidden">
-                   <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><Skeleton className="h-6 w-1/4" /></CardHeader>
-                   <CardContent className="p-6 space-y-6">
-                      <div className="space-y-2"><Skeleton className="h-4 w-1/6"/><Skeleton className="h-10 w-full"/></div>
-                      <div className="space-y-2"><Skeleton className="h-4 w-1/6"/><Skeleton className="h-20 w-full"/></div>
-                   </CardContent>
-               </Card>
-               <Card className="shadow-md border-border overflow-hidden">
-                   <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><Skeleton className="h-6 w-1/3" /></CardHeader>
-                   <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                     <div className="space-y-2"><Skeleton className="h-4 w-1/3"/><Skeleton className="h-10 w-full"/></div>
-                     <div className="space-y-2"><Skeleton className="h-4 w-1/3"/><Skeleton className="h-10 w-full"/></div>
-                     <div className="space-y-2"><Skeleton className="h-4 w-1/3"/><Skeleton className="h-10 w-full"/></div>
-                   </CardContent>
-              </Card>
-              <Card className="shadow-md border-border overflow-hidden">
-                  <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><Skeleton className="h-6 w-1/5" /></CardHeader>
-                  <CardContent className="p-6 space-y-4">
-                     <Skeleton className="h-32 w-40 rounded-md border border-border"/>
-                     <Skeleton className="h-10 w-1/2"/>
-                     <Skeleton className="h-10 w-full"/>
-                  </CardContent>
-              </Card>
-              <div className="flex justify-end pt-4">
-                 <Skeleton className="h-11 w-48 rounded-md"/>
-              </div>
+              <Card className="shadow-md border-border overflow-hidden"><CardHeader className="bg-muted/30 border-b px-6 py-4"><Skeleton className="h-6 w-1/4" /></CardHeader><CardContent className="p-6 space-y-6"><div className="space-y-2"><Skeleton className="h-4 w-1/6"/><Skeleton className="h-10 w-full"/></div><div className="space-y-2"><Skeleton className="h-4 w-1/6"/><Skeleton className="h-20 w-full"/></div></CardContent></Card>
+              <Card className="shadow-md border-border overflow-hidden"><CardHeader className="bg-muted/30 border-b px-6 py-4"><Skeleton className="h-6 w-1/3" /></CardHeader><CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-start"><div className="space-y-2"><Skeleton className="h-4 w-1/3"/><Skeleton className="h-10 w-full"/></div><div className="space-y-2"><Skeleton className="h-4 w-1/3"/><Skeleton className="h-10 w-full"/></div><div className="space-y-2"><Skeleton className="h-4 w-1/3"/><Skeleton className="h-10 w-full"/></div><div className="space-y-2 col-span-1 md:col-span-3"><Skeleton className="h-4 w-1/6"/><Skeleton className="h-10 w-full"/></div></CardContent></Card>
+              <Card className="shadow-md border-border overflow-hidden"><CardHeader className="bg-muted/30 border-b px-6 py-4"><Skeleton className="h-6 w-1/5" /></CardHeader><CardContent className="p-6 space-y-4"><Skeleton className="h-32 w-40 rounded-md border"/><Skeleton className="h-10 w-1/2"/><Skeleton className="h-10 w-full"/></CardContent></Card>
+              <div className="flex justify-end pt-4"><Skeleton className="h-11 w-48 rounded-md"/></div>
          </div>
      );
   }
@@ -338,13 +252,8 @@ export default function EditProductPage() {
   return (
     <div className="space-y-8">
        <div className="flex items-center gap-4 mb-6">
-           <Link href="/admin/products" >
-               <Button variant="outline" size="icon" aria-label={t('admin_add_product_back_button')}> <ArrowLeft className="h-4 w-4" /> </Button>
-           </Link>
-            <div>
-                <h1 className="text-3xl font-bold text-primary">{t('admin_edit_product_page_title')}</h1>
-                <p className="text-muted-foreground">{t('admin_edit_product_description', { productName: product.name })}</p>
-            </div>
+           <Link href="/admin/products" ><Button variant="outline" size="icon" aria-label={t('admin_add_product_back_button')}> <ArrowLeft className="h-4 w-4" /> </Button></Link>
+            <div><h1 className="text-3xl font-bold text-primary">{t('admin_edit_product_page_title')}</h1><p className="text-muted-foreground">{t('admin_edit_product_description', { productName: product.name })}</p></div>
        </div>
 
       <Form {...form}>
@@ -358,15 +267,48 @@ export default function EditProductPage() {
                  </CardContent>
              </Card>
 
-            {/* Pricing and Categorization Card */}
+            {/* Pricing, Categorization, Tags Card */}
              <Card className="shadow-md border-border overflow-hidden">
                  <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><CardTitle>{t('admin_add_product_pricing_category_title')}</CardTitle></CardHeader>
                  <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
                      <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>{t('admin_add_product_form_price')}</FormLabel><FormControl><Input type="number" step="1" {...field} /></FormControl><FormMessage /></FormItem> )}/>
-                      {/* Category Input */}
-                     <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>{t('admin_add_product_form_category')}</FormLabel><FormControl><Input placeholder="Ex: Vêtements, Services" {...field} /></FormControl><FormMessage /></FormItem> )}/>
+                     {/* Category Select */}
+                     <FormField control={form.control} name="category" render={({ field }) => (
+                         <FormItem>
+                             <FormLabel>{t('admin_add_product_form_category')}</FormLabel>
+                             <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                 <FormControl>
+                                    <SelectTrigger>
+                                         <SelectValue placeholder={t('admin_add_product_form_category_select')} />
+                                     </SelectTrigger>
+                                 </FormControl>
+                                 <SelectContent>
+                                     {categoryOptions.map(option => (
+                                         <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                     ))}
+                                 </SelectContent>
+                             </Select>
+                             <FormMessage />
+                         </FormItem>
+                     )}/>
                      {/* Brand Input */}
                      <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem><FormLabel>{t('admin_add_product_form_brand')}</FormLabel><FormControl><Input placeholder="Ex: Marque A, SamaServices" {...field} /></FormControl><FormMessage /></FormItem> )}/>
+                     {/* Tags MultiSelect */}
+                     <FormField control={form.control} name="tags" render={({ field }) => (
+                         <FormItem className="md:col-span-3">
+                             <FormLabel>{t('admin_add_product_form_tags')}</FormLabel>
+                             <FormControl>
+                                 <MultiSelect
+                                     options={tagOptions}
+                                     selected={field.value || []}
+                                     onChange={field.onChange}
+                                     placeholder={t('admin_add_product_form_tags_select')}
+                                     className="w-full"
+                                 />
+                             </FormControl>
+                             <FormMessage />
+                         </FormItem>
+                     )}/>
                  </CardContent>
             </Card>
 
@@ -375,47 +317,16 @@ export default function EditProductPage() {
                  <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><CardTitle>{t('admin_add_product_image_title')}</CardTitle></CardHeader>
                  <CardContent className="p-6 space-y-4">
                        {/* Image Preview */}
-                       {imagePreview && (
-                          <div className="mb-4">
-                             <p className="text-sm font-medium mb-2">{t('admin_settings_form_preview_label')}</p>
-                             <Image src={imagePreview} alt={product.name} width={200} height={150} className="rounded-md border border-border object-cover" onError={() => setImagePreview(null)} />
-                          </div>
-                       )}
-                        {!imagePreview && product?.imageUrl && (
-                            <div className="mb-4">
-                                 <p className="text-sm font-medium mb-2">{t('admin_edit_product_current_image_label')}</p>
-                                 <Image src={product.imageUrl} alt={product.name} width={200} height={150} className="rounded-md border border-border object-cover"/>
-                            </div>
-                        )}
-
+                       {imagePreview && <div className="mb-4"><p className="text-sm font-medium mb-2">{t('admin_settings_form_preview_label')}</p><Image src={imagePreview} alt={product.name} width={200} height={150} className="rounded-md border border-border object-cover" onError={() => setImagePreview(null)} /></div>}
+                       {!imagePreview && product?.imageUrl && <div className="mb-4"><p className="text-sm font-medium mb-2">{t('admin_edit_product_current_image_label')}</p><Image src={product.imageUrl} alt={product.name} width={200} height={150} className="rounded-md border border-border object-cover"/></div>}
+                     {/* Image Source Tabs */}
                      <Tabs value={imageSourceType} onValueChange={handleImageSourceChange} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 mb-4">
-                            <TabsTrigger value="url">{t('admin_add_product_image_source_url')}</TabsTrigger>
-                            <TabsTrigger value="file">{t('admin_add_product_image_source_file')}</TabsTrigger>
-                        </TabsList>
+                        <TabsList className="grid w-full grid-cols-2 mb-4"><TabsTrigger value="url">{t('admin_add_product_image_source_url')}</TabsTrigger><TabsTrigger value="file">{t('admin_add_product_image_source_file')}</TabsTrigger></TabsList>
                         <TabsContent value="url">
-                           <FormField control={form.control} name="imageUrl" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="flex items-center gap-1"><LinkIcon className="h-4 w-4"/> {t('admin_add_product_form_image_url')}</FormLabel>
-                                    <FormControl><Input type="url" placeholder="https://.../image.png" {...field} onChange={handleImageUrlChange} /></FormControl>
-                                    <FormDescription>{t('admin_add_product_form_image_url_desc')}</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}/>
+                           <FormField control={form.control} name="imageUrl" render={({ field }) => ( <FormItem> <FormLabel className="flex items-center gap-1"><LinkIcon className="h-4 w-4"/> {t('admin_add_product_form_image_url')}</FormLabel> <FormControl><Input type="url" placeholder="https://.../image.png" {...field} onChange={handleImageUrlChange} /></FormControl> <FormDescription>{t('admin_add_product_form_image_url_desc')}</FormDescription> <FormMessage /> </FormItem> )}/>
                         </TabsContent>
                         <TabsContent value="file">
-                             <FormField control={form.control} name="imageFile" render={({ field: { value, onChange, ...fieldProps } }) => (
-                                 <FormItem>
-                                     <FormLabel htmlFor="product-image" className="flex items-center gap-2 cursor-pointer border-2 border-dashed border-muted-foreground/50 rounded-lg p-4 justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors">
-                                         <ImageIcon className="h-6 w-6"/> <span>{t('admin_edit_product_change_image_label')}</span>
-                                     </FormLabel>
-                                     <FormControl>
-                                         <Input id="product-image" type="file" accept="image/*" className="sr-only" onChange={handleImageFileChange} {...fieldProps} />
-                                     </FormControl>
-                                     <FormDescription>{t('admin_edit_product_image_description')}</FormDescription>
-                                     <FormMessage />
-                                 </FormItem>
-                             )} />
+                             <FormField control={form.control} name="imageFile" render={({ field: { value, onChange, ...fieldProps } }) => ( <FormItem> <FormLabel htmlFor="product-image" className="flex items-center gap-2 cursor-pointer border-2 border-dashed border-muted-foreground/50 rounded-lg p-4 justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"> <ImageIcon className="h-6 w-6"/> <span>{t('admin_edit_product_change_image_label')}</span> </FormLabel> <FormControl> <Input id="product-image" type="file" accept="image/*" className="sr-only" onChange={handleImageFileChange} {...fieldProps} /> </FormControl> <FormDescription>{t('admin_edit_product_image_description')}</FormDescription> <FormMessage /> </FormItem> )} />
                         </TabsContent>
                       </Tabs>
                  </CardContent>

@@ -1,4 +1,3 @@
-
 // src/lib/types.ts
 import type { CartItem } from '@/context/CartContext';
 
@@ -44,9 +43,24 @@ export interface AdminProduct {
   name: string;
   description: string;
   price: number;
-  category: string;
+  category: string; // Now references Category.id or name
   brand: string;
   imageUrl?: string; // Optional image URL
+  tags?: string[]; // Array of Tag IDs or names
 }
 
-    
+// Interface for Categories
+export interface Category {
+    id: string;
+    name: string;
+    description?: string;
+    // parentId?: string; // Optional: for nested categories
+    createdAt: Date;
+}
+
+// Interface for Tags
+export interface Tag {
+    id: string;
+    name: string;
+    createdAt: Date;
+}

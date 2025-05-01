@@ -3,7 +3,7 @@
 
 import type { ReactNode } from 'react';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
-import { User, Package, LogOut, LayoutDashboard, Box, Settings, FileText } from 'lucide-react'; // Added FileText
+import { User, Package, LogOut, LayoutDashboard, Box, Settings, FileText, Tags, FolderTree } from 'lucide-react'; // Added FolderTree, Tags
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import { usePathname, useRouter } from 'next/navigation'; // Import usePathname
@@ -66,14 +66,15 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                     </SidebarMenuButton>
                 </Link>
             </SidebarMenuItem>
-            <SidebarMenuItem>
+            {/* Invoices Link Removed for Customer/Manager */}
+            {/* <SidebarMenuItem>
                 <Link href="/dashboard/invoices" >
                     <SidebarMenuButton tooltip="Mes Factures" className="text-sm" isActive={pathname === '/dashboard/invoices'}>
                         <FileText />
                         <span>Mes Factures</span>
                     </SidebarMenuButton>
                 </Link>
-            </SidebarMenuItem>
+            </SidebarMenuItem> */}
              <SidebarMenuItem>
                 <Link href="/dashboard/profile" >
                     <SidebarMenuButton tooltip="Mon Profil" className="text-sm" isActive={pathname === '/dashboard/profile'}>
@@ -97,6 +98,22 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                  </Link>
              </SidebarMenuItem>
              <SidebarMenuItem>
+                 <Link href="/dashboard/categories" > {/* Added Categories Link */}
+                     <SidebarMenuButton tooltip="Catégories" className="text-sm" isActive={pathname?.startsWith('/dashboard/categories')}>
+                         <FolderTree />
+                         <span>Catégories</span>
+                     </SidebarMenuButton>
+                 </Link>
+             </SidebarMenuItem>
+              <SidebarMenuItem>
+                 <Link href="/dashboard/tags" > {/* Added Tags Link */}
+                     <SidebarMenuButton tooltip="Étiquettes" className="text-sm" isActive={pathname?.startsWith('/dashboard/tags')}>
+                         <Tags />
+                         <span>Étiquettes</span>
+                     </SidebarMenuButton>
+                 </Link>
+             </SidebarMenuItem>
+             <SidebarMenuItem>
                  <Link href="/dashboard/manage-orders" >
                      <SidebarMenuButton tooltip="Gérer Commandes" className="text-sm" isActive={pathname?.startsWith('/dashboard/manage-orders')}>
                          <Package />
@@ -104,7 +121,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                      </SidebarMenuButton>
                  </Link>
              </SidebarMenuItem>
-              {/* The Invoices link for manager is intentionally the same as customer's for now */}
+              {/* The Invoices link for manager is intentionally the same as customer's for now - REMOVED */}
          </>
      );
 
@@ -131,7 +148,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                             {/* Show Manager links first if manager */}
                             {user.role === 'manager' && managerLinks}
 
-                            {/* Show Common links (includes invoices) */}
+                            {/* Show Common links */}
                             {commonLinks}
 
                         </SidebarMenu>

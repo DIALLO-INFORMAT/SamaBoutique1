@@ -3,7 +3,7 @@
 
 import type { ReactNode } from 'react';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
-import { LayoutGrid, Box, Settings, Users, LogOut, Package, FileText, BarChart3 } from 'lucide-react'; // Kept BarChart3 icon for consistency, though link is removed
+import { LayoutGrid, Box, Settings, Users, LogOut, Package, FileText, BarChart3, Tags, FolderTree } from 'lucide-react'; // Added FolderTree, Tags
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import { useRouter, usePathname } from 'next/navigation'; // Import useRouter, usePathname
@@ -80,6 +80,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
+                             <SidebarMenuItem>
+                                <Link href="/admin/categories" > {/* Added Categories Link */}
+                                    <SidebarMenuButton tooltip="Catégories" className="text-sm" isActive={pathname?.startsWith('/admin/categories')}>
+                                        <FolderTree />
+                                        <span>Catégories</span>
+                                    </SidebarMenuButton>
+                                </Link>
+                            </SidebarMenuItem>
+                             <SidebarMenuItem>
+                                <Link href="/admin/tags" > {/* Added Tags Link */}
+                                    <SidebarMenuButton tooltip="Étiquettes" className="text-sm" isActive={pathname?.startsWith('/admin/tags')}>
+                                        <Tags />
+                                        <span>Étiquettes</span>
+                                    </SidebarMenuButton>
+                                </Link>
+                            </SidebarMenuItem>
                              {/* Orders Link */}
                              <SidebarMenuItem>
                                 <Link href="/admin/orders" >
@@ -107,14 +123,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                 </Link>
                             </SidebarMenuItem>
                             {/* Statistics Link Removed - Integrated into Dashboard */}
-                            {/* <SidebarMenuItem>
-                                <Link href="/admin/statistics" >
-                                    <SidebarMenuButton tooltip="Statistiques" className="text-sm" isActive={pathname === '/admin/statistics'}>
-                                        <BarChart3 />
-                                        <span>Statistiques</span>
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem> */}
                             <SidebarMenuItem>
                                 <Link href="/admin/settings" >
                                     <SidebarMenuButton tooltip="Paramètres" className="text-sm" isActive={pathname === '/admin/settings'}>
