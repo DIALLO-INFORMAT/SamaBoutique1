@@ -152,10 +152,10 @@ export default function AccountPage() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-secondary rounded-md p-1">
               <TabsTrigger value="login" disabled={isLoading} className="data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-sm py-2 text-sm font-medium">
-                {/* Removed LogIn icon */}Se Connecter
+                Se Connecter
               </TabsTrigger>
               <TabsTrigger value="register" disabled={isLoading} className="data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-sm py-2 text-sm font-medium">
-                {/* Removed UserPlus icon */}S'inscrire
+                S'inscrire
               </TabsTrigger>
             </TabsList>
 
@@ -190,7 +190,7 @@ export default function AccountPage() {
                     )}
                   />
                   <Button type="submit" className="w-full h-11 text-base" disabled={isLoading} variant="destructive">
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null /* Removed LogIn icon */}
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {isLoading ? "Connexion..." : "Se Connecter"}
                   </Button>
                 </form>
@@ -305,7 +305,7 @@ export default function AccountPage() {
                       )}
                     />
                   <Button type="submit" className="w-full h-11 text-base" disabled={isLoading} variant="destructive">
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null /* Removed UserPlus icon */}
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {isLoading ? "Inscription..." : "Créer le Compte"}
                   </Button>
                 </form>

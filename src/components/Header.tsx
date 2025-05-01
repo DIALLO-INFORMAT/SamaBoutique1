@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, ShoppingCart, User, LayoutGrid, Gauge, LogOut, Search } from 'lucide-react'; // Added Search for Suivi, removed Mail
+import { ShoppingBag, ShoppingCart, LayoutGrid, Gauge, LogOut, Search } from 'lucide-react'; // Removed User, Mail
 import { useCart } from '@/context/CartContext'; // Import useCart
 import { Badge } from '@/components/ui/badge'; // Import Badge
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
@@ -45,27 +45,34 @@ export function Header() {
               <Button variant="ghost" className="px-2 md:px-4 text-sm">Boutique</Button>
           </Link>
 
-          {/* Conditional Dashboard Link (before Account/Login) */}
-          {userRole === 'admin' && (
-              <Link href="/admin" passHref>
-                 <Button variant="ghost" className="flex items-center gap-1 px-2 md:px-4 text-sm">
-                     <LayoutGrid className="h-4 w-4" /> Admin
-                 </Button>
-               </Link>
-          )}
-          {(userRole === 'customer' || userRole === 'manager') && ( // Include manager
-               <Link href="/dashboard" passHref>
-                 <Button variant="ghost" className="flex items-center gap-1 px-2 md:px-4 text-sm">
-                    <Gauge className="h-4 w-4" /> Dashboard
-                 </Button>
-               </Link>
-          )}
+          {/* Tracking Link */}
+          <Link href="/suivi" passHref>
+             <Button variant="ghost" className="px-2 md:px-4 text-sm"> {/* Removed icon */}
+                Suivi
+             </Button>
+          </Link>
+
+           {/* Conditional Dashboard Link - Show if admin or manager */}
+           {userRole === 'admin' && (
+               <Link href="/admin" passHref>
+                  <Button variant="ghost" className="flex items-center gap-1 px-2 md:px-4 text-sm">
+                      <LayoutGrid className="h-4 w-4" /> Admin
+                  </Button>
+                </Link>
+           )}
+           {(userRole === 'customer' || userRole === 'manager') && ( // Include manager
+                <Link href="/dashboard" passHref>
+                  <Button variant="ghost" className="flex items-center gap-1 px-2 md:px-4 text-sm">
+                     <Gauge className="h-4 w-4" /> Dashboard
+                  </Button>
+                </Link>
+           )}
 
           {/* Account/Logout link */}
           {userRole === 'guest' ? (
             <Link href="/account" passHref>
-               <Button variant="ghost" className="flex items-center gap-1 px-2 md:px-4 text-sm">
-                  <User className="h-4 w-4" /> Compte
+               <Button variant="ghost" className="px-2 md:px-4 text-sm"> {/* Removed icon */}
+                   Compte
                </Button>
             </Link>
           ) : (
@@ -73,13 +80,6 @@ export function Header() {
                  <LogOut className="h-4 w-4" /> Déconnexion
              </Button>
           )}
-
-          {/* Tracking Link */}
-          <Link href="/suivi" passHref>
-             <Button variant="ghost" className="flex items-center gap-1 px-2 md:px-4 text-sm">
-                <Search className="h-4 w-4 hidden sm:inline-block"/> Suivi
-             </Button>
-          </Link>
 
           <Link href="/contact" passHref>
             <Button variant="ghost" className="px-2 md:px-4 text-sm"> {/* Removed icon */}

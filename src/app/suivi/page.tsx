@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Search, Clock, Truck, PackageCheck, PackageX, RefreshCw, CircleDollarSign, HelpCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { Clock, Truck, PackageCheck, PackageX, RefreshCw, CircleDollarSign, HelpCircle, AlertTriangle, Loader2 } from "lucide-react"; // Removed Search
 import type { Order, OrderStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge'; // Import Badge
@@ -110,9 +110,7 @@ export default function OrderTrackingPage() {
     <div className="container mx-auto max-w-2xl space-y-8 py-10">
       <Card className="shadow-lg">
         <CardHeader className="text-center">
-           <div className="flex justify-center mb-2">
-              <Search className="h-8 w-8 text-primary" />
-           </div>
+           {/* Removed Icon */}
           <CardTitle className="text-2xl font-bold text-primary">Suivi de Commande</CardTitle>
           <CardDescription>
             Entrez votre numéro de commande pour voir son statut actuel.
@@ -135,7 +133,7 @@ export default function OrderTrackingPage() {
                 )}
               />
               <Button type="submit" variant="destructive" className="w-full sm:w-auto" disabled={isLoading}>
-                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} {/* Removed icon */}
                 {isLoading ? 'Recherche...' : 'Suivre'}
               </Button>
             </form>
