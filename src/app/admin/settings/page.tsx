@@ -43,7 +43,7 @@ const createSettingsSchema = (t: Function) => z.object({
 export default function AdminSettingsPage() {
   const { toast } = useToast();
   const { t } = useTranslation(); // Use translation hook
-  const currentSettings = useSettings(); // Use the hook to get current settings
+  const { isLoading: settingsLoading, ...currentSettings } = useSettings(); // Destructure settings
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const settingsSchema = createSettingsSchema(t); // Create schema with translation
@@ -64,7 +64,7 @@ export default function AdminSettingsPage() {
 
   // Load current settings into the form when they are available or change
   useEffect(() => {
-      if (!currentSettings.isLoading) {
+      if (!settingsLoading) {
           form.reset({
               storeName: currentSettings.storeName,
               supportEmail: currentSettings.supportEmail,
@@ -75,8 +75,18 @@ export default function AdminSettingsPage() {
               faviconUrl: currentSettings.faviconUrl || '', // Ensure empty string
           });
       }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only run when settings load/change, not on form reference change
-  }, [currentSettings]);
+  // Use specific setting values in the dependency array
+  }, [
+      settingsLoading,
+      currentSettings.storeName,
+      currentSettings.supportEmail,
+      currentSettings.enableMaintenance,
+      currentSettings.storeDescription,
+      currentSettings.primaryColor,
+      currentSettings.logoUrl,
+      currentSettings.faviconUrl,
+      form // form.reset is stable, include form itself
+  ]);
 
 
   // Preview states
@@ -127,7 +137,7 @@ export default function AdminSettingsPage() {
   }
 
    // Show loading skeleton if settings are loading
-   if (currentSettings.isLoading) {
+   if (settingsLoading) {
         return (
              <div className="space-y-8">
                  <h1 className="text-3xl font-bold text-primary">{t('admin_settings_page_title')}</h1>
@@ -137,7 +147,7 @@ export default function AdminSettingsPage() {
                          <CardDescription><div className="h-4 w-4/5 bg-muted rounded animate-pulse mt-1"></div></CardDescription>
                      </CardHeader>
                      <CardContent className="space-y-6">
-                         {[...Array(6)].map((_, i) => (
+                         {[...Array(7)].map((_, i) => ( // Increased to 7 for favicon
                            <div key={i} className="space-y-2">
                                <div className="h-4 w-1/4 bg-muted rounded animate-pulse"></div>
                                <div className="h-10 w-full bg-muted rounded animate-pulse"></div>
@@ -237,7 +247,7 @@ export default function AdminSettingsPage() {
                   </FormItem>
               )}/>
 
-              <Button type="submit" variant="destructive" disabled={isSubmitting} className="min-w-[180px]">
+              <Button type="submit" variant="destructive" disabled={isSubmitting || settingsLoading} className="min-w-[180px]">
                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                  {isSubmitting ? t('admin_settings_form_saving_button') : t('admin_settings_form_save_button')}
               </Button>
