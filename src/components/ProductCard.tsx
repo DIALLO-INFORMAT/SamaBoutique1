@@ -1,16 +1,32 @@
+'use client'; // Make it a client component
+
 import Image from 'next/image';
-import type { Product } from '@/app/page'; // Corrected import path
+import type { Product } from '@/app/page';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Tag } from 'lucide-react';
+import { Tag, ShoppingCart } from 'lucide-react'; // Added ShoppingCart icon
+import { useCart } from '@/context/CartContext'; // Import useCart
+import { useToast } from '@/hooks/use-toast'; // Import useToast
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { addToCart } = useCart(); // Get addToCart function
+  const { toast } = useToast(); // Get toast function
+
   // Placeholder image based on category or name
   const imageHint = product.category === 'Services' ? 'service tech' : product.name.toLowerCase().split(' ')[0];
+
+  const handleAddToCart = () => {
+    addToCart(product);
+    toast({
+      title: "Produit Ajouté!",
+      description: `${product.name} a été ajouté à votre panier.`,
+      className: "border-primary bg-primary text-primary-foreground",
+    });
+  };
 
   return (
     <Card className="flex flex-col overflow-hidden h-full shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -38,8 +54,8 @@ export function ProductCard({ product }: ProductCardProps) {
         <span className="text-xl font-semibold text-primary">
           {product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
         </span>
-        <Button variant="destructive">
-           Voir Détails
+        <Button variant="destructive" onClick={handleAddToCart}>
+           <ShoppingCart className="mr-2 h-4 w-4" /> Ajouter au Panier
         </Button>
       </CardFooter>
     </Card>

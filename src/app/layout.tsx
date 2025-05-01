@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Header } from "@/components/Header";
 import { cn } from "@/lib/utils";
+import { CartProvider } from "@/context/CartContext"; // Import CartProvider
 
 export const metadata: Metadata = {
   title: "SamaBoutique",
@@ -23,11 +24,13 @@ export default function RootLayout({
           "antialiased flex flex-col min-h-screen"
         )}
       >
-        <Header />
-        <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
-          {children}
-        </main>
-        <Toaster />
+        <CartProvider> {/* Wrap with CartProvider */}
+          <Header />
+          <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+            {children}
+          </main>
+          <Toaster />
+        </CartProvider> {/* Close CartProvider */}
       </body>
     </html>
   );
