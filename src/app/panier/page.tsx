@@ -78,12 +78,12 @@ export default function CartPage() {
                 <Table>
                 <TableHeader>
                     <TableRow>
-                    <TableHead className="w-[80px]">{t('cart_table_image')}</TableHead>
-                    <TableHead>{t('cart_table_product')}</TableHead>
-                    <TableHead className="text-center w-[150px]">{t('cart_table_quantity')}</TableHead>
-                    <TableHead className="text-right">{t('cart_table_unit_price')}</TableHead>
-                    <TableHead className="text-right">{t('cart_table_total')}</TableHead>
-                    <TableHead className="text-right w-[50px]"> </TableHead>
+                        <TableHead className="w-[80px]">{t('cart_table_image')}</TableHead>
+                        <TableHead>{t('cart_table_product')}</TableHead>
+                        <TableHead className="text-center w-[150px]">{t('cart_table_quantity')}</TableHead>
+                        <TableHead className="text-right">{t('cart_table_unit_price')}</TableHead>
+                        <TableHead className="text-right">{t('cart_table_total')}</TableHead>
+                        <TableHead className="text-right w-[50px]"> </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -292,5 +292,4 @@ export default function CartPage() {
     </div>
   );
 }
-
     

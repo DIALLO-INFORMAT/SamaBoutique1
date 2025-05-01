@@ -204,7 +204,7 @@ export default function ManagerOrdersPage() {
                             <TableBody>
                                 {orders.map((order) => (
                                     <TableRow key={order.id} className="hover:bg-muted/50">
-                                        <TableCell className="font-mono text-xs px-6 py-3">{order.orderNumber}</TableCell>
+                                        <TableCell className="font-mono text-xs px-6 py-3">{order.number}</TableCell>
                                         <TableCell className="px-6 py-3">{order.customerInfo.name}</TableCell>
                                         <TableCell className="hidden md:table-cell px-6 py-3 text-xs text-muted-foreground">
                                             {order.createdAt.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}

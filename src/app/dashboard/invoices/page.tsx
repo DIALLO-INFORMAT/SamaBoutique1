@@ -76,7 +76,7 @@ const handleInvoiceAction = async (order: Order, action: 'view' | 'download' | '
                 // Create a temporary link to trigger download
                 const link = document.createElement('a');
                 link.href = pdfUrl;
-                link.download = `facture-${order.orderNumber}.pdf`;
+                link.download = `facture-${order.number}.pdf`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -91,8 +91,8 @@ const handleInvoiceAction = async (order: Order, action: 'view' | 'download' | '
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: `${t('invoice_share_title')} ${order.orderNumber}`,
-                    text: `${t('invoice_share_text')} ${order.orderNumber}. Total: ${order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 })}`,
+                    title: `${t('invoice_share_title')} ${order.number}`,
+                    text: `${t('invoice_share_text')} ${order.number}. Total: ${order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 })}`,
                     // url: Optionally share a link to the order status page
                 });
             } catch (error) {
@@ -197,7 +197,7 @@ export default function UserInvoicesPage() {
                                 {invoices.map((invoice) => (
                                     <TableRow key={invoice.id} className="hover:bg-muted/50">
                                         <TableCell className="font-medium px-6 py-3">
-                                            <span className="font-mono text-xs">{invoice.orderNumber}</span>
+                                            <span className="font-mono text-xs">{invoice.number}</span>
                                         </TableCell>
                                         <TableCell className="hidden md:table-cell px-6 py-3 text-xs text-muted-foreground">
                                             {invoice.createdAt.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}
@@ -258,6 +258,5 @@ export default function UserInvoicesPage() {
         </div>
     );
 }
-
 
     

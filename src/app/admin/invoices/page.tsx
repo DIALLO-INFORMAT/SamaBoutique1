@@ -61,7 +61,7 @@ const handleInvoiceAction = async (order: Order, action: 'view' | 'download' | '
                 // Create a temporary link to trigger download
                 const link = document.createElement('a');
                 link.href = pdfUrl;
-                link.download = `facture-${order.orderNumber}.pdf`; // Set the filename
+                link.download = `facture-${order.number}.pdf`; // Set the filename
                 document.body.appendChild(link); // Append to body (needed for Firefox)
                 link.click(); // Trigger download
                 document.body.removeChild(link); // Remove the link
@@ -76,8 +76,8 @@ const handleInvoiceAction = async (order: Order, action: 'view' | 'download' | '
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: `${t('invoice_share_title')} ${order.orderNumber}`,
-                    text: `${t('invoice_share_text')} ${order.orderNumber}. Total: ${order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 })}`,
+                    title: `${t('invoice_share_title')} ${order.number}`,
+                    text: `${t('invoice_share_text')} ${order.number}. Total: ${order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 })}`,
                     // url: window.location.href // Or a link to the order tracking page
                 });
             } catch (error) {
@@ -152,7 +152,7 @@ export default function AdminInvoicesPage() {
                                 {invoices.map((invoice) => (
                                     <TableRow key={invoice.id} className="hover:bg-muted/50">
                                         <TableCell className="font-medium px-6 py-3">
-                                            <span className="font-mono text-xs">{invoice.orderNumber}</span>
+                                            <span className="font-mono text-xs">{invoice.number}</span>
                                         </TableCell>
                                         <TableCell className="px-6 py-3">
                                             <div>{invoice.customerInfo.name}</div>
@@ -188,7 +188,7 @@ export default function AdminInvoicesPage() {
                                                  <span className="hidden sm:inline">{t('invoice_download_button')}</span>
                                             </Button>
                                             {/* Optional Share Button Placeholder */}
-                                            {/* <Button variant="ghost" size="icon" title={t('invoice_share_button_soon')} onClick={() => handleInvoiceAction(invoice.orderNumber, 'share')}>
+                                            {/* <Button variant="ghost" size="icon" title={t('invoice_share_button_soon')} onClick={() => handleInvoiceAction(invoice.number, 'share')}>
                                                 <Share2 className="h-4 w-4 text-muted-foreground" />
                                             </Button> */}
                                         </TableCell>
@@ -203,6 +203,5 @@ export default function AdminInvoicesPage() {
         </div>
     );
 }
-
 
     

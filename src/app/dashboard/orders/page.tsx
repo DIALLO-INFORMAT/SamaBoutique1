@@ -231,11 +231,11 @@ export default function UserOrdersPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                        <TableHead className="px-4 md:px-6">{t('dashboard_my_orders_table_number')}</TableHead>
-                        <TableHead className="px-4 md:px-6">{t('dashboard_my_orders_table_date')}</TableHead>
-                        <TableHead className="text-right px-4 md:px-6">{t('dashboard_my_orders_table_total')}</TableHead>
-                        <TableHead className="text-center px-4 md:px-6">{t('dashboard_my_orders_table_status')}</TableHead>
-                        <TableHead className="text-right px-4 md:px-6">{t('dashboard_my_orders_table_actions')}</TableHead>
+                            <TableHead className="px-4 md:px-6">{t('dashboard_my_orders_table_number')}</TableHead>
+                            <TableHead className="px-4 md:px-6">{t('dashboard_my_orders_table_date')}</TableHead>
+                            <TableHead className="text-right px-4 md:px-6">{t('dashboard_my_orders_table_total')}</TableHead>
+                            <TableHead className="text-center px-4 md:px-6">{t('dashboard_my_orders_table_status')}</TableHead>
+                            <TableHead className="text-right px-4 md:px-6">{t('dashboard_my_orders_table_actions')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -281,7 +281,7 @@ export default function UserOrdersPage() {
                  }
             }
              cancelInProgress={isCancelling === selectedOrder?.id}
-             onCancelConfirm={() => selectedOrder && handleCancelOrder(selectedOrder.id, selectedOrder.orderNumber)}
+             onCancelConfirm={() => selectedOrder && handleCancelOrder(selectedOrder.id, selectedOrder.number)}
         />
 
     </div>
