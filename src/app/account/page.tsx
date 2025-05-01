@@ -64,6 +64,19 @@ export default function AccountPage() {
   const loginSchema = createLoginSchema(t);
   const registerSchema = createRegisterSchema(t);
 
+  // ---- FORM DECLARATIONS MOVED UP ----
+  const loginForm = useForm<z.infer<typeof loginSchema>>({
+      resolver: zodResolver(loginSchema),
+      defaultValues: { emailOrPhone: "", password: "" },
+    });
+
+  const registerForm = useForm<z.infer<typeof registerSchema>>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { name: "", email: "", phone: "", password: "", confirmPassword: "", role: "customer" },
+  });
+  // ---- END OF FORM DECLARATIONS MOVE ----
+
+
   // Redirect if user is already logged in
   useEffect(() => {
     if (user) {
@@ -108,7 +121,7 @@ export default function AccountPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [login, router, toast, t, redirectUrl]); // Include dependencies
+  }, [login, router, toast, t, redirectUrl, loginForm]); // Added loginForm dependency
 
   // Handle Registration
   const onRegisterSubmit = useCallback(async (values: z.infer<typeof registerSchema>) => {
@@ -143,15 +156,6 @@ export default function AccountPage() {
     }
   }, [signup, user, toast, setActiveTab, registerForm, loginForm, t]); // Include dependencies
 
-  const loginForm = useForm<z.infer<typeof loginSchema>>({
-      resolver: zodResolver(loginSchema),
-      defaultValues: { emailOrPhone: "", password: "" },
-    });
-
-    const registerForm = useForm<z.infer<typeof registerSchema>>({
-      resolver: zodResolver(registerSchema),
-      defaultValues: { name: "", email: "", phone: "", password: "", confirmPassword: "", role: "customer" },
-    });
 
 
    // If user exists but useEffect hasn't redirected yet, show loading
