@@ -1,4 +1,3 @@
-
 // src/components/ProductList.tsx
 'use client';
 
@@ -15,11 +14,12 @@ import { useTranslation } from '@/hooks/useTranslation';
 interface ProductListProps {
   initialProducts: Product[];
   viewMode: 'grid' | 'list'; // Accept viewMode prop
+  getProductHref?: (product: Product) => string | undefined; // Optional href generator
 }
 
 const ITEMS_PER_PAGE = 9; // Number of products per page
 
-export function ProductList({ initialProducts, viewMode }: ProductListProps) {
+export function ProductList({ initialProducts, viewMode, getProductHref }: ProductListProps) {
   const { t } = useTranslation();
   const [products] = useState<Product[]>(initialProducts);
   const [isLoading, setIsLoading] = useState(false);
@@ -176,8 +176,12 @@ export function ProductList({ initialProducts, viewMode }: ProductListProps) {
           viewMode === 'grid' ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
       )}>
         {paginatedProducts.map(product => (
-          // Pass viewMode to ProductCard if it needs to adjust its internal layout
-          <ProductCard key={product.id} product={product} viewMode={viewMode} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            viewMode={viewMode}
+            href={getProductHref ? getProductHref(product) : undefined} // Pass generated href
+          />
         ))}
       </div>
 

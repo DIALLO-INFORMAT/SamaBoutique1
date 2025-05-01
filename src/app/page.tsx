@@ -1,4 +1,3 @@
-
 // src/app/page.tsx
 'use client'; // Needs to be a client component to use the hook
 
@@ -44,6 +43,14 @@ export default function Home() {
   const { t } = useTranslation(); // Use the translation hook
   const { carouselImages, partnerLogos, isLoading: settingsLoading } = useSettings(); // Get images from settings
 
+  // Function to generate the link for a product
+  const getProductLink = (product: Product): string => {
+      // Link to the boutique page and pre-fill the search query with the product name
+      const params = new URLSearchParams();
+      params.set('search', product.name);
+      return `/boutique?${params.toString()}`;
+  };
+
   // Handle loading state for settings if needed
   if (settingsLoading) {
       return <div>{t('loading')}</div>; // Or a skeleton loader
@@ -59,8 +66,12 @@ export default function Home() {
       {/* Featured Products Section */}
       <section className="container mx-auto px-4">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-primary">{t('home_featured_products')}</h2>
-        {/* Pass featuredProducts and viewMode */}
-        <ProductList initialProducts={featuredProducts} viewMode="grid" />
+        {/* Pass featuredProducts, viewMode, and the link generator function */}
+        <ProductList
+            initialProducts={featuredProducts}
+            viewMode="grid"
+            getProductHref={getProductLink}
+        />
         <div className="text-center mt-6 md:mt-8">
            <Link href="/boutique" >
              <Button variant="destructive" size="lg">

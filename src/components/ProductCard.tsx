@@ -1,8 +1,8 @@
-
+// src/components/ProductCard.tsx
 'use client';
 
 import Image from 'next/image';
-// Re-import Product type definition if needed
+import Link from 'next/link'; // Import Link
 // Assuming Product interface now includes optional imageUrl
 export interface Product {
   id: string;
@@ -24,9 +24,10 @@ import { cn } from '@/lib/utils'; // Import cn
 interface ProductCardProps {
   product: Product;
   viewMode: 'grid' | 'list'; // Accept viewMode
+  href?: string; // Optional href to make the card a link
 }
 
-export function ProductCard({ product, viewMode }: ProductCardProps) {
+export function ProductCard({ product, viewMode, href }: ProductCardProps) {
   const { addToCart } = useCart();
   const { toast } = useToast();
   const { t, currentLocale } = useTranslation();
@@ -34,7 +35,9 @@ export function ProductCard({ product, viewMode }: ProductCardProps) {
   const imageHint = product.category === 'Services' ? 'service tech' : product.name.toLowerCase().split(' ')[0];
   const imageUrl = product.imageUrl || `https://picsum.photos/seed/${product.id}/400/300`; // Use actual URL or fallback
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation(); // Prevent link navigation if the card is a link
+    e.preventDefault(); // Prevent default link behavior as well
     addToCart(product);
     toast({
       title: t('cart_toast_added_title'),
@@ -43,10 +46,11 @@ export function ProductCard({ product, viewMode }: ProductCardProps) {
     });
   };
 
-  return (
+  const cardContent = (
     <Card className={cn(
         "overflow-hidden h-full shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg border border-border",
         viewMode === 'grid' ? "flex flex-col" : "flex flex-row items-start", // Conditional layout
+        href ? "hover:border-primary/50" : "" // Add hover effect if it's a link
     )}>
       {/* Image Section */}
       <div className={cn(
@@ -131,6 +135,18 @@ export function ProductCard({ product, viewMode }: ProductCardProps) {
       </div>
     </Card>
   );
-}
 
-    
+  // If href is provided, wrap the card content in a Link component
+  if (href) {
+    return (
+      <Link href={href} passHref legacyBehavior>
+        <a className="block h-full">
+          {cardContent}
+        </a>
+      </Link>
+    );
+  }
+
+  // Otherwise, return the card content directly
+  return cardContent;
+}
