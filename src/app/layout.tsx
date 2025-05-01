@@ -7,9 +7,8 @@ import { Footer } from '@/components/Footer';
 import { cn } from '@/lib/utils';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
-// import { LocaleProvider } from '@/context/LocaleContext'; // Removed LocaleProvider import
 import { WelcomePopup } from '@/components/WelcomePopup';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSettings } from '@/hooks/useSettings';
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
@@ -101,8 +100,9 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
         document.title = settings.storeName || 'SamaBoutique';
     }, [settings.storeName]);
 
-    // Loading State
-    if (settings.isLoading) {
+    // Loading State or Initial Render before isMobile is determined
+    // Render a minimal layout during hydration check
+    if (settings.isLoading || isMobile === undefined) {
         return (
              <div className="fixed inset-0 bg-background z-[9999] flex flex-col items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -122,7 +122,7 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
         );
     }
 
-    // Render the actual layout
+    // Render the actual layout once isMobile is determined
     return (
         <>
             <Header />
@@ -168,4 +168,3 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
 //         </div>
 //     );
 // }
-
