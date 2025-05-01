@@ -44,6 +44,8 @@
   "shop_search": "Rechercher",
   "shop_no_products_found": "Aucun produit trouvé.",
   "shop_adjust_filters": "Essayez d'ajuster vos filtres de recherche.",
+  "shop_view_grid": "Vue Grille",
+  "shop_view_list": "Vue Liste",
   "product_card_add_to_cart": "Ajouter",
   "contact_page_title": "Contactez-nous",
   "contact_page_description": "Remplissez le formulaire ci-dessous pour nous envoyer un message.",
@@ -533,7 +535,7 @@
   "admin_settings_toast_save_error_description": "Impossible d'enregistrer les paramètres.",
   "loading": "Chargement...",
   "general_error": "Erreur",
-  "general_cancel": "Annuler",
+  "general_cancel": "Cancel",
   "general_delete": "Supprimer",
   "general_save": "Sauvegarder",
   "general_saving": "Sauvegarde...",
@@ -543,5 +545,10 @@
   "welcome_popup_description": "Heureux de vous revoir sur SamaBoutique.",
   "maintenance_mode_title": "Site en Maintenance",
   "maintenance_mode_description": "Nous serons bientôt de retour. Merci de votre patience.",
-  "maintenance_mode_contact": "Contact: {email}"
+  "maintenance_mode_contact": "Contact: {email}",
+  "pagination_previous": "Précédent",
+  "pagination_next": "Suivant",
+  "pagination_page": "Page {current} sur {total}",
+  "shop_view_grid": "Vue Grille",
+  "shop_view_list": "Vue Liste"
 }

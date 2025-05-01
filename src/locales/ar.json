@@ -44,6 +44,8 @@
   "shop_search": "بحث",
   "shop_no_products_found": "لم يتم العثور على منتجات.",
   "shop_adjust_filters": "حاول تعديل فلاتر البحث الخاصة بك.",
+  "shop_view_grid": "عرض الشبكة",
+  "shop_view_list": "عرض القائمة",
   "product_card_add_to_cart": "أضف",
   "contact_page_title": "اتصل بنا",
   "contact_page_description": "املأ النموذج أدناه لإرسال رسالة لنا.",
@@ -313,7 +315,7 @@
   "dashboard_edit_product_page_title": "تعديل المنتج",
   "dashboard_edit_product_description": "تحديث \"{productName}\".",
   "dashboard_edit_product_back_button": "رجوع",
-  "dashboard_edit_product_general_info_title": "معلومات عامة",
+  "dashboard_edit_product_general_info_title": "Infos Générales",
   "dashboard_edit_product_form_name": "الاسم",
   "dashboard_edit_product_form_description": "الوصف",
   "dashboard_edit_product_pricing_category_title": "التسعير والتصنيف",
@@ -425,7 +427,7 @@
   "admin_edit_product_page_title": "تعديل المنتج",
   "admin_edit_product_description": "تحديث \"{productName}\".",
   "admin_edit_product_back_button": "العودة إلى المنتجات",
-  "admin_edit_product_general_info_title": "معلومات عامة",
+  "admin_edit_product_general_info_title": "Informations Générales",
   "admin_edit_product_form_name": "اسم المنتج/الخدمة",
   "admin_edit_product_form_description": "الوصف",
   "admin_edit_product_pricing_category_title": "التسعير والتصنيف",
@@ -543,5 +545,11 @@
   "welcome_popup_description": "سعداء بعودتك إلى سما بوتيك.",
   "maintenance_mode_title": "الموقع تحت الصيانة",
   "maintenance_mode_description": "سنعود قريبا. شكرا لصبرك.",
-  "maintenance_mode_contact": "اتصل: {email}"
+  "maintenance_mode_contact": "اتصل: {email}",
+  "pagination_previous": "السابق",
+  "pagination_next": "التالي",
+  "pagination_page": "الصفحة {current} من {total}",
+  "shop_view_grid": "عرض الشبكة",
+  "shop_view_list": "عرض القائمة"
 }
+

@@ -3,25 +3,31 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import type { Product } from '@/app/boutique/page';
+import type { Product } from '@/app/boutique/page'; // Ensure this path is correct
 import { ProductCard } from './ProductCard';
 import { useSearchParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Filter, Loader2 } from 'lucide-react'; // Import Filter and Loader2 icon
-import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import { Filter, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface ProductListProps {
   initialProducts: Product[];
+  viewMode: 'grid' | 'list'; // Accept viewMode prop
 }
 
-export function ProductList({ initialProducts }: ProductListProps) {
-  const { t } = useTranslation(); // Use translation hook
+const ITEMS_PER_PAGE = 9; // Number of products per page
+
+export function ProductList({ initialProducts, viewMode }: ProductListProps) {
+  const { t } = useTranslation();
   const [products] = useState<Product[]>(initialProducts);
-  const [isLoading, setIsLoading] = useState(false); // Start with false, set true during calculation
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const searchParams = useSearchParams();
 
   const filteredAndSortedProducts = useMemo(() => {
-    setIsLoading(true); // Set loading true when starting calculation
+    setIsLoading(true);
 
     const categoryFilter = searchParams.get('category')?.toLowerCase() || 'all';
     const brandFilters = searchParams.getAll('brand');
@@ -66,62 +72,82 @@ export function ProductList({ initialProducts }: ProductListProps) {
       case 'name_asc': default: result.sort((a, b) => a.name.localeCompare(a.name)); break;
     }
 
-    // Simulate filtering/sorting delay ONLY for visual feedback
-    // In a real app with server-side filtering, the loading state would be managed differently.
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 500); // Adjust delay as needed
+    // Reset to page 1 when filters change
+    setCurrentPage(1);
 
-    // We need to return result immediately for responsiveness, but also cleanup timer
-    // This approach might cause a flash if calculation is faster than delay.
-    // A better approach involves signaling completion from the calculation itself.
-    // For now, we'll rely on this simple delay.
+    // Simulate delay
+    const timer = setTimeout(() => setIsLoading(false), 300);
 
-    // Cleanup function for the timer
-    // This runs if dependencies change before timeout finishes or on unmount
-    const cleanup = () => clearTimeout(timer);
-    // Attaching cleanup to the effect that depends on isLoading, or use a separate effect
+    return result;
 
-    return result; // Return the calculated result
+  }, [products, searchParams]);
 
-  }, [products, searchParams]); // Depend on base products and searchParams
-
-   // Effect to manage the loading state based on the calculation finishing
+  // Cleanup effect for the timer in useMemo
    useEffect(() => {
-      // This effect helps ensure isLoading becomes false after the calculation delay
-      let timerId: NodeJS.Timeout | null = null;
-      if (isLoading) {
-          timerId = setTimeout(() => {
-              setIsLoading(false);
-          }, 500); // Match the delay in useMemo
-      }
-      return () => {
-          if (timerId) clearTimeout(timerId);
-      };
+     let timerId: NodeJS.Timeout | null = null;
+     if (isLoading) {
+       timerId = setTimeout(() => setIsLoading(false), 300);
+     }
+     return () => { if (timerId) clearTimeout(timerId); };
    }, [isLoading]);
 
+  const totalPages = Math.ceil(filteredAndSortedProducts.length / ITEMS_PER_PAGE);
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredAndSortedProducts.slice(startIndex, endIndex);
+  }, [filteredAndSortedProducts, currentPage]);
 
-  if (isLoading) {
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+  };
+
+   // --- SKELETON LOADING ---
+   if (isLoading) {
      return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
+       <div className={cn(
+           "grid gap-6",
+           viewMode === 'grid' ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
+       )}>
+         {[...Array(ITEMS_PER_PAGE)].map((_, i) => (
+             viewMode === 'grid' ? (
                  <div key={i} className="flex flex-col space-y-3 border border-border rounded-lg overflow-hidden shadow-sm bg-card">
-                    <Skeleton className="h-[200px] w-full bg-muted" />
-                    <div className="space-y-3 p-4">
-                        <Skeleton className="h-5 w-3/4 bg-muted" />
-                        <Skeleton className="h-4 w-full bg-muted" />
+                     <Skeleton className="h-[200px] w-full bg-muted" />
+                     <div className="space-y-3 p-4">
+                         <Skeleton className="h-5 w-3/4 bg-muted" />
+                         <Skeleton className="h-4 w-full bg-muted" />
                          <Skeleton className="h-4 w-1/2 bg-muted" />
                          <div className="flex justify-between items-center pt-3">
-                           <Skeleton className="h-6 w-1/4 bg-muted" />
-                           <Skeleton className="h-10 w-1/3 rounded-md bg-muted" />
+                             <Skeleton className="h-6 w-1/4 bg-muted" />
+                             <Skeleton className="h-10 w-1/3 rounded-md bg-muted" />
                          </div>
-                    </div>
-                </div>
-            ))}
-        </div>
+                     </div>
+                 </div>
+             ) : (
+                  <div key={i} className="flex gap-4 border border-border rounded-lg overflow-hidden shadow-sm bg-card p-4">
+                     <Skeleton className="h-24 w-24 rounded-md bg-muted flex-shrink-0" />
+                     <div className="flex-grow space-y-2">
+                         <Skeleton className="h-5 w-3/5 bg-muted" />
+                         <Skeleton className="h-4 w-1/2 bg-muted" />
+                         <Skeleton className="h-4 w-full bg-muted" />
+                         <Skeleton className="h-4 w-4/5 bg-muted" />
+                         <div className="flex justify-between items-center pt-2">
+                             <Skeleton className="h-6 w-1/4 bg-muted" />
+                             <Skeleton className="h-9 w-1/4 rounded-md bg-muted" />
+                         </div>
+                     </div>
+                 </div>
+             )
+         ))}
+       </div>
      );
-  }
+   }
 
+  // --- NO PRODUCTS FOUND ---
   if (filteredAndSortedProducts.length === 0) {
     return (
         <div className="text-center py-16 text-muted-foreground bg-secondary rounded-lg">
@@ -132,11 +158,44 @@ export function ProductList({ initialProducts }: ProductListProps) {
     );
   }
 
+  // --- RENDER PRODUCT LIST ---
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {filteredAndSortedProducts.map(product => (
-        <ProductCard key={product.id} product={product} />
-      ))}
+    <div className="space-y-8">
+      <div className={cn(
+          "grid gap-6",
+          viewMode === 'grid' ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
+      )}>
+        {paginatedProducts.map(product => (
+          // Pass viewMode to ProductCard if it needs to adjust its internal layout
+          <ProductCard key={product.id} product={product} viewMode={viewMode} />
+        ))}
+      </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 pt-4">
+          <Button
+            variant="outline"
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1}
+            size="sm"
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" /> {t('pagination_previous')}
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            {t('pagination_page', { current: currentPage, total: totalPages })}
+          </span>
+          <Button
+            variant="outline"
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+            size="sm"
+          >
+             {t('pagination_next')} <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
+

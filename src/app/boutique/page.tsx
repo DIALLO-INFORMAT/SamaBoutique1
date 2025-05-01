@@ -2,14 +2,15 @@
 // src/app/boutique/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ProductList } from "@/components/ProductList";
 import { BoutiqueSidebar } from "@/components/BoutiqueSidebar";
 import { ShopSortControls } from "@/components/FilterSortControls";
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ListFilter, Loader2 } from 'lucide-react'; // Added Loader2
-import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import { ListFilter, Loader2, Grid, List } from 'lucide-react'; // Added Grid, List
+import { useTranslation } from '@/hooks/useTranslation';
+import { cn } from '@/lib/utils';
 
 // Mock product data (replace with actual data fetching)
 export interface Product {
@@ -33,28 +34,31 @@ const fetchAllProducts = async (): Promise<Product[]> => {
         { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C" },
         { id: '7', name: "Chemise Élégante", description: "Chemise pour occasions spéciales.", price: 35000, category: "Vêtements", brand: "Marque B" },
         { id: '8', name: "Maintenance Site Web", description: "Pack maintenance mensuel.", price: 50000, category: "Services", brand: "SamaServices" },
+        { id: '9', name: "Autocollants Logo", description: "Lot de 50 autocollants.", price: 5000, category: "Accessoires", brand: "Marque C" },
+        { id: '10', name: "Pantalon Cargo", description: "Pantalon pratique et résistant.", price: 30000, category: "Vêtements", brand: "Marque A" },
+        { id: '11', name: "Rédaction Contenu Web", description: "Service de rédaction SEO (500 mots).", price: 25000, category: "Services", brand: "SamaServices" },
+        { id: '12', name: "Porte-clés Design", description: "Porte-clés en métal.", price: 3000, category: "Accessoires", brand: "Marque B" },
      ];
     return allProductsData;
 }
 
 export default function BoutiquePage() {
-    const { t } = useTranslation(); // Use translation hook
+    const { t } = useTranslation();
     const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid'); // State for view mode
 
-    // Changed to useEffect to run client-side
     useEffect(() => {
-        setIsLoading(true); // Set loading true when fetch starts
+        setIsLoading(true);
         fetchAllProducts().then(data => {
             setAllProducts(data);
             setIsLoading(false);
         }).catch(error => {
             console.error("Failed to fetch products:", error);
-            setIsLoading(false); // Ensure loading is turned off on error
+            setIsLoading(false);
         });
-    }, []); // Empty dependency array means this runs once on mount
+    }, []);
 
-    // Derive categories and brands after products are loaded
     const categories = useMemo(() => [...new Set(allProducts.map(p => p.category))], [allProducts]);
     const brands = useMemo(() => [...new Set(allProducts.map(p => p.brand))], [allProducts]);
 
@@ -79,23 +83,22 @@ export default function BoutiquePage() {
 
             {/* Product Listing Area */}
             <main className="w-full md:w-3/4 lg:w-4/5">
-                {/* Mobile Filter Trigger & Sorting */}
-                <div className="flex justify-between items-center mb-4 md:mb-6">
+                {/* Mobile Filter Trigger & Sorting & View Toggle */}
+                <div className="flex justify-between items-center mb-4 md:mb-6 gap-4">
                     {/* Mobile Filter Drawer Trigger */}
                     <Sheet>
                         <SheetTrigger asChild>
-                            <Button variant="outline" className="md:hidden flex items-center gap-2">
+                            <Button variant="outline" className="md:hidden flex items-center gap-2 shrink-0">
                                 <ListFilter className="h-4 w-4" /> {t('shop_filters')}
                             </Button>
                         </SheetTrigger>
-                        <SheetContent side="left" className="w-3/4 sm:w-1/2 overflow-y-auto p-0"> {/* Remove padding for full height */}
-                             <SheetHeader className="border-b p-4"> {/* Add padding here */}
+                        <SheetContent side="left" className="w-3/4 sm:w-1/2 overflow-y-auto p-0">
+                             <SheetHeader className="border-b p-4">
                                 <SheetTitle className="text-lg flex items-center gap-2">
                                     <ListFilter className="h-5 w-5 text-primary" /> {t('shop_filters')}
                                 </SheetTitle>
                             </SheetHeader>
-                            {/* Pass categories and brands */}
-                            <div className="p-4"> {/* Add padding for content */}
+                            <div className="p-4">
                                <BoutiqueSidebar categories={categories} brands={brands} />
                             </div>
                         </SheetContent>
@@ -105,8 +108,37 @@ export default function BoutiquePage() {
                     <div className="flex-grow flex justify-end">
                          <ShopSortControls />
                     </div>
+
+                     {/* View Mode Toggle */}
+                    <div className="flex items-center gap-1 border rounded-md p-0.5 bg-secondary">
+                       <Button
+                         variant={viewMode === 'grid' ? 'background' : 'ghost'}
+                         size="icon"
+                         onClick={() => setViewMode('grid')}
+                         className={cn(
+                           "h-8 w-8",
+                           viewMode === 'grid' && 'bg-background text-primary shadow-sm'
+                         )}
+                         aria-label={t('shop_view_grid')}
+                       >
+                         <Grid className="h-4 w-4" />
+                       </Button>
+                       <Button
+                         variant={viewMode === 'list' ? 'background' : 'ghost'}
+                         size="icon"
+                         onClick={() => setViewMode('list')}
+                         className={cn(
+                           "h-8 w-8",
+                            viewMode === 'list' && 'bg-background text-primary shadow-sm'
+                          )}
+                          aria-label={t('shop_view_list')}
+                       >
+                         <List className="h-4 w-4" />
+                       </Button>
+                     </div>
                 </div>
-                <ProductList initialProducts={allProducts} />
+                {/* Pass viewMode to ProductList */}
+                <ProductList initialProducts={allProducts} viewMode={viewMode} />
             </main>
         </div>
         </div>
@@ -118,3 +150,4 @@ export { useMemo } from 'react';
 
 // Keep dynamic rendering if relying on searchParams client-side
 export const dynamic = 'force-dynamic';
+

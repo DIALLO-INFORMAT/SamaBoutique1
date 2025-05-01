@@ -44,6 +44,8 @@
   "shop_search": "Search",
   "shop_no_products_found": "No products found.",
   "shop_adjust_filters": "Try adjusting your search filters.",
+  "shop_view_grid": "Grid View",
+  "shop_view_list": "List View",
   "product_card_add_to_cart": "Add",
   "contact_page_title": "Contact Us",
   "contact_page_description": "Fill out the form below to send us a message.",
@@ -539,9 +541,15 @@
   "general_saving": "Saving...",
   "general_select_placeholder": "Select...",
   "currency_xof": "XOF",
-  "welcome_popup_title": "Welcome, {name}!",
+   "welcome_popup_title": "Welcome, {name}!",
   "welcome_popup_description": "Glad to see you back at SamaBoutique.",
   "maintenance_mode_title": "Site Under Maintenance",
   "maintenance_mode_description": "We will be back soon. Thank you for your patience.",
-  "maintenance_mode_contact": "Contact: {email}"
+  "maintenance_mode_contact": "Contact: {email}",
+  "pagination_previous": "Previous",
+  "pagination_next": "Next",
+  "pagination_page": "Page {current} of {total}",
+  "shop_view_grid": "Grid View",
+  "shop_view_list": "List View"
 }
+
