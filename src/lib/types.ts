@@ -1,0 +1,31 @@
+// src/lib/types.ts
+import type { CartItem } from '@/context/CartContext';
+
+export type OrderStatus =
+    | 'En attente de paiement'
+    | 'Payé'
+    | 'En cours de préparation'
+    | 'Expédié'
+    | 'Livraison en cours'
+    | 'Livré'
+    | 'Annulé'
+    | 'Remboursé';
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  userId: string; // Link to user who placed the order ('guest' if not logged in)
+  customerInfo: {
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+  };
+  items: CartItem[];
+  total: number;
+  status: OrderStatus;
+  paymentMethod: string; // e.g., "Paiement à la livraison"
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date; // To track status changes
+}

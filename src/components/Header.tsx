@@ -35,7 +35,7 @@ export function Header() {
           <ShoppingBag className="h-6 w-6" />
           SamaBoutique
         </Link>
-        <div className="flex items-center gap-1 md:gap-3">
+        <div className="flex items-center gap-1 md:gap-2"> {/* Reduced gap slightly */}
           <Link href="/" passHref>
             <Button variant="ghost" className="px-2 md:px-4 text-sm">Accueil</Button>
           </Link>
@@ -59,6 +59,11 @@ export function Header() {
                </Link>
           )}
 
+          {/* Tracking Link */}
+          <Link href="/suivi" passHref>
+             <Button variant="ghost" className="px-2 md:px-4 text-sm">Suivi</Button>
+          </Link>
+
           <Link href="/contact" passHref>
             <Button variant="ghost" className="flex items-center gap-1 px-2 md:px-4 text-sm">
                <Mail className="h-4 w-4 hidden sm:inline-block" /> Contact
@@ -78,11 +83,20 @@ export function Header() {
              </Button>
           )}
 
-           {/* Cart Link */}
+           {/* Cart Link - Icon only by default, text on sm+ */}
           <Link href="/panier" passHref>
-            <Button variant="ghost" className="relative flex items-center gap-1 px-2 md:px-4 text-sm">
+            <Button variant="ghost" size="icon" className="relative md:hidden"> {/* Icon only on small screens */}
               <ShoppingCart className="h-5 w-5" />
-              <span className="hidden sm:inline-block">Panier</span>
+              {itemCount > 0 && (
+                <Badge variant="destructive" className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full">
+                  {itemCount}
+                </Badge>
+              )}
+               <span className="sr-only">Panier</span>
+            </Button>
+             <Button variant="ghost" className="relative hidden md:inline-flex items-center gap-1 px-2 md:px-4 text-sm"> {/* Icon and text on medium+ screens */}
+              <ShoppingCart className="h-5 w-5" />
+              <span>Panier</span>
               {itemCount > 0 && (
                 <Badge variant="destructive" className="absolute -top-2 -right-1 md:-right-2 px-1.5 py-0.5 text-xs rounded-full">
                   {itemCount}

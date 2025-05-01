@@ -3,12 +3,13 @@
 
 import type { ReactNode } from 'react';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
-import { LayoutGrid, Box, Settings, Users, LogOut } from 'lucide-react';
+import { LayoutGrid, Box, Settings, Users, LogOut, Package } from 'lucide-react'; // Added Package
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import { useRouter } from 'next/navigation'; // Import useRouter
 import { Button } from '@/components/ui/button'; // Import Button for styling
 import { useToast } from '@/hooks/use-toast'; // Import useToast
+import { useNotificationListener } from '@/hooks/useNotificationListener.tsx'; // Import notification hook
 
 interface AdminLayoutProps {
     children: ReactNode;
@@ -18,6 +19,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     const { user, logout, isLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
+    useNotificationListener(['admin', 'manager']); // Listen for new orders if admin or manager
 
     const handleLogout = () => {
         logout();
@@ -73,6 +75,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                     <SidebarMenuButton tooltip="Produits" className="text-sm" isActive={router.pathname?.startsWith('/admin/products')}>
                                         <Box />
                                         <span>Produits</span>
+                                    </SidebarMenuButton>
+                                </Link>
+                            </SidebarMenuItem>
+                             {/* Orders Link */}
+                             <SidebarMenuItem>
+                                <Link href="/admin/orders" passHref legacyBehavior>
+                                    <SidebarMenuButton tooltip="Commandes" className="text-sm" isActive={router.pathname?.startsWith('/admin/orders')}>
+                                        <Package />
+                                        <span>Commandes</span>
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>

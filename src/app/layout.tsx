@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer"; // Import Footer
 import { cn } from "@/lib/utils";
 import { CartProvider } from "@/context/CartContext"; // Import CartProvider
 import { AuthProvider } from "@/context/AuthContext"; // Import AuthProvider
@@ -32,6 +33,7 @@ export default function RootLayout({
             <main className="flex-grow px-4 py-8">
               {children}
             </main>
+            <Footer /> {/* Add Footer */}
             <Toaster />
           </CartProvider> {/* Close CartProvider */}
         </AuthProvider> {/* Close AuthProvider */}

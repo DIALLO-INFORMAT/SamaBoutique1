@@ -21,8 +21,11 @@ import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Truck, CreditCard, User, Home, Phone, Mail } from 'lucide-react';
-import { useEffect } from 'react';
+import { Truck, CreditCard, User, Home, Phone, Mail, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext'; // Import useAuth
+import type { CartItem } from '@/context/CartContext'; // Import CartItem type
+import type { Order } from '@/lib/types'; // Import Order type
 
 // Define Zod schema for form validation
 const formSchema = z.object({
@@ -45,26 +48,53 @@ const formSchema = z.object({
   }).optional(),
 });
 
+const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
+
+// Function to save order to localStorage
+const saveOrder = (order: Order) => {
+    if (typeof window === 'undefined') return;
+    const storedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
+    const orders: Order[] = storedOrders ? JSON.parse(storedOrders) : [];
+    orders.push(order);
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+};
+
+
 export default function CheckoutPage() {
   const { cart, getTotalPrice, clearCart } = useCart();
+  const { user } = useAuth(); // Get logged-in user
   const { toast } = useToast();
   const router = useRouter();
   const totalPrice = getTotalPrice();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      name: user?.name || "", // Pre-fill name if user is logged in
       address: "",
       phone: "",
-      email: "",
+      email: user?.email || "", // Pre-fill email if user is logged in
       notes: "",
     },
   });
 
+   // Load user data into form when user context updates
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        name: user.name,
+        email: user.email,
+        address: form.getValues('address'), // Keep existing address if typed
+        phone: form.getValues('phone'),     // Keep existing phone if typed
+        notes: form.getValues('notes'),       // Keep existing notes if typed
+      });
+    }
+  }, [user, form]);
+
   // Effect to check cart emptiness on client-side after mount
     useEffect(() => {
-      if (cart.length === 0) {
+      if (cart.length === 0 && !isSubmitting) { // Avoid redirect during submission
           toast({
               title: "Panier Vide",
               description: "Ajoutez des articles à votre panier avant de passer à la caisse.",
@@ -72,33 +102,62 @@ export default function CheckoutPage() {
           });
           router.push('/panier');
       }
-  }, [cart, router, toast]);
+  }, [cart, router, toast, isSubmitting]);
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    // Simulate order placement
-    console.log("Order Submitted:", {
-      customerInfo: values,
-      orderItems: cart,
-      total: totalPrice,
-      paymentMethod: "Paiement à la livraison",
-    });
+    setIsSubmitting(true);
+
+    const orderId = `SB-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const newOrder: Order = {
+        id: orderId,
+        orderNumber: orderId, // Use the same ID for order number initially
+        userId: user?.id ?? 'guest', // Link to user or mark as guest
+        customerInfo: {
+            name: values.name,
+            email: values.email || '',
+            phone: values.phone,
+            address: values.address,
+        },
+        items: cart,
+        total: totalPrice,
+        status: 'En attente de paiement', // Initial status
+        paymentMethod: "Paiement à la livraison",
+        notes: values.notes || '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    };
+
+    console.log("Order Submitted:", newOrder);
 
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Pass order details to confirmation page via query params (or use state management)
-    const orderDetails = {
-        customerName: values.name,
-        total: totalPrice,
-        items: cart.map(item => ({ name: item.name, quantity: item.quantity })) // Example data to pass
-    };
-    // Encode order details to pass in URL (simple example, consider security/size limits)
-    // const query = new URLSearchParams({ order: JSON.stringify(orderDetails) }).toString();
+    try {
+        saveOrder(newOrder); // Save order to local storage
 
-    clearCart(); // Clear the cart
-    // Redirect to confirmation page instead of homepage
-    router.push(`/order-confirmation`); // Removed query string for simplicity now
+         // --- Trigger Notifications (Simulated) ---
+         // In a real app, this would happen server-side after saving the order
+         if (typeof window !== 'undefined') {
+            const event = new CustomEvent('new-order', { detail: newOrder });
+            window.dispatchEvent(event);
+         }
+         // ---------------------------------------
+
+
+        clearCart(); // Clear the cart
+        // Redirect to confirmation page, passing the order number
+        router.push(`/order-confirmation?orderNumber=${newOrder.orderNumber}`);
+    } catch (error) {
+        console.error("Failed to save or process order:", error);
+        toast({
+            title: "Erreur de commande",
+            description: "Impossible de finaliser la commande. Veuillez réessayer.",
+            variant: "destructive",
+        });
+        setIsSubmitting(false); // Re-enable button on error
+    }
+    // No need to set isSubmitting to false on success if redirecting
   }
 
 
@@ -262,9 +321,9 @@ export default function CheckoutPage() {
                  form="checkout-form" // Link button to the form
                  className="w-full"
                  variant="destructive"
-                 disabled={form.formState.isSubmitting || cart.length === 0}
+                 disabled={isSubmitting || cart.length === 0}
              >
-                 {form.formState.isSubmitting ? 'Traitement...' : 'Confirmer la Commande'}
+                 {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Traitement...</> : 'Confirmer la Commande'}
              </Button>
           </CardFooter>
         </Card>

@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import { useRouter } from 'next/navigation'; // Import useRouter
 import { Button } from '@/components/ui/button'; // Import Button
 import { useToast } from '@/hooks/use-toast'; // Import useToast
+import { useNotificationListener } from '@/hooks/useNotificationListener.tsx'; // Import notification hook
 
 interface UserDashboardLayoutProps {
     children: ReactNode;
@@ -18,6 +19,9 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
     const { user, logout, isLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
+
+    // Only listen if the user is a manager
+    useNotificationListener(user?.role === 'manager' ? ['manager'] : []);
 
     const handleLogout = () => {
         logout();
@@ -79,21 +83,28 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                                             </SidebarMenuButton>
                                         </Link>
                                     </SidebarMenuItem>
-                                    {/* Potentially add Orders Management for Manager if different from Admin */}
-                                    {/* <SidebarMenuItem>
-                                        <Link href="/dashboard/manage-orders" passHref legacyBehavior> ... </Link>
-                                    </SidebarMenuItem> */}
+                                    {/* Orders Management for Manager */}
+                                     <SidebarMenuItem>
+                                        <Link href="/dashboard/manage-orders" passHref legacyBehavior>
+                                            <SidebarMenuButton tooltip="Gérer Commandes" className="text-sm" isActive={router.pathname?.startsWith('/dashboard/manage-orders')}>
+                                                <Package />
+                                                <span>Gérer Commandes</span>
+                                            </SidebarMenuButton>
+                                        </Link>
+                                    </SidebarMenuItem>
                                 </>
                              )}
-                            {/* Links for both Customer and Manager */}
-                            <SidebarMenuItem>
-                                <Link href="/dashboard/orders" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Mes Commandes" className="text-sm" isActive={router.pathname === '/dashboard/orders'}>
-                                        <Package />
-                                        <span>Mes Commandes</span>
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
+                            {/* Links for Customers (Hide My Orders if manager, they have Manage Orders) */}
+                             {user.role === 'customer' && (
+                                <SidebarMenuItem>
+                                    <Link href="/dashboard/orders" passHref legacyBehavior>
+                                        <SidebarMenuButton tooltip="Mes Commandes" className="text-sm" isActive={router.pathname === '/dashboard/orders'}>
+                                            <Package />
+                                            <span>Mes Commandes</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                </SidebarMenuItem>
+                             )}
                             <SidebarMenuItem>
                                 <Link href="/dashboard/profile" passHref legacyBehavior>
                                     <SidebarMenuButton tooltip="Mon Profil" className="text-sm" isActive={router.pathname === '/dashboard/profile'}>
