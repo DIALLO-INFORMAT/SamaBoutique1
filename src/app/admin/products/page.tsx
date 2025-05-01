@@ -22,6 +22,7 @@ import {
 import { buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
 // Reusing Product type - assuming it's globally available or define here
 // Define if not imported globally
@@ -35,13 +36,21 @@ export interface AdminProduct {
   // Add other fields like stock, image URL, etc. if needed
 }
 
+const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products'; // Use a consistent key for admin
+
 // Mock product data (replace with actual data fetching - e.g., from a context or API)
 const fetchProductsFromAPI = async (): Promise<AdminProduct[]> => {
    // Simulate API call
    await new Promise(resolve => setTimeout(resolve, 1000));
    // In real app, fetch from '/api/products' or similar
-   // Assume prices are already in XOF format (e.g., 10000 for 10,000 FCFA)
-   return [
+   if (typeof window !== 'undefined') {
+       const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
+       if (storedProducts) {
+           return JSON.parse(storedProducts);
+       }
+   }
+   // Fallback mock data if localStorage is empty or SSR
+   const mockProducts: AdminProduct[] = [
       { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" },
       { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices" },
       { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" },
@@ -49,14 +58,26 @@ const fetchProductsFromAPI = async (): Promise<AdminProduct[]> => {
       { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A" },
       { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C" },
    ];
+   // Save mock data to localStorage if it was empty
+   if (typeof window !== 'undefined' && !localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY)) {
+       localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(mockProducts));
+   }
+   return mockProducts;
 }
+
 
 // Simulate API call to delete a product
 const deleteProductFromAPI = async (productId: string): Promise<void> => {
-    console.log("Attempting to delete product via API:", productId);
+    console.log("Admin attempting to delete product via API:", productId);
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
     // In a real app: await fetch(`/api/products/${productId}`, { method: 'DELETE' });
+    if (typeof window !== 'undefined') {
+        const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
+        let products: AdminProduct[] = storedProducts ? JSON.parse(storedProducts) : [];
+        products = products.filter(p => p.id !== productId);
+        localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+    }
     // Handle potential errors from API response here
 }
 
@@ -66,6 +87,7 @@ export default function AdminProductsPage() {
   const [isLoading, setIsLoading] = useState(true); // Loading state
   const [isDeleting, setIsDeleting] = useState<string | null>(null); // Track deleting product ID
   const { toast } = useToast();
+  const { t, currentLocale } = useTranslation(); // Use translation hook
 
   // Fetch products on component mount
   useEffect(() => {
@@ -77,8 +99,8 @@ export default function AdminProductsPage() {
         } catch (error) {
             console.error("Failed to fetch products:", error);
             toast({
-                title: "Erreur de chargement",
-                description: "Impossible de charger les produits.",
+                title: t('admin_products_toast_load_error_title'),
+                description: t('admin_products_toast_load_error_description'),
                 variant: "destructive",
             });
         } finally {
@@ -86,7 +108,7 @@ export default function AdminProductsPage() {
         }
     };
     loadProducts();
-  }, [toast]); // Added toast as dependency
+  }, [toast, t]); // Added t dependency
 
 
   const handleDeleteProduct = async (productId: string, productName: string) => {
@@ -95,16 +117,15 @@ export default function AdminProductsPage() {
         await deleteProductFromAPI(productId);
         setProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
         toast({
-          title: "Produit Supprimé",
-          description: `Le produit "${productName}" a été supprimé.`,
-          // variant: "destructive", // Use default (green check) for success confirmation
+          title: t('admin_products_toast_delete_success_title'),
+          description: t('admin_products_toast_delete_success_description', { productName }),
            className: "bg-primary text-primary-foreground border-primary", // Or custom success style
         });
     } catch (error) {
          console.error("Failed to delete product:", error);
          toast({
-            title: "Erreur de suppression",
-            description: `Impossible de supprimer le produit "${productName}".`,
+            title: t('admin_products_toast_delete_error_title'),
+            description: t('admin_products_toast_delete_error_description', { productName }),
             variant: "destructive",
          });
     } finally {
@@ -116,19 +137,19 @@ export default function AdminProductsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-            <h1 className="text-3xl font-bold text-primary">Gestion des Produits</h1>
-            <p className="text-muted-foreground">Ajoutez, modifiez ou supprimez vos produits et services.</p>
+            <h1 className="text-3xl font-bold text-primary">{t('admin_products_page_title')}</h1>
+            <p className="text-muted-foreground">{t('admin_products_description')}</p>
         </div>
         <Link href="/admin/products/new" >
           <Button variant="destructive" size="sm"> {/* Smaller button */}
-            <PlusCircle className="mr-2 h-4 w-4" /> Ajouter
+            <PlusCircle className="mr-2 h-4 w-4" /> {t('admin_products_add_button')}
           </Button>
         </Link>
       </div>
 
       <Card className="shadow-md border-border">
         <CardHeader className="border-b border-border px-6 py-4">
-          <CardTitle>Liste des Produits</CardTitle>
+          <CardTitle>{t('admin_products_table_title')}</CardTitle>
           {/* Optional: Add search/filter inputs here */}
         </CardHeader>
         <CardContent className="p-0"> {/* Remove padding for full-width table */}
@@ -148,18 +169,18 @@ export default function AdminProductsPage() {
                  ))}
              </div>
           ) : products.length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">Aucun produit trouvé. Commencez par en ajouter un !</p>
+            <p className="text-center text-muted-foreground py-12">{t('admin_products_no_products')}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="hidden w-[80px] sm:table-cell px-6">Image</TableHead>
-                  <TableHead className="px-6">Nom</TableHead>
-                  <TableHead className="px-6">Catégorie</TableHead>
-                   <TableHead className="hidden md:table-cell px-6">Marque</TableHead> {/* Added Brand */}
+                  <TableHead className="hidden w-[80px] sm:table-cell px-6">{t('admin_products_table_image')}</TableHead>
+                  <TableHead className="px-6">{t('admin_products_table_name')}</TableHead>
+                  <TableHead className="px-6">{t('admin_products_table_category')}</TableHead>
+                   <TableHead className="hidden md:table-cell px-6">{t('admin_products_table_brand')}</TableHead> {/* Added Brand */}
                   {/* <TableHead className="hidden lg:table-cell px-6">Description</TableHead> */}
-                  <TableHead className="text-right px-6">Prix</TableHead>
-                  <TableHead className="text-right px-6 w-[100px]">Actions</TableHead>
+                  <TableHead className="text-right px-6">{t('admin_products_table_price')}</TableHead>
+                  <TableHead className="text-right px-6 w-[100px]">{t('admin_products_table_actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -179,7 +200,7 @@ export default function AdminProductsPage() {
                     <TableCell className="px-6 py-3">{product.category}</TableCell>
                      <TableCell className="hidden md:table-cell px-6 py-3">{product.brand}</TableCell> {/* Added Brand */}
                     {/* <TableCell className="hidden lg:table-cell max-w-xs truncate px-6 py-3">{product.description}</TableCell> */}
-                    <TableCell className="text-right px-6 py-3">{product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
+                    <TableCell className="text-right px-6 py-3">{product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
                     <TableCell className="text-right px-6 py-3">
                       <AlertDialog>
                            <DropdownMenu>
@@ -190,16 +211,16 @@ export default function AdminProductsPage() {
                                    </Button>
                                </DropdownMenuTrigger>
                                <DropdownMenuContent align="end">
-                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                   <DropdownMenuLabel>{t('admin_products_table_actions')}</DropdownMenuLabel>
                                    <DropdownMenuItem asChild>
                                         <Link href={`/admin/products/edit/${product.id}`} className="flex items-center cursor-pointer w-full">
-                                            <Edit className="mr-2 h-4 w-4"/>Modifier
+                                            <Edit className="mr-2 h-4 w-4"/>{t('admin_products_action_edit')}
                                         </Link>
                                    </DropdownMenuItem>
                                    <DropdownMenuSeparator />
                                    <AlertDialogTrigger asChild>
                                       <Button variant="ghost" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                                         <Trash2 className="mr-2 h-4 w-4"/>Supprimer
+                                         <Trash2 className="mr-2 h-4 w-4"/>{t('admin_products_action_delete')}
                                       </Button>
                                    </AlertDialogTrigger>
                                </DropdownMenuContent>
@@ -208,20 +229,20 @@ export default function AdminProductsPage() {
                            {/* Delete Confirmation Dialog */}
                            <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>
+                                  <AlertDialogTitle>{t('admin_products_delete_confirm_title')}</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Cette action est irréversible et supprimera définitivement le produit "{product.name}".
+                                    {t('admin_products_delete_confirm_description', { productName: product.name })}
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                  <AlertDialogCancel>{t('general_cancel')}</AlertDialogCancel>
                                   <AlertDialogAction
                                      onClick={() => handleDeleteProduct(product.id, product.name)}
                                      className={buttonVariants({ variant: "destructive" })}
                                      disabled={isDeleting === product.id}
                                   >
                                       {isDeleting === product.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                      Supprimer
+                                      {t('general_delete')}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -239,3 +260,4 @@ export default function AdminProductsPage() {
     </div>
   );
 }
+

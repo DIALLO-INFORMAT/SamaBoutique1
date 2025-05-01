@@ -127,7 +127,7 @@
   "order_confirmation_back_home": "Retourner à l'accueil",
   "track_order_page_title": "Suivi de Commande",
   "track_order_description": "Entrez votre numéro de commande pour voir son statut actuel.",
-  "track_order_input_placeholder": "Entrez votre numéro de commande (ex: SB-012345)",
+  "track_order_input_placeholder": "Entrez votre numéro de commande",
   "track_order_input_placeholder_format": "Entrez votre numéro de commande (ex: SB-ABC123)",
   "track_order_button": "Suivre",
   "track_order_searching": "Recherche...",
@@ -443,6 +443,7 @@
   "admin_add_product_submitting_button": "Ajout en cours...",
   "admin_add_product_toast_success_title": "Produit Ajouté!",
   "admin_add_product_toast_success_description": "Le produit \"{productName}\" a été ajouté avec succès.",
+  "admin_add_product_toast_error_description": "Impossible d'ajouter le produit.",
   "admin_edit_product_page_title": "Modifier le Produit",
   "admin_edit_product_description": "Mise à jour de \"{productName}\".",
   "admin_edit_product_back_button": "Retour aux produits",
@@ -479,7 +480,7 @@
   "admin_orders_change_status_label": "Changer Statut",
   "admin_orders_new_status_label": "Nouveau Statut",
   "admin_orders_toast_status_success_title": "Statut Modifié",
-  "admin_orders_toast_status_success_description": "La commande {orderId}... est maintenant \"{status}\".",
+  "admin_orders_toast_status_success_description": "La commande {orderId} est maintenant \"{status}\".",
   "admin_orders_toast_status_error_title": "Erreur",
   "admin_orders_toast_status_error_description": "Impossible de modifier le statut.",
   "admin_invoices_page_title": "Gestion des Factures",
@@ -598,5 +599,10 @@
   "invoice_action_placeholder_payment_method": "Méthode de paiement",
   "invoice_action_placeholder_order_status": "Statut commande",
   "invoice_action_placeholder_download_specific": "Pour le téléchargement, on forcerait le téléchargement du PDF généré.",
-  "invoice_action_placeholder_share_specific": "Pour le partage, on utiliserait les APIs de partage web (WhatsApp, Email)."
+  "invoice_action_placeholder_share_specific": "Pour le partage, on utiliserait les APIs de partage web (WhatsApp, Email).",
+  "validation_min_chars": "doit contenir au moins {count} caractères.",
+  "validation_max_chars": "ne peut pas dépasser {count} caractères.",
+  "validation_positive_number": "doit être un nombre positif.",
+  "validation_required_field": "{field} est requis(e).",
+  "validation_invalid_format": "{field} est invalide."
 }

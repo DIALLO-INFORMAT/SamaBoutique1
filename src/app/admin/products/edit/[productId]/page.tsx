@@ -24,22 +24,24 @@ import { ArrowLeft, Loader2, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image'; // Import Image for display
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
 // Define Zod schema for form validation (same as add product + optional image update)
-const productFormSchema = z.object({
+const createProductSchema = (t: Function) => z.object({
   name: z.string().min(3, {
-    message: "Le nom doit contenir au moins 3 caractères.",
+    message: t('admin_add_product_form_name') + " " + t('validation_min_chars', { count: 3 }),
   }),
   description: z.string().min(10, {
-    message: "La description doit contenir au moins 10 caractères.",
-  }).max(500, { message: "La description ne peut pas dépasser 500 caractères."}),
+    message: t('admin_add_product_form_description') + " " + t('validation_min_chars', { count: 10 }),
+  }).max(500, { message: t('admin_add_product_form_description') + " " + t('validation_max_chars', { count: 500 }) }),
   price: z.coerce.number().positive({
-    message: "Le prix doit être un nombre positif.",
+    message: t('admin_add_product_form_price') + " " + t('validation_positive_number'),
   }),
-  category: z.string().min(1, { message: "Veuillez sélectionner une catégorie." }),
-  brand: z.string().min(2, { message: "La marque doit contenir au moins 2 caractères." }), // Added brand
+  category: z.string().min(1, { message: t('validation_required_field', { field: t('admin_add_product_form_category') }) }),
+  brand: z.string().min(2, { message: t('admin_add_product_form_brand') + " " + t('validation_min_chars', { count: 2 }) }),
   // newImage: z.instanceof(File).optional(), // Optional field for new image
 });
+
 
 // Mock product data type (ensure it matches API/DB)
 interface AdminProduct {
@@ -52,29 +54,45 @@ interface AdminProduct {
   // imageUrl: string; // Add imageUrl if available
 }
 
+const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products'; // Use a consistent key for admin
+
 // Mock data fetching function (replace with actual API call)
 const fetchProductById = async (productId: string): Promise<AdminProduct | null> => {
     console.log(`Fetching product ${productId}...`);
     await new Promise(resolve => setTimeout(resolve, 700)); // Simulate network delay
-    // Assuming price is stored in the smallest currency unit (e.g., cents for EUR/USD)
-    // Or already as the correct value for XOF
+
+    // Try loading from localStorage first
+    if (typeof window !== 'undefined') {
+        const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
+        const products: AdminProduct[] = storedProducts ? JSON.parse(storedProducts) : [];
+        const foundProduct = products.find(p => p.id === productId);
+        if (foundProduct) return foundProduct;
+    }
+
+    // Fallback to initial mock data if not in localStorage (for initial setup/demo)
     const mockProducts: AdminProduct[] = [
-        { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" /*, imageUrl: `https://picsum.photos/seed/1/400/300` */ },
-        { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices" /*, imageUrl: `https://picsum.photos/seed/2/400/300` */ },
-        { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" /*, imageUrl: `https://picsum.photos/seed/3/400/300` */ },
-        // Add other mock products if needed
+        { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" },
+        { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices" },
+        { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" },
+        { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", brand: "SamaServices" },
+        { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A" },
+        { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C" },
     ];
     return mockProducts.find(p => p.id === productId) || null;
 };
 
+
 // Simulate API call to update product
-const updateProductAPI = async (productId: string, values: z.infer<typeof productFormSchema>): Promise<void> => {
-    console.log("Updating Product via API:", productId, values);
-    // In a real app, handle FormData if `newImage` exists
-    // const formData = new FormData();
-    // ... append fields ...
-    // await fetch(`/api/products/${productId}`, { method: 'PUT', body: formData });
+const updateProductAPI = async (productId: string, values: z.infer<ReturnType<typeof createProductSchema>>): Promise<void> => {
+    console.log("Admin Updating Product via API:", productId, values);
     await new Promise(resolve => setTimeout(resolve, 1200)); // Simulate network request
+
+    if (typeof window !== 'undefined') {
+        const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
+        let products: AdminProduct[] = storedProducts ? JSON.parse(storedProducts) : [];
+        products = products.map(p => p.id === productId ? { ...p, ...values, price: Number(values.price) } : p); // Ensure price is number
+        localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+    }
 };
 
 
@@ -83,6 +101,8 @@ const categories = ["Vêtements", "Services", "Accessoires", "Autre"];
 const brands = ["Marque A", "Marque B", "Marque C", "SamaServices", "Autre"];
 
 export default function EditProductPage() {
+  const { t } = useTranslation(); // Use translation hook
+  const productSchema = createProductSchema(t); // Create schema
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
@@ -92,8 +112,8 @@ export default function EditProductPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [product, setProduct] = useState<AdminProduct | null>(null);
 
-  const form = useForm<z.infer<typeof productFormSchema>>({
-    resolver: zodResolver(productFormSchema),
+  const form = useForm<z.infer<ReturnType<typeof createProductSchema>>>({
+    resolver: zodResolver(productSchema),
     defaultValues: { // Initialize with empty or default values
       name: "",
       description: "",
@@ -123,25 +143,25 @@ export default function EditProductPage() {
           });
         } else {
           toast({
-            title: "Erreur",
-            description: "Produit non trouvé.",
+            title: t('general_error'),
+            description: t('admin_edit_product_not_found_description'),
             variant: "destructive",
           });
           router.replace('/admin/products'); // Use replace to avoid back button issues
         }
       } catch (error) {
          console.error("Failed to fetch product:", error);
-         toast({ title: "Erreur", description: "Impossible de charger le produit.", variant: "destructive" });
+         toast({ title: t('general_error'), description: t('admin_products_toast_load_error_description'), variant: "destructive" });
          router.replace('/admin/products');
       } finally {
         setIsLoading(false);
       }
     };
     loadProduct();
-  }, [productId, form, router, toast]);
+  }, [productId, form, router, toast, t]); // Added t dependency
 
 
-  async function onSubmit(values: z.infer<typeof productFormSchema>) {
+  async function onSubmit(values: z.infer<ReturnType<typeof createProductSchema>>) {
     if (!product) return;
     setIsSubmitting(true);
 
@@ -150,14 +170,14 @@ export default function EditProductPage() {
         const priceToSave = values.price; // Assuming the input 'price' is already in the correct format/unit for saving
         await updateProductAPI(productId, { ...values, price: priceToSave });
         toast({
-          title: "Produit Modifié!",
-          description: `Le produit "${values.name}" a été mis à jour.`,
+          title: t('admin_edit_product_toast_success_title'),
+          description: t('admin_edit_product_toast_success_description', { productName: values.name }),
            className: "bg-primary text-primary-foreground border-primary",
         });
         router.push('/admin/products'); // Redirect back to the products list
     } catch (error) {
         console.error("Failed to update product:", error);
-        toast({ title: "Erreur", description: "La modification a échoué.", variant: "destructive" });
+        toast({ title: t('general_error'), description: t('admin_edit_product_toast_error_description'), variant: "destructive" });
         setIsSubmitting(false); // Keep form enabled on error
     }
     // No need to set isSubmitting to false on success if redirecting
@@ -195,7 +215,7 @@ export default function EditProductPage() {
 
    if (!product) {
        // This case should ideally be handled by the redirect in useEffect, but added for safety
-       return <div className="text-center py-10"><p className="text-destructive">Produit non trouvé.</p></div>;
+       return <div className="text-center py-10"><p className="text-destructive">{t('admin_edit_product_not_found_description')}</p></div>;
    }
 
 
@@ -203,13 +223,13 @@ export default function EditProductPage() {
     <div className="space-y-8">
        <div className="flex items-center gap-4 mb-6">
            <Link href="/admin/products" >
-               <Button variant="outline" size="icon" aria-label="Retour aux produits">
+               <Button variant="outline" size="icon" aria-label={t('admin_add_product_back_button')}>
                    <ArrowLeft className="h-4 w-4" />
                </Button>
            </Link>
             <div>
-                <h1 className="text-3xl font-bold text-primary">Modifier le Produit</h1>
-                <p className="text-muted-foreground">Mise à jour de "{product.name}".</p>
+                <h1 className="text-3xl font-bold text-primary">{t('admin_edit_product_page_title')}</h1>
+                <p className="text-muted-foreground">{t('admin_edit_product_description', { productName: product.name })}</p>
             </div>
        </div>
 
@@ -218,7 +238,7 @@ export default function EditProductPage() {
             {/* General Info Card */}
             <Card className="shadow-md border-border overflow-hidden">
                  <CardHeader className="bg-muted/30 border-b border-border px-6 py-4">
-                     <CardTitle>Informations Générales</CardTitle>
+                     <CardTitle>{t('admin_add_product_general_info_title')}</CardTitle>
                  </CardHeader>
                  <CardContent className="p-6 space-y-6">
                      <FormField
@@ -226,7 +246,7 @@ export default function EditProductPage() {
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nom du Produit/Service</FormLabel>
+                            <FormLabel>{t('admin_add_product_form_name')}</FormLabel>
                             <FormControl>
                               <Input placeholder="Ex: T-Shirt SamaBoutique" {...field} />
                             </FormControl>
@@ -239,7 +259,7 @@ export default function EditProductPage() {
                         name="description"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Description</FormLabel>
+                            <FormLabel>{t('admin_add_product_form_description')}</FormLabel>
                             <FormControl>
                               <Textarea
                                 placeholder="Décrivez en détail votre produit ou service..."
@@ -248,9 +268,9 @@ export default function EditProductPage() {
                                 {...field}
                               />
                             </FormControl>
-                            <FormDescription className="text-right text-xs">
-                                {field.value?.length ?? 0}/500 caractères
-                            </FormDescription>
+                             <FormDescription className="text-right text-xs">
+                                 {t('contact_form_char_count', { count: field.value?.length ?? 0 })}
+                             </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -261,7 +281,7 @@ export default function EditProductPage() {
             {/* Pricing and Categorization Card */}
              <Card className="shadow-md border-border overflow-hidden">
                  <CardHeader className="bg-muted/30 border-b border-border px-6 py-4">
-                     <CardTitle>Prix et Catégorisation</CardTitle>
+                     <CardTitle>{t('admin_add_product_pricing_category_title')}</CardTitle>
                  </CardHeader>
                  <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
                      <FormField
@@ -269,7 +289,7 @@ export default function EditProductPage() {
                          name="price"
                          render={({ field }) => (
                          <FormItem>
-                             <FormLabel>Prix (FCFA)</FormLabel>
+                             <FormLabel>{t('admin_add_product_form_price')}</FormLabel>
                              <FormControl>
                              {/* Using type="number" but without step="0.01" for whole numbers often used in XOF */}
                              <Input type="number" step="1" placeholder="0" {...field} />
@@ -283,11 +303,11 @@ export default function EditProductPage() {
                          name="category"
                          render={({ field }) => (
                          <FormItem>
-                             <FormLabel>Catégorie</FormLabel>
+                             <FormLabel>{t('admin_add_product_form_category')}</FormLabel>
                              <Select onValueChange={field.onChange} value={field.value}>
                              <FormControl>
                                  <SelectTrigger>
-                                 <SelectValue placeholder="Sélectionnez..." />
+                                 <SelectValue placeholder={t('general_select_placeholder')} />
                                  </SelectTrigger>
                              </FormControl>
                              <SelectContent>
@@ -305,11 +325,11 @@ export default function EditProductPage() {
                          name="brand"
                          render={({ field }) => (
                          <FormItem>
-                             <FormLabel>Marque</FormLabel>
+                             <FormLabel>{t('admin_add_product_form_brand')}</FormLabel>
                              <Select onValueChange={field.onChange} value={field.value}>
                              <FormControl>
                                  <SelectTrigger>
-                                 <SelectValue placeholder="Sélectionnez..." />
+                                 <SelectValue placeholder={t('general_select_placeholder')} />
                                  </SelectTrigger>
                              </FormControl>
                              <SelectContent>
@@ -328,11 +348,11 @@ export default function EditProductPage() {
             {/* Image Management Card */}
             <Card className="shadow-md border-border overflow-hidden">
                  <CardHeader className="bg-muted/30 border-b border-border px-6 py-4">
-                     <CardTitle>Image du Produit</CardTitle>
+                     <CardTitle>{t('admin_add_product_image_title')}</CardTitle>
                  </CardHeader>
                  <CardContent className="p-6 space-y-4">
                       <div>
-                          <p className="text-sm font-medium mb-2">Image Actuelle</p>
+                          <p className="text-sm font-medium mb-2">{t('admin_edit_product_current_image_label')}</p>
                           <Image
                              src={`https://picsum.photos/seed/${product.id}/200/150`} // Placeholder
                              alt={product.name}
@@ -345,13 +365,13 @@ export default function EditProductPage() {
                      <FormItem>
                          <FormLabel htmlFor="product-image" className="flex items-center gap-2 cursor-pointer border-2 border-dashed border-muted-foreground/50 rounded-lg p-4 justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors">
                              <ImageIcon className="h-6 w-6"/>
-                             <span>Changer l'image (Optionnel)</span>
+                             <span>{t('admin_edit_product_change_image_label')}</span>
                          </FormLabel>
                          <FormControl>
                              <Input id="product-image" type="file" accept="image/*" className="sr-only" /* onChange={(e) => field.onChange(e.target.files?.[0])} */ />
                          </FormControl>
                          <FormDescription>
-                             Téléchargez une nouvelle image pour remplacer l'actuelle (max 2MB).
+                             {t('admin_edit_product_image_description')}
                          </FormDescription>
                          <FormMessage />
                      </FormItem>
@@ -371,10 +391,10 @@ export default function EditProductPage() {
                      {isSubmitting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Sauvegarde...
+                           {t('admin_edit_product_submitting_button')}
                         </>
                      ) : (
-                        'Sauvegarder les Modifications'
+                         t('admin_edit_product_submit_button')
                      )}
                   </Button>
               </div>
@@ -383,3 +403,4 @@ export default function EditProductPage() {
     </div>
   );
 }
+

@@ -22,20 +22,21 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Image as ImageIcon } from "lucide-react"; // Added Loader2, ImageIcon
 import Link from "next/link";
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
 // Define Zod schema for form validation
-const productFormSchema = z.object({
+const createProductSchema = (t: Function) => z.object({
   name: z.string().min(3, {
-    message: "Le nom doit contenir au moins 3 caractères.",
+    message: t('admin_add_product_form_name') + " " + t('validation_min_chars', { count: 3 }),
   }),
   description: z.string().min(10, {
-    message: "La description doit contenir au moins 10 caractères.",
-  }).max(500, { message: "La description ne peut pas dépasser 500 caractères."}),
+    message: t('admin_add_product_form_description') + " " + t('validation_min_chars', { count: 10 }),
+  }).max(500, { message: t('admin_add_product_form_description') + " " + t('validation_max_chars', { count: 500 }) }),
   price: z.coerce.number().positive({ // coerce converts string input to number
-    message: "Le prix doit être un nombre positif.",
+    message: t('admin_add_product_form_price') + " " + t('validation_positive_number'),
   }),
-  category: z.string().min(1, { message: "Veuillez sélectionner une catégorie." }),
-  brand: z.string().min(2, { message: "La marque doit contenir au moins 2 caractères." }), // Added brand
+  category: z.string().min(1, { message: t('validation_required_field', { field: t('admin_add_product_form_category') }) }),
+  brand: z.string().min(2, { message: t('admin_add_product_form_brand') + " " + t('validation_min_chars', { count: 2 }) }), // Added brand
   // image: z.instanceof(File).optional(), // Placeholder for image upload
 });
 
@@ -43,13 +44,32 @@ const productFormSchema = z.object({
 const categories = ["Vêtements", "Services", "Accessoires", "Autre"];
 const brands = ["Marque A", "Marque B", "Marque C", "SamaServices", "Autre"]; // Example brands
 
+const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products'; // Use a consistent key for admin
+
+// Mock API function to add product
+const addProductAPI = async (values: z.infer<ReturnType<typeof createProductSchema>>): Promise<void> => {
+     console.log("Admin Adding Product via API:", values);
+     await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network request
+
+     if (typeof window !== 'undefined') {
+         const newProduct = { ...values, id: `prod-${Date.now()}` };
+         const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
+         const products = storedProducts ? JSON.parse(storedProducts) : [];
+         products.push(newProduct);
+         localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+     }
+};
+
+
 export default function AddProductPage() {
+  const { t } = useTranslation(); // Use translation hook
+  const productSchema = createProductSchema(t); // Create schema
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false); // Loading state
 
-  const form = useForm<z.infer<typeof productFormSchema>>({
-    resolver: zodResolver(productFormSchema),
+  const form = useForm<z.infer<ReturnType<typeof createProductSchema>>>({
+    resolver: zodResolver(productSchema),
     defaultValues: {
       name: "",
       description: "",
@@ -60,7 +80,7 @@ export default function AddProductPage() {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof productFormSchema>) {
+  async function onSubmit(values: z.infer<ReturnType<typeof createProductSchema>>) {
     setIsSubmitting(true); // Start loading
     // Simulate adding product to database
     console.log("Adding Product:", values);
@@ -68,24 +88,19 @@ export default function AddProductPage() {
     const priceToSave = values.price; // Assuming input is already in the correct unit (e.g., whole FCFA)
     const productData = { ...values, price: priceToSave };
 
-    // In a real app, send this data to your backend/API (e.g., using FormData if including files)
-    // const formData = new FormData();
-    // Object.entries(productData).forEach(([key, value]) => {
-    //   if (value instanceof File) {
-    //     formData.append(key, value);
-    //   } else if (value !== undefined && value !== null) {
-    //     formData.append(key, String(value));
-    //   }
-    // });
-    // await fetch('/api/products', { method: 'POST', body: formData });
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network request
-
-    toast({
-      title: "Produit Ajouté!",
-      description: `Le produit "${values.name}" a été ajouté avec succès.`,
-      className: "bg-primary text-primary-foreground border-primary",
-    });
-    router.push('/admin/products'); // Redirect back to the products list
+    try {
+        await addProductAPI(productData); // Use the API function
+        toast({
+            title: t('admin_add_product_toast_success_title'),
+            description: t('admin_add_product_toast_success_description', { productName: values.name }),
+            className: "bg-primary text-primary-foreground border-primary",
+        });
+        router.push('/admin/products'); // Redirect back to the products list
+    } catch (error) {
+        console.error("Failed to add product:", error);
+        toast({ title: t('general_error'), description: t('admin_add_product_toast_error_description'), variant: "destructive" });
+        setIsSubmitting(false); // Keep form enabled on error
+    }
     // No need to explicitly set isSubmitting to false if redirecting
   }
 
@@ -93,13 +108,13 @@ export default function AddProductPage() {
     <div className="space-y-8">
        <div className="flex items-center gap-4 mb-6">
            <Link href="/admin/products" >
-               <Button variant="outline" size="icon" aria-label="Retour aux produits">
+               <Button variant="outline" size="icon" aria-label={t('admin_add_product_back_button')}>
                    <ArrowLeft className="h-4 w-4" />
                </Button>
            </Link>
             <div>
-                <h1 className="text-3xl font-bold text-primary">Ajouter un Nouveau Produit</h1>
-                <p className="text-muted-foreground">Créez un nouvel article pour votre boutique.</p>
+                <h1 className="text-3xl font-bold text-primary">{t('admin_add_product_page_title')}</h1>
+                <p className="text-muted-foreground">{t('admin_add_product_description')}</p>
             </div>
        </div>
 
@@ -107,7 +122,7 @@ export default function AddProductPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <Card className="shadow-md border-border overflow-hidden"> {/* Added overflow */}
             <CardHeader className="bg-muted/30 border-b border-border px-6 py-4">
-              <CardTitle>Informations Générales</CardTitle>
+              <CardTitle>{t('admin_add_product_general_info_title')}</CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <FormField
@@ -115,7 +130,7 @@ export default function AddProductPage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nom du Produit/Service</FormLabel>
+                    <FormLabel>{t('admin_add_product_form_name')}</FormLabel>
                     <FormControl>
                       <Input placeholder="Ex: T-Shirt SamaBoutique" {...field} />
                     </FormControl>
@@ -129,7 +144,7 @@ export default function AddProductPage() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>{t('admin_add_product_form_description')}</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Décrivez en détail votre produit ou service..."
@@ -139,7 +154,7 @@ export default function AddProductPage() {
                       />
                     </FormControl>
                     <FormDescription className="text-right text-xs">
-                      {field.value?.length ?? 0}/500 caractères
+                       {t('contact_form_char_count', { count: field.value?.length ?? 0 })}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -151,7 +166,7 @@ export default function AddProductPage() {
           {/* Pricing and Categorization Card */}
           <Card className="shadow-md border-border overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border px-6 py-4">
-                <CardTitle>Prix et Catégorisation</CardTitle>
+                <CardTitle>{t('admin_add_product_pricing_category_title')}</CardTitle>
             </CardHeader>
             <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-start"> {/* Changed to 3 cols */}
                  <FormField
@@ -159,7 +174,7 @@ export default function AddProductPage() {
                     name="price"
                     render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Prix (FCFA)</FormLabel>
+                        <FormLabel>{t('admin_add_product_form_price')}</FormLabel>
                         <FormControl>
                          {/* Use step="1" for whole numbers common in XOF */}
                         <Input type="number" step="1" placeholder="0" {...field} />
@@ -174,11 +189,11 @@ export default function AddProductPage() {
                     name="category"
                     render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Catégorie</FormLabel>
+                        <FormLabel>{t('admin_add_product_form_category')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                             <SelectTrigger>
-                            <SelectValue placeholder="Sélectionnez..." />
+                            <SelectValue placeholder={t('general_select_placeholder')} />
                             </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -197,14 +212,14 @@ export default function AddProductPage() {
                     name="brand"
                     render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Marque</FormLabel>
+                        <FormLabel>{t('admin_add_product_form_brand')}</FormLabel>
                          {/* Can be Input or Select depending on how brands are managed */}
                         <FormControl>
                             {/* <Input placeholder="Nom de la marque" {...field} /> */}
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
                                     <SelectTrigger>
-                                    <SelectValue placeholder="Sélectionnez..." />
+                                    <SelectValue placeholder={t('general_select_placeholder')} />
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
@@ -225,20 +240,20 @@ export default function AddProductPage() {
             {/* Image Upload Card */}
             <Card className="shadow-md border-border overflow-hidden">
                  <CardHeader className="bg-muted/30 border-b border-border px-6 py-4">
-                     <CardTitle>Image du Produit</CardTitle>
+                     <CardTitle>{t('admin_add_product_image_title')}</CardTitle>
                  </CardHeader>
                  <CardContent className="p-6">
                      {/* Basic file input placeholder */}
                      <FormItem>
                          <FormLabel htmlFor="product-image" className="flex items-center gap-2 cursor-pointer border-2 border-dashed border-muted-foreground/50 rounded-lg p-6 justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors">
                              <ImageIcon className="h-8 w-8"/>
-                             <span>Cliquez ou glissez pour ajouter une image</span>
+                             <span>{t('admin_add_product_image_label')}</span>
                          </FormLabel>
                          <FormControl>
                              <Input id="product-image" type="file" accept="image/*" className="sr-only" /* onChange={(e) => field.onChange(e.target.files?.[0])} */ />
                          </FormControl>
                          <FormDescription>
-                             Téléchargez une image claire et attrayante (max 2MB, JPG/PNG).
+                             {t('admin_add_product_image_description')}
                          </FormDescription>
                          <FormMessage />
                      </FormItem>
@@ -270,10 +285,10 @@ export default function AddProductPage() {
                  {isSubmitting ? (
                      <>
                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                         Ajout en cours...
+                          {t('admin_add_product_submitting_button')}
                      </>
                  ) : (
-                     'Ajouter le Produit'
+                      t('admin_add_product_submit_button')
                  )}
               </Button>
           </div>
@@ -282,3 +297,4 @@ export default function AddProductPage() {
     </div>
   );
 }
+
