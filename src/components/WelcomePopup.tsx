@@ -90,6 +90,7 @@ export function WelcomePopup() {
                             <Sparkles className="h-12 w-12 text-primary-foreground animate-pulse" />
                         </div>
                     </div>
+                     {/* Ensure DialogTitle is present for accessibility */}
                     <DialogTitle className={`text-2xl font-bold text-primary mb-3 transition-all duration-500 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                         {t('welcome_popup_title', { name: user?.name || 'Utilisateur' })}
                     </DialogTitle>
