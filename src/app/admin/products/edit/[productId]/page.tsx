@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ChangeEvent } from 'react'; // Added ChangeEvent
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -39,7 +40,7 @@ const createProductSchema = (t: Function) => z.object({
   }),
   category: z.string().min(1, { message: t('validation_required_field', { field: t('admin_add_product_form_category') }) }),
   brand: z.string().min(2, { message: t('admin_add_product_form_brand') + " " + t('validation_min_chars', { count: 2 }) }),
-  // newImage: z.instanceof(File).optional(), // Optional field for new image
+  newImage: z.instanceof(File).optional().nullable(), // Optional field for new image, allow null
 });
 
 
@@ -51,7 +52,7 @@ interface AdminProduct {
   price: number;
   category: string;
   brand: string; // Added brand
-  // imageUrl: string; // Add imageUrl if available
+  imageUrl?: string; // Optional existing image URL
 }
 
 const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products'; // Use a consistent key for admin
@@ -66,32 +67,53 @@ const fetchProductById = async (productId: string): Promise<AdminProduct | null>
         const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
         const products: AdminProduct[] = storedProducts ? JSON.parse(storedProducts) : [];
         const foundProduct = products.find(p => p.id === productId);
-        if (foundProduct) return foundProduct;
+        if (foundProduct) {
+             // Simulate having an imageUrl if not present (using picsum)
+             if (!foundProduct.imageUrl) {
+                 foundProduct.imageUrl = `https://picsum.photos/seed/${productId}/400/300`;
+             }
+            return foundProduct;
+        }
     }
 
     // Fallback to initial mock data if not in localStorage (for initial setup/demo)
     const mockProducts: AdminProduct[] = [
-        { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" },
-        { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices" },
-        { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" },
-        { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", brand: "SamaServices" },
-        { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A" },
-        { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C" },
+        { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A", imageUrl: `https://picsum.photos/seed/1/400/300` },
+        { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/2/400/300` },
+        { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B", imageUrl: `https://picsum.photos/seed/3/400/300` },
+        { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/4/400/300` },
+        { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A", imageUrl: `https://picsum.photos/seed/5/400/300` },
+        { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C", imageUrl: `https://picsum.photos/seed/6/400/300` },
     ];
     return mockProducts.find(p => p.id === productId) || null;
 };
 
 
-// Simulate API call to update product
-const updateProductAPI = async (productId: string, values: z.infer<ReturnType<typeof createProductSchema>>): Promise<void> => {
-    console.log("Admin Updating Product via API:", productId, values);
+// Simulate API call to update product (now accepting imageFile, but won't store it)
+const updateProductAPI = async (productId: string, values: z.infer<ReturnType<typeof createProductSchema>>, imageFile?: File | null): Promise<void> => {
+    console.log("Admin Updating Product via API:", productId, values, "Image File:", imageFile?.name);
     await new Promise(resolve => setTimeout(resolve, 1200)); // Simulate network request
 
     if (typeof window !== 'undefined') {
         const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
         let products: AdminProduct[] = storedProducts ? JSON.parse(storedProducts) : [];
-        products = products.map(p => p.id === productId ? { ...p, ...values, price: Number(values.price) } : p); // Ensure price is number
-        localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+
+        // Find the product to update
+        const productIndex = products.findIndex(p => p.id === productId);
+        if (productIndex !== -1) {
+            // Create the updated product data excluding the 'newImage' field
+            const { newImage, ...productDataToSave } = values;
+
+            products[productIndex] = {
+                ...products[productIndex],
+                ...productDataToSave,
+                price: Number(productDataToSave.price), // Ensure price is number
+                // NOTE: In a real app, you would upload the imageFile here and get a new imageUrl
+                // For simulation, we keep the old imageUrl or the picsum one.
+                // imageUrl: newImageUrl || products[productIndex].imageUrl,
+            };
+            localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+        }
     }
 };
 
@@ -111,6 +133,7 @@ export default function EditProductPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [product, setProduct] = useState<AdminProduct | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null); // State for image preview
 
   const form = useForm<z.infer<ReturnType<typeof createProductSchema>>>({
     resolver: zodResolver(productSchema),
@@ -120,7 +143,7 @@ export default function EditProductPage() {
       price: 0,
       category: "",
       brand: "",
-      // newImage: undefined,
+      newImage: null, // Initialize as null
     },
   });
 
@@ -137,10 +160,12 @@ export default function EditProductPage() {
           form.reset({
             name: foundProduct.name,
             description: foundProduct.description,
-            price: foundProduct.price, // Assume price is fetched in the correct unit
+            price: foundProduct.price,
             category: foundProduct.category,
             brand: foundProduct.brand,
+            newImage: null, // Reset image field on load
           });
+           setImagePreview(foundProduct.imageUrl || null); // Set initial preview to existing image
         } else {
           toast({
             title: t('general_error'),
@@ -166,9 +191,9 @@ export default function EditProductPage() {
     setIsSubmitting(true);
 
     try {
-        // Ensure price is handled correctly (e.g., if input is in main unit, convert to smallest if needed)
-        const priceToSave = values.price; // Assuming the input 'price' is already in the correct format/unit for saving
-        await updateProductAPI(productId, { ...values, price: priceToSave });
+        const priceToSave = values.price;
+        // Pass the image file (if selected) to the API function
+        await updateProductAPI(productId, values, values.newImage);
         toast({
           title: t('admin_edit_product_toast_success_title'),
           description: t('admin_edit_product_toast_success_description', { productName: values.name }),
@@ -182,6 +207,23 @@ export default function EditProductPage() {
     }
     // No need to set isSubmitting to false on success if redirecting
   }
+
+    // Handle image selection and preview
+   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+     const file = event.target.files?.[0];
+     if (file) {
+       form.setValue('newImage', file); // Set file in form state
+       const reader = new FileReader();
+       reader.onloadend = () => {
+         setImagePreview(reader.result as string);
+       };
+       reader.readAsDataURL(file);
+     } else {
+         form.setValue('newImage', null); // Clear file in form state
+         // Revert preview to original product image if file is cleared
+          setImagePreview(product?.imageUrl || null);
+     }
+   };
 
   if (isLoading) {
     return (
@@ -351,32 +393,45 @@ export default function EditProductPage() {
                      <CardTitle>{t('admin_add_product_image_title')}</CardTitle>
                  </CardHeader>
                  <CardContent className="p-6 space-y-4">
-                      <div>
-                          <p className="text-sm font-medium mb-2">{t('admin_edit_product_current_image_label')}</p>
-                          <Image
-                             src={`https://picsum.photos/seed/${product.id}/200/150`} // Placeholder
-                             alt={product.name}
-                             width={200}
-                             height={150}
-                             className="rounded-md border border-border object-cover"
-                              data-ai-hint={product.category === 'Services' ? 'service tech icon' : product.name.toLowerCase().split(' ')[0]}
-                           />
-                      </div>
-                     <FormItem>
-                         <FormLabel htmlFor="product-image" className="flex items-center gap-2 cursor-pointer border-2 border-dashed border-muted-foreground/50 rounded-lg p-4 justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors">
-                             <ImageIcon className="h-6 w-6"/>
-                             <span>{t('admin_edit_product_change_image_label')}</span>
-                         </FormLabel>
-                         <FormControl>
-                             <Input id="product-image" type="file" accept="image/*" className="sr-only" /* onChange={(e) => field.onChange(e.target.files?.[0])} */ />
-                         </FormControl>
-                         <FormDescription>
-                             {t('admin_edit_product_image_description')}
-                         </FormDescription>
-                         <FormMessage />
-                     </FormItem>
-                      {/* Placeholder for new image preview */}
-                       {/* {form.watch('newImage') && ( ... preview logic ... )} */}
+                       {/* Image Preview */}
+                       {imagePreview && (
+                          <div className="mb-4">
+                             <p className="text-sm font-medium mb-2">{t('admin_settings_form_preview_label')}</p>
+                             <Image
+                                 src={imagePreview}
+                                 alt={product.name}
+                                 width={200}
+                                 height={150}
+                                 className="rounded-md border border-border object-cover"
+                             />
+                          </div>
+                       )}
+                     <FormField
+                         control={form.control}
+                         name="newImage"
+                         render={({ field: { onChange, value, ...rest } }) => ( // Destructure onChange
+                             <FormItem>
+                                 <FormLabel htmlFor="product-image" className="flex items-center gap-2 cursor-pointer border-2 border-dashed border-muted-foreground/50 rounded-lg p-4 justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+                                     <ImageIcon className="h-6 w-6"/>
+                                     <span>{t('admin_edit_product_change_image_label')}</span>
+                                 </FormLabel>
+                                 <FormControl>
+                                     <Input
+                                        id="product-image"
+                                        type="file"
+                                        accept="image/*"
+                                        className="sr-only"
+                                        onChange={handleImageChange} // Use custom handler
+                                        {...rest} // Pass rest props
+                                     />
+                                 </FormControl>
+                                 <FormDescription>
+                                     {t('admin_edit_product_image_description')}
+                                 </FormDescription>
+                                 <FormMessage />
+                             </FormItem>
+                         )}
+                     />
                  </CardContent>
              </Card>
 
@@ -404,3 +459,6 @@ export default function EditProductPage() {
   );
 }
 
+
+
+    

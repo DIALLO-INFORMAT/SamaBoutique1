@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react'; // Import useState for loading state
+import { useState, ChangeEvent } from 'react'; // Import useState, ChangeEvent
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -23,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Image as ImageIcon } from "lucide-react"; // Added Loader2, ImageIcon
 import Link from "next/link";
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import Image from 'next/image'; // Import Image for preview
 
 // Define Zod schema for form validation
 const createProductSchema = (t: Function) => z.object({
@@ -37,7 +39,7 @@ const createProductSchema = (t: Function) => z.object({
   }),
   category: z.string().min(1, { message: t('validation_required_field', { field: t('admin_add_product_form_category') }) }),
   brand: z.string().min(2, { message: t('admin_add_product_form_brand') + " " + t('validation_min_chars', { count: 2 }) }), // Added brand
-  // image: z.instanceof(File).optional(), // Placeholder for image upload
+  image: z.instanceof(File).optional().nullable(), // Optional image upload, allow null
 });
 
 // Example categories and brands - fetch or define elsewhere in a real app
@@ -46,13 +48,24 @@ const brands = ["Marque A", "Marque B", "Marque C", "SamaServices", "Autre"]; //
 
 const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products'; // Use a consistent key for admin
 
-// Mock API function to add product
-const addProductAPI = async (values: z.infer<ReturnType<typeof createProductSchema>>): Promise<void> => {
-     console.log("Admin Adding Product via API:", values);
+// Mock API function to add product (now accepts imageFile, but won't store it)
+const addProductAPI = async (values: z.infer<ReturnType<typeof createProductSchema>>, imageFile?: File | null): Promise<void> => {
+     console.log("Admin Adding Product via API:", values, "Image File:", imageFile?.name);
      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network request
 
      if (typeof window !== 'undefined') {
-         const newProduct = { ...values, id: `prod-${Date.now()}` };
+         // NOTE: In a real app, upload imageFile here and get back a URL
+         // const imageUrl = await uploadImage(imageFile); // Your upload function
+
+         // Create the product data excluding the 'image' field
+         const { image, ...productDataToSave } = values;
+
+         const newProduct = {
+             ...productDataToSave,
+             id: `prod-${Date.now()}`,
+             // imageUrl: imageUrl || `https://picsum.photos/seed/prod-${Date.now()}/400/300`, // Use uploaded URL or fallback
+             imageUrl: `https://picsum.photos/seed/prod-${Date.now()}/400/300`, // Simulation fallback
+         };
          const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
          const products = storedProducts ? JSON.parse(storedProducts) : [];
          products.push(newProduct);
@@ -67,6 +80,7 @@ export default function AddProductPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false); // Loading state
+  const [imagePreview, setImagePreview] = useState<string | null>(null); // State for image preview
 
   const form = useForm<z.infer<ReturnType<typeof createProductSchema>>>({
     resolver: zodResolver(productSchema),
@@ -76,20 +90,17 @@ export default function AddProductPage() {
       price: 0,
       category: "",
       brand: "", // Added brand default
-      // image: undefined,
+      image: null, // Initialize as null
     },
   });
 
   async function onSubmit(values: z.infer<ReturnType<typeof createProductSchema>>) {
     setIsSubmitting(true); // Start loading
-    // Simulate adding product to database
-    console.log("Adding Product:", values);
-    // Ensure price is handled correctly (e.g., convert to smallest unit if needed)
-    const priceToSave = values.price; // Assuming input is already in the correct unit (e.g., whole FCFA)
-    const productData = { ...values, price: priceToSave };
+    const priceToSave = values.price;
 
     try {
-        await addProductAPI(productData); // Use the API function
+        // Pass the image file to the API function
+        await addProductAPI(values, values.image); // Use the API function
         toast({
             title: t('admin_add_product_toast_success_title'),
             description: t('admin_add_product_toast_success_description', { productName: values.name }),
@@ -103,6 +114,23 @@ export default function AddProductPage() {
     }
     // No need to explicitly set isSubmitting to false if redirecting
   }
+
+   // Handle image selection and preview
+   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+     const file = event.target.files?.[0];
+     if (file) {
+       form.setValue('image', file); // Set file in form state
+       const reader = new FileReader();
+       reader.onloadend = () => {
+         setImagePreview(reader.result as string);
+       };
+       reader.readAsDataURL(file);
+     } else {
+       form.setValue('image', null); // Clear file in form state
+       setImagePreview(null); // Clear preview
+     }
+   };
+
 
   return (
     <div className="space-y-8">
@@ -242,35 +270,46 @@ export default function AddProductPage() {
                  <CardHeader className="bg-muted/30 border-b border-border px-6 py-4">
                      <CardTitle>{t('admin_add_product_image_title')}</CardTitle>
                  </CardHeader>
-                 <CardContent className="p-6">
-                     {/* Basic file input placeholder */}
-                     <FormItem>
-                         <FormLabel htmlFor="product-image" className="flex items-center gap-2 cursor-pointer border-2 border-dashed border-muted-foreground/50 rounded-lg p-6 justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors">
-                             <ImageIcon className="h-8 w-8"/>
-                             <span>{t('admin_add_product_image_label')}</span>
-                         </FormLabel>
-                         <FormControl>
-                             <Input id="product-image" type="file" accept="image/*" className="sr-only" /* onChange={(e) => field.onChange(e.target.files?.[0])} */ />
-                         </FormControl>
-                         <FormDescription>
-                             {t('admin_add_product_image_description')}
-                         </FormDescription>
-                         <FormMessage />
-                     </FormItem>
-
-                     {/* Placeholder to show selected image preview */}
-                      {/* {form.watch('image') && (
-                         <div className="mt-4">
-                           <p className="text-sm font-medium mb-2">Aperçu :</p>
-                           <Image
-                             src={URL.createObjectURL(form.watch('image')!)}
-                             alt="Aperçu"
-                             width={100}
-                             height={100}
-                             className="rounded-md border"
-                           />
-                         </div>
-                       )} */}
+                 <CardContent className="p-6 space-y-4">
+                      {/* Image Preview */}
+                      {imagePreview && (
+                          <div className="mb-4">
+                             <p className="text-sm font-medium mb-2">{t('admin_settings_form_preview_label')}</p>
+                             <Image
+                                 src={imagePreview}
+                                 alt="Aperçu de l'image"
+                                 width={200}
+                                 height={150}
+                                 className="rounded-md border border-border object-cover"
+                             />
+                          </div>
+                       )}
+                     <FormField
+                         control={form.control}
+                         name="image"
+                         render={({ field: { onChange, value, ...rest } }) => ( // Destructure onChange
+                             <FormItem>
+                                 <FormLabel htmlFor="product-image" className="flex items-center gap-2 cursor-pointer border-2 border-dashed border-muted-foreground/50 rounded-lg p-6 justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+                                     <ImageIcon className="h-8 w-8"/>
+                                     <span>{t('admin_add_product_image_label')}</span>
+                                 </FormLabel>
+                                 <FormControl>
+                                     <Input
+                                         id="product-image"
+                                         type="file"
+                                         accept="image/*"
+                                         className="sr-only"
+                                         onChange={handleImageChange} // Use custom handler
+                                         {...rest} // Pass rest props
+                                     />
+                                 </FormControl>
+                                 <FormDescription>
+                                     {t('admin_add_product_image_description')}
+                                 </FormDescription>
+                                 <FormMessage />
+                             </FormItem>
+                         )}
+                     />
                  </CardContent>
            </Card>
 
@@ -298,3 +337,6 @@ export default function AddProductPage() {
   );
 }
 
+
+
+    

@@ -1,3 +1,4 @@
+
 // src/app/admin/invoices/page.tsx
 'use client';
 
@@ -12,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { Order, OrderStatus } from '@/lib/types'; // Use Order type as base for invoice data
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import { generateInvoicePDF } from '@/lib/invoice-pdf'; // Import PDF generation utility
 
 const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 
@@ -32,26 +34,59 @@ const fetchInvoiceableOrdersFromAPI = async (): Promise<Order[]> => {
             ...order,
             createdAt: new Date(order.createdAt),
             updatedAt: new Date(order.updatedAt),
+            // Ensure items are CartItem[] - potentially needed if structure differs
+            items: order.items || [],
         }))
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort newest first
 };
 
-// Placeholder function for viewing/printing/sharing/downloading invoice
-const handleInvoiceAction = (orderId: string, action: 'view' | 'download' | 'share') => {
-    const actionText = action === 'view' ? "d'affichage/impression" : action === 'download' ? "de téléchargement" : "de partage";
-    alert(`Fonctionnalité ${actionText} pour la facture ${orderId} à implémenter.
+// Function for viewing/downloading/sharing invoice
+const handleInvoiceAction = async (order: Order, action: 'view' | 'download' | 'share') => {
+    const { t } = useTranslation(); // Get t function inside the handler
 
-Ici, on pourrait générer une version PDF/imprimable de la facture avec tous les détails :
-- Infos boutique (Logo, Nom, Adresse)
-- Infos client (Nom, Adresse)
-- N° Facture, N° Commande, Date
-- Détails produits (Nom, Qté, Prix Unitaire, Total Ligne)
-- Total HT, TVA (si applicable), Total TTC
-- Méthode de paiement
-- Statut commande
+    if (action === 'view' || action === 'download') {
+        try {
+            // Generate the PDF blob
+            const pdfBlob = await generateInvoicePDF(order, t);
 
-Pour le téléchargement, on forcerait le téléchargement du PDF généré.
-Pour le partage, on utiliserait les APIs de partage web (WhatsApp, Email).`);
+            // Create a URL for the blob
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+
+            if (action === 'view') {
+                // Open the PDF in a new tab for viewing/printing
+                window.open(pdfUrl, '_blank');
+                // Revoke the URL after a short delay to allow the new tab to load
+                setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+            } else if (action === 'download') {
+                // Create a temporary link to trigger download
+                const link = document.createElement('a');
+                link.href = pdfUrl;
+                link.download = `facture-${order.orderNumber}.pdf`; // Set the filename
+                document.body.appendChild(link); // Append to body (needed for Firefox)
+                link.click(); // Trigger download
+                document.body.removeChild(link); // Remove the link
+                URL.revokeObjectURL(pdfUrl); // Clean up the blob URL
+            }
+        } catch (error) {
+            console.error("Error generating or handling PDF:", error);
+            alert(t('invoice_generate_error')); // Show a user-friendly error
+        }
+    } else if (action === 'share') {
+        // Basic share functionality (can be expanded)
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `${t('invoice_share_title')} ${order.orderNumber}`,
+                    text: `${t('invoice_share_text')} ${order.orderNumber}. Total: ${order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 })}`,
+                    // url: window.location.href // Or a link to the order tracking page
+                });
+            } catch (error) {
+                console.error('Share failed:', error);
+            }
+        } else {
+            alert(t('invoice_share_not_supported'));
+        }
+    }
 };
 
 // --- Component ---
@@ -135,18 +170,18 @@ export default function AdminInvoicesPage() {
                                                 variant="outline"
                                                 size="sm"
                                                 title={t('admin_invoices_view_print_button')}
-                                                onClick={() => handleInvoiceAction(invoice.orderNumber, 'view')}
+                                                onClick={() => handleInvoiceAction(invoice, 'view')}
                                                 className="flex items-center gap-1"
                                             >
                                                 <Printer className="h-4 w-4" />
-                                                <span className="hidden sm:inline">{t('admin_invoices_view_print_button')}</span>
+                                                <span className="hidden sm:inline">{t('invoice_action_view')}</span>
                                             </Button>
                                             {/* Download Button */}
                                             <Button
                                                  variant="outline"
                                                  size="sm"
                                                  title={t('invoice_download_button')}
-                                                 onClick={() => handleInvoiceAction(invoice.orderNumber, 'download')}
+                                                 onClick={() => handleInvoiceAction(invoice, 'download')}
                                                  className="flex items-center gap-1"
                                             >
                                                  <Download className="h-4 w-4" />
@@ -168,3 +203,6 @@ export default function AdminInvoicesPage() {
         </div>
     );
 }
+
+
+    

@@ -1,3 +1,4 @@
+
 // src/components/OrderDetailsDialog.tsx
 import {
   Dialog,
@@ -28,6 +29,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"; // Import AlertDialog
 import { buttonVariants } from '@/components/ui/button'; // For styling AlertDialogAction
+import { generateInvoicePDF } from '@/lib/invoice-pdf'; // Import PDF generation utility
 
 
 interface OrderDetailsDialogProps {
@@ -60,29 +62,26 @@ const statusConfig: Record<Order['status'], StatusConfig> = {
     'Remboursé': { labelKey: 'order_status_refunded', icon: RefreshCw, variant: 'destructive', colorClass: 'text-gray-500' },
 };
 
-// Placeholder for printing/downloading (enhanced alert)
-const handleInvoiceAction = (orderId: string, action: 'view' | 'download') => {
+// Function for viewing/downloading invoice (moved from pages for reuse)
+const handleInvoiceDownload = async (order: Order) => {
     const { t } = useTranslation(); // Get t function inside the handler
-    const actionTextMap = {
-        view: t('invoice_action_view'),
-        download: t('invoice_action_download'),
-    };
-    const actionText = actionTextMap[action] || action;
-
-    alert(`${t('invoice_action_placeholder_title', { action: actionText, orderId })}
-
-${t('invoice_action_placeholder_details')}
-
-${t('invoice_action_placeholder_pdf_generation')}
-- ${t('invoice_action_placeholder_shop_info')}
-- ${t('invoice_action_placeholder_customer_info')}
-- ${t('invoice_action_placeholder_invoice_details')}
-- ${t('invoice_action_placeholder_product_details')}
-- ${t('invoice_action_placeholder_totals')}
-- ${t('invoice_action_placeholder_payment_method')}
-- ${t('invoice_action_placeholder_order_status')}
-
-${action === 'download' ? t('invoice_action_placeholder_download_specific') : ''}`);
+     try {
+        // Generate the PDF blob
+        const pdfBlob = await generateInvoicePDF(order, t);
+        // Create a URL for the blob
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        // Create a temporary link to trigger download
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = `facture-${order.orderNumber}.pdf`; // Set the filename
+        document.body.appendChild(link); // Append to body
+        link.click(); // Trigger download
+        document.body.removeChild(link); // Remove the link
+        URL.revokeObjectURL(pdfUrl); // Clean up the blob URL
+     } catch (error) {
+         console.error("Error generating or downloading PDF:", error);
+         alert(t('invoice_generate_error')); // Show a user-friendly error
+     }
 };
 
 
@@ -112,6 +111,9 @@ export function OrderDetailsDialog({
             </Badge>
         );
     };
+
+    // Check if invoice is downloadable based on status
+    const isInvoiceDownloadable = ['Payé', 'Expédié', 'Livraison en cours', 'Livré'].includes(order.status);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -213,14 +215,14 @@ export function OrderDetailsDialog({
             <div className="text-center">
                 <Button
                     variant="outline"
-                    onClick={() => handleInvoiceAction(order.orderNumber, 'download')}
+                    onClick={() => handleInvoiceDownload(order)}
                     className="flex items-center gap-1"
-                    disabled={!['Payé', 'Expédié', 'Livraison en cours', 'Livré'].includes(order.status)} // Only enable if invoiceable
+                    disabled={!isInvoiceDownloadable} // Disable if not downloadable
                 >
                     <Download className="h-4 w-4" />
                     {t('invoice_download_button')}
                 </Button>
-                 {!['Payé', 'Expédié', 'Livraison en cours', 'Livré'].includes(order.status) && (
+                 {!isInvoiceDownloadable && (
                     <p className="text-xs text-muted-foreground mt-1">{t('invoice_download_disabled_tooltip')}</p>
                  )}
             </div>
@@ -268,3 +270,6 @@ export function OrderDetailsDialog({
     </Dialog>
   );
 }
+
+
+    

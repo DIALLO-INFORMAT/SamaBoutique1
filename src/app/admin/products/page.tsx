@@ -1,3 +1,4 @@
+
 'use client'; // Required for interactions like delete confirmation
 
 import { useState, useEffect } from 'react';
@@ -33,7 +34,8 @@ export interface AdminProduct {
   price: number; // Assuming price is in the smallest unit or correctly formatted number for XOF
   category: string;
   brand: string; // Added brand
-  // Add other fields like stock, image URL, etc. if needed
+  imageUrl?: string; // Optional image URL
+  // Add other fields like stock, etc. if needed
 }
 
 const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products'; // Use a consistent key for admin
@@ -46,17 +48,28 @@ const fetchProductsFromAPI = async (): Promise<AdminProduct[]> => {
    if (typeof window !== 'undefined') {
        const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
        if (storedProducts) {
-           return JSON.parse(storedProducts);
+            try {
+                const products: AdminProduct[] = JSON.parse(storedProducts);
+                // Ensure imageUrl exists for fallback
+                return products.map(p => ({
+                    ...p,
+                    imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/64/64`
+                }));
+            } catch (error) {
+                 console.error("Error parsing products from localStorage:", error);
+                 localStorage.removeItem(ADMIN_PRODUCTS_STORAGE_KEY); // Clear corrupted data
+                 return []; // Return empty array on error
+            }
        }
    }
    // Fallback mock data if localStorage is empty or SSR
    const mockProducts: AdminProduct[] = [
-      { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" },
-      { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices" },
-      { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" },
-      { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", brand: "SamaServices" },
-      { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A" },
-      { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C" },
+      { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A", imageUrl: `https://picsum.photos/seed/1/64/64` },
+      { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/2/64/64` },
+      { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B", imageUrl: `https://picsum.photos/seed/3/64/64` },
+      { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/4/64/64` },
+      { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A", imageUrl: `https://picsum.photos/seed/5/64/64` },
+      { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C", imageUrl: `https://picsum.photos/seed/6/64/64` },
    ];
    // Save mock data to localStorage if it was empty
    if (typeof window !== 'undefined' && !localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY)) {
@@ -191,7 +204,7 @@ export default function AdminProductsPage() {
                          alt={product.name}
                          className="aspect-square rounded-md object-cover border border-border"
                          height="48" // Smaller image
-                         src={`https://picsum.photos/seed/${product.id}/64/64`} // Placeholder
+                         src={product.imageUrl || `https://picsum.photos/seed/${product.id}/64/64`} // Use stored URL or fallback
                          width="48"
                          data-ai-hint={product.category === 'Services' ? 'service tech icon' : product.name.toLowerCase().split(' ')[0]}
                        />
@@ -219,7 +232,7 @@ export default function AdminProductsPage() {
                                    </DropdownMenuItem>
                                    <DropdownMenuSeparator />
                                    <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                                      <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                                          <Trash2 className="mr-2 h-4 w-4"/>{t('admin_products_action_delete')}
                                       </Button>
                                    </AlertDialogTrigger>
@@ -261,3 +274,6 @@ export default function AdminProductsPage() {
   );
 }
 
+
+
+    

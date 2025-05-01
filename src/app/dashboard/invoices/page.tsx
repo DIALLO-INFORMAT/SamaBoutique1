@@ -1,3 +1,4 @@
+
 // src/app/dashboard/invoices/page.tsx
 'use client';
 
@@ -14,11 +15,27 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import Link from 'next/link'; // Import Link
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import { generateInvoicePDF } from '@/lib/invoice-pdf'; // Import PDF generation utility
 
 const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 
 // Filter criteria for considering an order invoice-able (same as admin)
 const INVOICEABLE_STATUSES: OrderStatus[] = ['Payé', 'Expédié', 'Livraison en cours', 'Livré'];
+
+// Reuse status config from orders page
+interface StatusConfig {
+    labelKey: string;
+}
+const statusConfig: Record<OrderStatus, StatusConfig> = {
+    'En attente de paiement': { labelKey: 'order_status_pending_payment' },
+    'Payé': { labelKey: 'order_status_paid' },
+    'En cours de préparation': { labelKey: 'order_status_processing' },
+    'Expédié': { labelKey: 'order_status_shipped' },
+    'Livraison en cours': { labelKey: 'order_status_delivering' },
+    'Livré': { labelKey: 'order_status_delivered' },
+    'Annulé': { labelKey: 'order_status_cancelled' },
+    'Remboursé': { labelKey: 'order_status_refunded' },
+};
 
 // --- Mock API Functions (using localStorage) ---
 const fetchMyInvoiceableOrdersFromAPI = async (userId: string): Promise<Order[]> => {
@@ -34,35 +51,57 @@ const fetchMyInvoiceableOrdersFromAPI = async (userId: string): Promise<Order[]>
             ...order,
             createdAt: new Date(order.createdAt),
             updatedAt: new Date(order.updatedAt),
+            items: order.items || [], // Ensure items exist
         }))
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort newest first
 };
 
-// Placeholder for printing/viewing/sharing/downloading (enhanced alert)
-const handleInvoiceAction = (orderId: string, action: 'view' | 'download' | 'share') => {
+// Function for viewing/downloading/sharing invoice (customer version)
+const handleInvoiceAction = async (order: Order, action: 'view' | 'download' | 'share') => {
     const { t } = useTranslation(); // Get t function inside the handler
-    const actionTextMap = {
-        view: t('invoice_action_view'),
-        download: t('invoice_action_download'),
-        share: t('invoice_action_share')
-    };
-    const actionText = actionTextMap[action] || action;
 
-    alert(`${t('invoice_action_placeholder_title', { action: actionText, orderId })}
+    if (action === 'view' || action === 'download') {
+        try {
+            // Generate the PDF blob
+            const pdfBlob = await generateInvoicePDF(order, t);
 
-${t('invoice_action_placeholder_details')}
+            // Create a URL for the blob
+            const pdfUrl = URL.createObjectURL(pdfBlob);
 
-${t('invoice_action_placeholder_pdf_generation')}
-- ${t('invoice_action_placeholder_shop_info')}
-- ${t('invoice_action_placeholder_customer_info')}
-- ${t('invoice_action_placeholder_invoice_details')}
-- ${t('invoice_action_placeholder_product_details')}
-- ${t('invoice_action_placeholder_totals')}
-- ${t('invoice_action_placeholder_payment_method')}
-- ${t('invoice_action_placeholder_order_status')}
-
-${action === 'download' ? t('invoice_action_placeholder_download_specific') : ''}
-${action === 'share' ? t('invoice_action_placeholder_share_specific') : ''}`);
+            if (action === 'view') {
+                // Open the PDF in a new tab for viewing/printing
+                window.open(pdfUrl, '_blank');
+                setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+            } else if (action === 'download') {
+                // Create a temporary link to trigger download
+                const link = document.createElement('a');
+                link.href = pdfUrl;
+                link.download = `facture-${order.orderNumber}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(pdfUrl);
+            }
+        } catch (error) {
+            console.error("Error generating or handling PDF:", error);
+            alert(t('invoice_generate_error'));
+        }
+    } else if (action === 'share') {
+        // Basic share functionality
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: `${t('invoice_share_title')} ${order.orderNumber}`,
+                    text: `${t('invoice_share_text')} ${order.orderNumber}. Total: ${order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 })}`,
+                    // url: Optionally share a link to the order status page
+                });
+            } catch (error) {
+                console.error('Share failed:', error);
+            }
+        } else {
+            alert(t('invoice_share_not_supported'));
+        }
+    }
 };
 
 
@@ -187,7 +226,7 @@ export default function UserInvoicesPage() {
                                                 variant="outline"
                                                 size="sm"
                                                 title={t('dashboard_my_invoices_view_print')}
-                                                onClick={() => handleInvoiceAction(invoice.orderNumber, 'view')}
+                                                onClick={() => handleInvoiceAction(invoice, 'view')}
                                                 className="flex items-center gap-1"
                                             >
                                                 <Printer className="h-4 w-4" />
@@ -197,16 +236,16 @@ export default function UserInvoicesPage() {
                                                  variant="outline"
                                                  size="sm"
                                                  title={t('invoice_download_button')}
-                                                 onClick={() => handleInvoiceAction(invoice.orderNumber, 'download')}
+                                                 onClick={() => handleInvoiceAction(invoice, 'download')}
                                                  className="flex items-center gap-1"
                                             >
                                                  <Download className="h-4 w-4" />
                                                  <span className="hidden sm:inline">{t('invoice_download_button')}</span>
                                             </Button>
-                                            {/* Optional Share Button Placeholder */}
-                                            {/* <Button variant="ghost" size="icon" title={t('invoice_share_button_soon')} onClick={() => handleInvoiceAction(invoice.orderNumber, 'share')}>
-                                                <Share2 className="h-4 w-4 text-muted-foreground" />
-                                            </Button> */}
+                                            {/* Optional Share Button */}
+                                            <Button variant="ghost" size="icon" title={t('invoice_action_share')} onClick={() => handleInvoiceAction(invoice, 'share')}>
+                                                 <Share2 className="h-4 w-4 text-muted-foreground" />
+                                             </Button>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -219,3 +258,6 @@ export default function UserInvoicesPage() {
         </div>
     );
 }
+
+
+    
