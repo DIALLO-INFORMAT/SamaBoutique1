@@ -3,7 +3,7 @@
 'use client';
 
 import { useLocale, Locale, defaultLocale } from '@/context/LocaleContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // Import useCallback
 import type { TOptions } from 'i18next'; // Use i18next type for interpolation
 
 type TranslationData = Record<string, string | object>; // Allow nested objects
@@ -80,5 +80,6 @@ export const useTranslation = () => {
   return { t, isLoading, currentLocale: locale };
 };
 
-// Re-export useCallback from React because it's used internally
-export { useCallback } from 'react';
+// Remove the re-export as it's now imported directly
+// export { useCallback } from 'react';
+
