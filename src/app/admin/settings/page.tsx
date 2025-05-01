@@ -24,6 +24,7 @@ import Image from 'next/image';
 import {ImageIcon, Loader2} from 'lucide-react';
 import { useSettings, saveSettings } from '@/hooks/useSettings'; // Import useSettings and saveSettings
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 
 // Define Zod schema for settings form validation
 const createSettingsSchema = (t: Function) => z.object({
@@ -52,14 +53,15 @@ export default function AdminSettingsPage() {
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
     // Default values are set based on DEFAULT_SETTINGS in useSettings initially
+    // These will be updated by the useEffect once settings are loaded
     defaultValues: {
-        storeName: currentSettings.storeName,
-        supportEmail: currentSettings.supportEmail,
-        enableMaintenance: currentSettings.enableMaintenance,
-        storeDescription: currentSettings.storeDescription,
-        primaryColor: currentSettings.primaryColor,
-        logoUrl: currentSettings.logoUrl || '', // Ensure empty string if null/undefined
-        faviconUrl: currentSettings.faviconUrl || '', // Ensure empty string
+        storeName: '',
+        supportEmail: '',
+        enableMaintenance: false,
+        storeDescription: '',
+        primaryColor: '',
+        logoUrl: '',
+        faviconUrl: '',
     },
   });
 
@@ -75,10 +77,18 @@ export default function AdminSettingsPage() {
                 logoUrl: currentSettings.logoUrl || '',
                 faviconUrl: currentSettings.faviconUrl || '',
             };
-          form.reset(settingsToApply);
+           // Check if the form has already been populated/reset with these settings
+           // This prevents unnecessary resets if the user navigates away and back or if currentSettings reference changes unnecessarily
+           const currentFormValues = form.getValues();
+           if (JSON.stringify(currentFormValues) !== JSON.stringify(settingsToApply)) {
+              form.reset(settingsToApply);
+           }
       }
-  // Depend only on the loading state and the reset function reference
-  }, [settingsLoading, form.reset, currentSettings]);
+  // Depend only on the loading state finishing and the settings object reference.
+  // This ensures it runs once after loading completes, but not on subsequent re-renders
+  // unless `currentSettings` reference *itself* changes (which it shouldn't if memoized).
+  // Added form.getValues to dependencies as required by react-hooks/exhaustive-deps.
+  }, [settingsLoading, currentSettings, form.reset, form.getValues]);
 
 
   // Preview states
@@ -135,17 +145,17 @@ export default function AdminSettingsPage() {
                  <h1 className="text-3xl font-bold text-primary">{t('admin_settings_page_title')}</h1>
                  <Card className="max-w-3xl">
                      <CardHeader>
-                         <CardTitle><div className="h-6 w-3/5 bg-muted rounded animate-pulse"></div></CardTitle>
-                         <CardDescription><div className="h-4 w-4/5 bg-muted rounded animate-pulse mt-1"></div></CardDescription>
+                         <CardTitle><Skeleton className="h-6 w-3/5 bg-muted rounded animate-pulse"></Skeleton></CardTitle>
+                         <CardDescription><Skeleton className="h-4 w-4/5 bg-muted rounded animate-pulse mt-1"></Skeleton></CardDescription>
                      </CardHeader>
                      <CardContent className="space-y-6">
                          {[...Array(7)].map((_, i) => ( // Increased to 7 for favicon
                            <div key={i} className="space-y-2">
-                               <div className="h-4 w-1/4 bg-muted rounded animate-pulse"></div>
-                               <div className="h-10 w-full bg-muted rounded animate-pulse"></div>
+                               <Skeleton className="h-4 w-1/4 bg-muted rounded animate-pulse"></Skeleton>
+                               <Skeleton className="h-10 w-full bg-muted rounded animate-pulse"></Skeleton>
                            </div>
                          ))}
-                         <div className="h-10 w-36 bg-muted rounded animate-pulse ml-auto"></div>
+                         <Skeleton className="h-10 w-36 bg-muted rounded animate-pulse ml-auto"></Skeleton>
                      </CardContent>
                  </Card>
              </div>
@@ -256,3 +266,4 @@ export default function AdminSettingsPage() {
     </div>
   );
 }
+
