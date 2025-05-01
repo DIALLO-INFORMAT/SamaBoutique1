@@ -21,7 +21,8 @@ import {Separator} from '@/components/ui/separator';
 import {Textarea} from '@/components/ui/textarea';
 import {useEffect, useState} from 'react';
 import Image from 'next/image';
-import {ImageIcon} from 'lucide-react';
+import {ImageIcon, Loader2} from 'lucide-react';
+import { useSettings, saveSettings } from '@/hooks/useSettings'; // Import useSettings and saveSettings
 
 // Define Zod schema for settings form validation
 const settingsSchema = z.object({
@@ -31,68 +32,124 @@ const settingsSchema = z.object({
   storeDescription: z.string().max(200, {
     message: 'La description ne peut pas dépasser 200 caractères.',
   }),
-  primaryColor: z.string().regex(/^hsl\(\d+,\s*\d+%,\s*\d+%\)$/, {
+  primaryColor: z.string().regex(/^hsl\(\s*\d+\s*,\s*\d+%?\s*,\s*\d+%?\s*\)$/i, { // Allow spaces and optional %
     message: 'Doit être une valeur HSL valide (ex: hsl(154, 50%, 50%)).',
   }),
-  logoUrl: z.string().url({message: 'Doit être une URL valide.'}).optional(), // Added logo URL
-  faviconUrl: z.string().url({message: 'Doit être une URL valide.'}).optional(), // Added favicon URL
-  // Add more settings fields as needed: currency, language, API keys, etc.
+  logoUrl: z.string().url({message: 'Doit être une URL valide.'}).or(z.literal('')).optional(), // Allow empty string
+  faviconUrl: z.string().url({message: 'Doit être une URL valide.'}).or(z.literal('')).optional(), // Allow empty string
 });
 
-// Simulate fetching current settings
-const currentSettings = {
-  storeName: 'SamaBoutique',
-  supportEmail: 'support@samaboutique.com',
-  enableMaintenance: false,
-  storeDescription: 'Votre partenaire de confiance pour des produits et services de qualité.',
-  primaryColor: 'hsl(154, 50%, 50%)',
-  logoUrl: '', // Initial empty logo URL
-  faviconUrl: '', // Initial empty favicon URL
-};
-
 export default function AdminSettingsPage() {
-  const {toast} = useToast();
-  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | undefined>(undefined); // State for logo preview
-  const [faviconPreviewUrl, setFaviconPreviewUrl] = useState<string | undefined>(undefined); // State for favicon preview
+  const { toast } = useToast();
+  const currentSettings = useSettings(); // Use the hook to get current settings
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: currentSettings, // Load current settings into the form
+    // Default values will be set by useEffect based on currentSettings
+    defaultValues: {
+        storeName: '',
+        supportEmail: '',
+        enableMaintenance: false,
+        storeDescription: '',
+        primaryColor: '',
+        logoUrl: '',
+        faviconUrl: '',
+    },
   });
 
-  // Update logo preview when logoUrl changes
+  // Load current settings into the form when they are available or change
   useEffect(() => {
-    if (form.watch('logoUrl')) {
-      setLogoPreviewUrl(form.watch('logoUrl'));
-    }
-  }, [form.watch('logoUrl')]);
+      if (!currentSettings.isLoading) {
+          form.reset({
+              storeName: currentSettings.storeName,
+              supportEmail: currentSettings.supportEmail,
+              enableMaintenance: currentSettings.enableMaintenance,
+              storeDescription: currentSettings.storeDescription,
+              primaryColor: currentSettings.primaryColor,
+              logoUrl: currentSettings.logoUrl || '', // Ensure empty string if null/undefined
+              faviconUrl: currentSettings.faviconUrl || '', // Ensure empty string
+          });
+      }
+  }, [currentSettings, form]);
 
-   // Update favicon preview when faviconUrl changes
-  useEffect(() => {
-    if (form.watch('faviconUrl')) {
-      setFaviconPreviewUrl(form.watch('faviconUrl'));
-    }
-  }, [form.watch('faviconUrl')]);
+
+  // Preview states
+   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | undefined>(undefined);
+   const [faviconPreviewUrl, setFaviconPreviewUrl] = useState<string | undefined>(undefined);
+
+   // Update previews based on form values
+   useEffect(() => {
+     const subscription = form.watch((value, { name }) => {
+       if (name === 'logoUrl') {
+         setLogoPreviewUrl(value.logoUrl || undefined);
+       }
+       if (name === 'faviconUrl') {
+         setFaviconPreviewUrl(value.faviconUrl || undefined);
+       }
+     });
+     return () => subscription.unsubscribe();
+   }, [form]);
+
 
   async function onSubmit(values: z.infer<typeof settingsSchema>) {
-    // Simulate saving settings to the database
-    console.log('Saving Settings:', values);
-    // In a real app, send this data to your backend/API: PUT `/api/settings`
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network request
+    setIsSubmitting(true);
+    try {
+        // Use the imported saveSettings function
+        saveSettings(values);
+        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
 
-    toast({
-      title: 'Paramètres Enregistrés!',
-      description: 'Vos paramètres ont été mis à jour avec succès.',
-      className: 'bg-primary text-primary-foreground border-primary',
-    });
-    // Optionally refetch settings or update local state if needed
+        toast({
+            title: 'Paramètres Enregistrés!',
+            description: 'Vos paramètres ont été mis à jour avec succès.',
+            className: 'bg-primary text-primary-foreground border-primary',
+        });
+
+        // Force reload or trigger context update if necessary
+        // Might not be needed if useSettings updates via storage event
+        // window.location.reload(); // Or a more subtle update
+
+    } catch (error) {
+        console.error("Failed to save settings:", error);
+         toast({
+             title: 'Erreur',
+             description: 'Impossible d\'enregistrer les paramètres.',
+             variant: 'destructive',
+         });
+    } finally {
+        setIsSubmitting(false);
+    }
   }
+
+   // Show loading skeleton if settings are loading
+   if (currentSettings.isLoading) {
+        return (
+             <div className="space-y-8">
+                 <h1 className="text-3xl font-bold text-primary">Paramètres de la Boutique</h1>
+                 <Card className="max-w-3xl">
+                     <CardHeader>
+                         <CardTitle><div className="h-6 w-3/5 bg-muted rounded animate-pulse"></div></CardTitle>
+                         <CardDescription><div className="h-4 w-4/5 bg-muted rounded animate-pulse mt-1"></div></CardDescription>
+                     </CardHeader>
+                     <CardContent className="space-y-6">
+                         {[...Array(6)].map((_, i) => (
+                           <div key={i} className="space-y-2">
+                               <div className="h-4 w-1/4 bg-muted rounded animate-pulse"></div>
+                               <div className="h-10 w-full bg-muted rounded animate-pulse"></div>
+                           </div>
+                         ))}
+                         <div className="h-10 w-36 bg-muted rounded animate-pulse"></div>
+                     </CardContent>
+                 </Card>
+             </div>
+        );
+   }
 
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-primary">Paramètres de la Boutique</h1>
 
-      <Card className="max-w-3xl">
+      <Card className="max-w-3xl shadow-md border-border">
         <CardHeader>
           <CardTitle>Paramètres Généraux</CardTitle>
           <CardDescription>
@@ -103,174 +160,81 @@ export default function AdminSettingsPage() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               {/* Store Name */}
-              <FormField
-                control={form.control}
-                name="storeName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nom de la Boutique</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ma Super Boutique" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
+              <FormField control={form.control} name="storeName" render={({ field }) => ( <FormItem> <FormLabel>Nom Boutique</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
               {/* Support Email */}
-              <FormField
-                control={form.control}
-                name="supportEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email de Support</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="contact@maboutique.com" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      L'adresse email affichée pour le support client.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
+              <FormField control={form.control} name="supportEmail" render={({ field }) => ( <FormItem> <FormLabel>Email Support</FormLabel> <FormControl><Input type="email" {...field} /></FormControl> <FormDescription>Email affiché pour le support.</FormDescription> <FormMessage /> </FormItem> )}/>
               {/* Store Description */}
-              <FormField
-                control={form.control}
-                name="storeDescription"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description de la Boutique</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Décrivez votre boutique..." {...field} rows={3} />
-                    </FormControl>
-                    <FormDescription>
-                      Courte description de votre boutique (pour le footer).
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormField control={form.control} name="storeDescription" render={({ field }) => ( <FormItem> <FormLabel>Description Boutique</FormLabel> <FormControl><Textarea {...field} rows={3} /></FormControl> <FormDescription>Courte description (footer).</FormDescription> <FormMessage /> </FormItem> )}/>
 
               <Separator />
 
               {/* Logo URL */}
-              <FormField
-                control={form.control}
-                name="logoUrl"
-                render={({ field }) => (
+              <FormField control={form.control} name="logoUrl" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>URL du Logo</FormLabel>
-                    <FormControl>
-                      <Input type="url" placeholder="https://example.com/logo.png" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      URL vers l'image de votre logo (PNG, JPG, SVG).
-                    </FormDescription>
-                    <FormMessage />
-                    {logoPreviewUrl && (
-                      <div className="mt-2">
-                        <p className="text-sm font-medium">Aperçu du Logo:</p>
-                        <Image
-                           src={logoPreviewUrl}
-                           alt="Aperçu du Logo"
-                           width={100}
-                           height={50}
-                           className="rounded-md border border-border object-contain"
-                           style={{maxWidth: '100%', height: 'auto'}}
-                         />
-                      </div>
-                    )}
+                      <FormLabel>URL du Logo</FormLabel>
+                      <FormControl><Input type="url" placeholder="https://.../logo.png" {...field} /></FormControl>
+                      <FormDescription>URL de l'image (PNG, JPG, SVG).</FormDescription>
+                      <FormMessage />
+                      {logoPreviewUrl ? (
+                          <div className="mt-2">
+                              <p className="text-sm font-medium">Aperçu:</p>
+                              <Image src={logoPreviewUrl} alt="Logo Preview" width={100} height={50} className="rounded border object-contain mt-1" onError={() => setLogoPreviewUrl(undefined)} />
+                          </div>
+                      ) : field.value && (
+                           <p className="text-xs text-muted-foreground mt-1">Aperçu non disponible ou URL invalide.</p>
+                      )}
                   </FormItem>
-                )}
-              />
+              )}/>
 
                {/* Favicon URL */}
-              <FormField
-                control={form.control}
-                name="faviconUrl"
-                render={({ field }) => (
+              <FormField control={form.control} name="faviconUrl" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>URL du Favicon</FormLabel>
-                    <FormControl>
-                      <Input type="url" placeholder="https://example.com/favicon.ico" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      URL vers votre favicon (ICO, PNG).
-                    </FormDescription>
-                    <FormMessage />
-                     {faviconPreviewUrl && (
-                        <div className="mt-2">
-                            <p className="text-sm font-medium">Aperçu du Favicon:</p>
-                            <Image
-                                src={faviconPreviewUrl}
-                                alt="Aperçu du Favicon"
-                                width={32}
-                                height={32}
-                                className="rounded-full border border-border object-contain"
-                                style={{maxWidth: '100%', height: 'auto'}}
-                             />
-                        </div>
-                     )}
+                      <FormLabel>URL du Favicon</FormLabel>
+                      <FormControl><Input type="url" placeholder="https://.../favicon.ico" {...field} /></FormControl>
+                      <FormDescription>URL du favicon (ICO, PNG).</FormDescription>
+                      <FormMessage />
+                      {faviconPreviewUrl ? (
+                          <div className="mt-2">
+                              <p className="text-sm font-medium">Aperçu:</p>
+                              <Image src={faviconPreviewUrl} alt="Favicon Preview" width={32} height={32} className="rounded border object-contain mt-1" onError={() => setFaviconPreviewUrl(undefined)}/>
+                          </div>
+                      ): field.value && (
+                           <p className="text-xs text-muted-foreground mt-1">Aperçu non disponible ou URL invalide.</p>
+                      )}
                   </FormItem>
-                )}
-              />
+              )}/>
 
               <Separator />
 
               {/* Primary Color */}
-              <FormField
-                control={form.control}
-                name="primaryColor"
-                render={({ field }) => (
+              <FormField control={form.control} name="primaryColor" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Couleur Primaire (HSL)</FormLabel>
-                    <FormControl>
-                      <Input type="text" placeholder="hsl(154, 50%, 50%)" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Entrez une valeur HSL pour la couleur principale de votre boutique.
-                    </FormDescription>
-                    <FormMessage />
+                      <FormLabel>Couleur Primaire (HSL)</FormLabel>
+                      <div className="flex items-center gap-2">
+                          <FormControl><Input type="text" placeholder="hsl(154, 50%, 50%)" {...field} /></FormControl>
+                          <div className="w-8 h-8 rounded border" style={{ backgroundColor: field.value }}></div>
+                      </div>
+                      <FormDescription>Couleur principale (thème). Format: hsl(H, S%, L%)</FormDescription>
+                      <FormMessage />
                   </FormItem>
-                )}
-              />
+              )}/>
 
               <Separator />
 
               {/* Maintenance Mode */}
-              <FormField
-                control={form.control}
-                name="enableMaintenance"
-                render={({ field }) => (
+              <FormField control={form.control} name="enableMaintenance" render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">
-                        Mode Maintenance
-                      </FormLabel>
-                      <FormDescription>
-                        Activer pour afficher une page de maintenance aux visiteurs.
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
+                      <div className="space-y-0.5">
+                          <FormLabel className="text-base">Mode Maintenance</FormLabel>
+                          <FormDescription>Activer pour afficher une page de maintenance.</FormDescription>
+                      </div>
+                      <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                   </FormItem>
-                )}
-              />
+              )}/>
 
-              {/* Add more settings fields here */}
-
-              <Button
-                type="submit"
-                variant="destructive"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting ? 'Enregistrement...' : 'Enregistrer les Paramètres'}
+              <Button type="submit" variant="destructive" disabled={isSubmitting} className="min-w-[180px]">
+                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                 {isSubmitting ? 'Enregistrement...' : 'Enregistrer Paramètres'}
               </Button>
             </form>
           </Form>

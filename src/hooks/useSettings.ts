@@ -19,56 +19,95 @@ const DEFAULT_SETTINGS: Settings = {
   supportEmail: 'support@samaboutique.com',
   enableMaintenance: false,
   storeDescription: 'Votre partenaire de confiance pour des produits et services de qualité.',
-  primaryColor: 'hsl(154, 50%, 50%)',
+  primaryColor: 'hsl(154, 50%, 50%)', // Example HSL value
   logoUrl: '',
   faviconUrl: '',
 };
 
-export const useSettings = () => {
-  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-  const [isLoading, setIsLoading] = useState(true);
+const SETTINGS_STORAGE_KEY = 'sama_boutique_settings';
+
+export const useSettings = (): Settings & { isLoading: boolean } => {
+  const [settings, setSettings] = useState<Settings>(() => {
+    // Initialize state from localStorage synchronously if possible (client-side only)
+    if (typeof window !== 'undefined') {
+      const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (storedSettings) {
+        try {
+          // Merge stored settings with defaults to ensure all keys exist
+          return { ...DEFAULT_SETTINGS, ...JSON.parse(storedSettings) };
+        } catch (error) {
+          console.error('Failed to parse settings from localStorage on init:', error);
+        }
+      }
+    }
+    return DEFAULT_SETTINGS;
+  });
+  const [isLoading, setIsLoading] = useState(true); // Still track loading state
 
   useEffect(() => {
-    // Simulate fetching settings from a database or API
-    const loadSettings = async () => {
-      setIsLoading(true);
-      try {
-        // In a real application, you would fetch from an API endpoint
-        // const response = await fetch('/api/settings');
-        // const data = await response.json();
-        // setSettings(data);
-
-        // Simulate localStorage
+    // This effect now primarily handles the initial loading state and potential updates
+    // if settings were not correctly loaded synchronously or need refreshing.
+    const loadAndUpdateSettings = () => {
         if (typeof window !== 'undefined') {
-          // Check local storage for override, if not exist, use default
-          const storedSettings = localStorage.getItem('sama_boutique_settings');
-          if (storedSettings) {
-            try {
-              setSettings(JSON.parse(storedSettings));
-            } catch (error) {
-              console.error('Failed to parse settings from localStorage:', error);
-              // Set to DEFAULT_SETTINGS or handle error as needed
-              setSettings(DEFAULT_SETTINGS);
+            const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
+            let currentSettings = DEFAULT_SETTINGS;
+            if (storedSettings) {
+                try {
+                    currentSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(storedSettings) };
+                } catch (error) {
+                     console.error('Failed to parse settings from localStorage in effect:', error);
+                     localStorage.removeItem(SETTINGS_STORAGE_KEY); // Clear corrupted data
+                }
             }
-          } else {
-            setSettings(DEFAULT_SETTINGS);
-          }
+            // Update state only if different from initial sync load
+             // Use JSON stringify for comparison to handle object reference differences
+             if (JSON.stringify(settings) !== JSON.stringify(currentSettings)) {
+                 setSettings(currentSettings);
+             }
         }
-      } catch (error) {
-        console.error('Failed to fetch settings:', error);
-        // Optionally set to default settings or handle error
-        setSettings(DEFAULT_SETTINGS);
-      } finally {
-        setIsLoading(false);
-      }
+        setIsLoading(false); // Mark loading as complete
     };
 
-    loadSettings();
-  }, []);
+    loadAndUpdateSettings();
+
+     // Optional: Listen for storage events to update settings across tabs
+     const handleStorageChange = (event: StorageEvent) => {
+         if (event.key === SETTINGS_STORAGE_KEY && event.newValue) {
+             try {
+                 const newSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(event.newValue) };
+                 setSettings(newSettings);
+             } catch (error) {
+                  console.error('Failed to parse settings from storage event:', error);
+             }
+         } else if (event.key === SETTINGS_STORAGE_KEY && !event.newValue) {
+             // Settings were cleared in another tab
+             setSettings(DEFAULT_SETTINGS);
+         }
+     };
+
+     window.addEventListener('storage', handleStorageChange);
+     return () => window.removeEventListener('storage', handleStorageChange);
+
+  }, []); // Run only once on mount
 
   return {
     ...settings,
     isLoading,
   };
+};
+
+// Function to save settings (can be called from the settings page)
+export const saveSettings = (newSettings: Partial<Settings>) => {
+     if (typeof window !== 'undefined') {
+         const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
+         const currentSettings = storedSettings ? JSON.parse(storedSettings) : {};
+         const updatedSettings = { ...currentSettings, ...newSettings };
+         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updatedSettings));
+         // Dispatch a storage event so useSettings hook in other tabs/components can update
+         window.dispatchEvent(new StorageEvent('storage', {
+             key: SETTINGS_STORAGE_KEY,
+             newValue: JSON.stringify(updatedSettings)
+         }));
+     }
 };
 
