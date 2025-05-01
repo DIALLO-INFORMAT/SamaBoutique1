@@ -3,7 +3,7 @@
 
 import type { ReactNode } from 'react';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
-import { User, Package, LogOut, LayoutDashboard, Box, Settings } from 'lucide-react'; // Added Box, Settings
+import { User, Package, LogOut, LayoutDashboard, Box, Settings, FileText } from 'lucide-react'; // Added FileText
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import { useRouter } from 'next/navigation'; // Import useRouter
@@ -92,19 +92,35 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                                             </SidebarMenuButton>
                                         </Link>
                                     </SidebarMenuItem>
+                                     {/* Invoices for Manager */}
+                                     <SidebarMenuItem>
+                                        <Link href="/dashboard/invoices" passHref legacyBehavior>
+                                            <SidebarMenuButton tooltip="Factures" className="text-sm" isActive={router.pathname?.startsWith('/dashboard/invoices')}>
+                                                <FileText />
+                                                <span>Factures</span>
+                                            </SidebarMenuButton>
+                                        </Link>
+                                    </SidebarMenuItem>
                                 </>
                              )}
-                            {/* Links for Customers (Hide My Orders if manager, they have Manage Orders) */}
-                             {user.role === 'customer' && (
-                                <SidebarMenuItem>
-                                    <Link href="/dashboard/orders" passHref legacyBehavior>
-                                        <SidebarMenuButton tooltip="Mes Commandes" className="text-sm" isActive={router.pathname === '/dashboard/orders'}>
-                                            <Package />
-                                            <span>Mes Commandes</span>
-                                        </SidebarMenuButton>
-                                    </Link>
-                                </SidebarMenuItem>
-                             )}
+                            {/* Links for Customers */}
+                             <SidebarMenuItem>
+                                <Link href="/dashboard/orders" passHref legacyBehavior>
+                                    <SidebarMenuButton tooltip="Mes Commandes" className="text-sm" isActive={router.pathname === '/dashboard/orders'}>
+                                        <Package />
+                                        <span>Mes Commandes</span>
+                                    </SidebarMenuButton>
+                                </Link>
+                            </SidebarMenuItem>
+                             {/* Invoices for Customer */}
+                             <SidebarMenuItem>
+                                <Link href="/dashboard/invoices" passHref legacyBehavior>
+                                    <SidebarMenuButton tooltip="Mes Factures" className="text-sm" isActive={router.pathname === '/dashboard/invoices'}>
+                                        <FileText />
+                                        <span>Mes Factures</span>
+                                    </SidebarMenuButton>
+                                </Link>
+                            </SidebarMenuItem>
                             <SidebarMenuItem>
                                 <Link href="/dashboard/profile" passHref legacyBehavior>
                                     <SidebarMenuButton tooltip="Mon Profil" className="text-sm" isActive={router.pathname === '/dashboard/profile'}>

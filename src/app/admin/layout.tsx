@@ -3,7 +3,7 @@
 
 import type { ReactNode } from 'react';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
-import { LayoutGrid, Box, Settings, Users, LogOut, Package } from 'lucide-react'; // Added Package
+import { LayoutGrid, Box, Settings, Users, LogOut, Package, FileText } from 'lucide-react'; // Added FileText for Invoices
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import { useRouter } from 'next/navigation'; // Import useRouter
@@ -84,6 +84,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                     <SidebarMenuButton tooltip="Commandes" className="text-sm" isActive={router.pathname?.startsWith('/admin/orders')}>
                                         <Package />
                                         <span>Commandes</span>
+                                    </SidebarMenuButton>
+                                </Link>
+                            </SidebarMenuItem>
+                             {/* Invoices Link */}
+                             <SidebarMenuItem>
+                                <Link href="/admin/invoices" passHref legacyBehavior>
+                                    <SidebarMenuButton tooltip="Factures" className="text-sm" isActive={router.pathname?.startsWith('/admin/invoices')}>
+                                        <FileText />
+                                        <span>Factures</span>
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
