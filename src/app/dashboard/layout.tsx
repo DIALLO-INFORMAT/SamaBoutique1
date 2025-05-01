@@ -6,7 +6,7 @@ import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, S
 import { User, Package, LogOut, LayoutDashboard, Box, Settings, FileText } from 'lucide-react'; // Added FileText
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { usePathname, useRouter } from 'next/navigation'; // Import usePathname
 import { Button } from '@/components/ui/button'; // Import Button
 import { useToast } from '@/hooks/use-toast'; // Import useToast
 import { useNotificationListener } from '@/hooks/useNotificationListener.tsx'; // Import notification hook
@@ -18,6 +18,7 @@ interface UserDashboardLayoutProps {
 export default function UserDashboardLayout({ children }: UserDashboardLayoutProps) {
     const { user, logout, isLoading } = useAuth();
     const router = useRouter();
+    const pathname = usePathname(); // Get current path
     const { toast } = useToast();
 
     // Only listen if the user is a manager
@@ -54,6 +55,60 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
         );
     }
 
+    // Define common links
+     const commonLinks = (
+        <>
+            <SidebarMenuItem>
+                <Link href="/dashboard/orders" passHref legacyBehavior>
+                    <SidebarMenuButton tooltip="Mes Commandes" className="text-sm" isActive={pathname === '/dashboard/orders'}>
+                        <Package />
+                        <span>Mes Commandes</span>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <Link href="/dashboard/invoices" passHref legacyBehavior>
+                    <SidebarMenuButton tooltip="Mes Factures" className="text-sm" isActive={pathname === '/dashboard/invoices'}>
+                        <FileText />
+                        <span>Mes Factures</span>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <Link href="/dashboard/profile" passHref legacyBehavior>
+                    <SidebarMenuButton tooltip="Mon Profil" className="text-sm" isActive={pathname === '/dashboard/profile'}>
+                        <User />
+                        <span>Mon Profil</span>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
+        </>
+     );
+
+     // Define manager specific links
+     const managerLinks = (
+         <>
+             <SidebarMenuItem>
+                 <Link href="/dashboard/products" passHref legacyBehavior>
+                     <SidebarMenuButton tooltip="Gérer Produits" className="text-sm" isActive={pathname?.startsWith('/dashboard/products')}>
+                         <Box />
+                         <span>Gérer Produits</span>
+                     </SidebarMenuButton>
+                 </Link>
+             </SidebarMenuItem>
+             <SidebarMenuItem>
+                 <Link href="/dashboard/manage-orders" passHref legacyBehavior>
+                     <SidebarMenuButton tooltip="Gérer Commandes" className="text-sm" isActive={pathname?.startsWith('/dashboard/manage-orders')}>
+                         <Package />
+                         <span>Gérer Commandes</span>
+                     </SidebarMenuButton>
+                 </Link>
+             </SidebarMenuItem>
+              {/* The Invoices link for manager is intentionally the same as customer's for now */}
+         </>
+     );
+
+
     return (
         <SidebarProvider>
             <div className="flex min-h-[calc(100vh-150px)]"> {/* Adjust min-height based on header/footer */}
@@ -66,69 +121,19 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                         <SidebarMenu>
                              <SidebarMenuItem>
                                 <Link href="/dashboard" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Tableau de bord" className="text-sm" isActive={router.pathname === '/dashboard'}>
+                                    <SidebarMenuButton tooltip="Tableau de bord" className="text-sm" isActive={pathname === '/dashboard'}>
                                         <LayoutDashboard />
                                         <span>Tableau de bord</span>
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
-                             {/* Manager Specific Links */}
-                             {user.role === 'manager' && (
-                                <>
-                                    <SidebarMenuItem>
-                                        <Link href="/dashboard/products" passHref legacyBehavior>
-                                            <SidebarMenuButton tooltip="Gérer Produits" className="text-sm" isActive={router.pathname?.startsWith('/dashboard/products')}>
-                                                <Box />
-                                                <span>Gérer Produits</span>
-                                            </SidebarMenuButton>
-                                        </Link>
-                                    </SidebarMenuItem>
-                                    {/* Orders Management for Manager */}
-                                     <SidebarMenuItem>
-                                        <Link href="/dashboard/manage-orders" passHref legacyBehavior>
-                                            <SidebarMenuButton tooltip="Gérer Commandes" className="text-sm" isActive={router.pathname?.startsWith('/dashboard/manage-orders')}>
-                                                <Package />
-                                                <span>Gérer Commandes</span>
-                                            </SidebarMenuButton>
-                                        </Link>
-                                    </SidebarMenuItem>
-                                     {/* Invoices for Manager */}
-                                     <SidebarMenuItem>
-                                        <Link href="/dashboard/invoices" passHref legacyBehavior>
-                                            <SidebarMenuButton tooltip="Factures" className="text-sm" isActive={router.pathname?.startsWith('/dashboard/invoices')}>
-                                                <FileText />
-                                                <span>Factures</span>
-                                            </SidebarMenuButton>
-                                        </Link>
-                                    </SidebarMenuItem>
-                                </>
-                             )}
-                            {/* Links for Customers */}
-                             <SidebarMenuItem>
-                                <Link href="/dashboard/orders" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Mes Commandes" className="text-sm" isActive={router.pathname === '/dashboard/orders'}>
-                                        <Package />
-                                        <span>Mes Commandes</span>
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
-                             {/* Invoices for Customer */}
-                             <SidebarMenuItem>
-                                <Link href="/dashboard/invoices" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Mes Factures" className="text-sm" isActive={router.pathname === '/dashboard/invoices'}>
-                                        <FileText />
-                                        <span>Mes Factures</span>
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <Link href="/dashboard/profile" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Mon Profil" className="text-sm" isActive={router.pathname === '/dashboard/profile'}>
-                                        <User />
-                                        <span>Mon Profil</span>
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
+
+                            {/* Show Manager links first if manager */}
+                            {user.role === 'manager' && managerLinks}
+
+                            {/* Show Common links (includes invoices) */}
+                            {commonLinks}
+
                         </SidebarMenu>
                     </SidebarContent>
                      <SidebarFooter className="p-2 border-t border-border">

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Printer, Download } from "lucide-react"; // Icons for actions
+import { Eye, Printer, Download, Share2 } from "lucide-react"; // Icons for actions - Added Share2
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Order, OrderStatus } from '@/lib/types'; // Use Order type as base for invoice data
@@ -35,11 +35,20 @@ const fetchInvoiceableOrdersFromAPI = async (): Promise<Order[]> => {
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort newest first
 };
 
-// Placeholder function for viewing/printing invoice
-const handlePrintInvoice = (orderId: string) => {
-    alert(`Fonctionnalité d'impression/affichage pour la facture ${orderId} à implémenter.`);
-    // In a real app, this would open a new tab/modal with the formatted invoice
-    // or trigger the browser's print dialog using window.print() on a styled component.
+// Placeholder function for viewing/printing/sharing invoice (same logic as customer page)
+const handleViewInvoice = (orderId: string) => {
+    alert(`Fonctionnalité d'affichage/impression pour la facture ${orderId} à implémenter.
+
+Ici, on pourrait générer une version imprimable/PDF de la facture avec tous les détails :
+- Infos boutique (Logo, Nom, Adresse)
+- Infos client (Nom, Adresse)
+- N° Facture, N° Commande, Date
+- Détails produits (Nom, Qté, Prix Unitaire, Total Ligne)
+- Total HT, TVA (si applicable), Total TTC
+- Méthode de paiement
+- Statut commande
+
+Un bouton "Partager" (WhatsApp, Email) pourrait aussi être ajouté ici.`);
 };
 
 // --- Component ---
@@ -117,22 +126,20 @@ export default function AdminInvoicesPage() {
                                             {invoice.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}
                                         </TableCell>
                                         <TableCell className="text-right px-6 py-3 space-x-1">
-                                            {/* <Button variant="ghost" size="icon" title="Voir la facture">
-                                                <Eye className="h-4 w-4" />
-                                            </Button> */}
+                                            {/* Use the unified handler */}
                                             <Button
                                                 variant="outline"
-                                                size="sm" // Make button slightly larger
-                                                title="Imprimer/Télécharger"
-                                                onClick={() => handlePrintInvoice(invoice.orderNumber)}
+                                                size="sm"
+                                                title="Voir / Imprimer"
+                                                onClick={() => handleViewInvoice(invoice.orderNumber)}
                                                 className="flex items-center gap-1"
                                             >
                                                 <Printer className="h-4 w-4" />
-                                                <span className="hidden sm:inline">Imprimer</span>
+                                                <span className="hidden sm:inline">Voir</span>
                                             </Button>
-                                            {/* Add Download functionality if needed */}
-                                            {/* <Button variant="ghost" size="icon" title="Télécharger la facture">
-                                                <Download className="h-4 w-4" />
+                                            {/* Optional Share Button Placeholder */}
+                                            {/* <Button variant="ghost" size="icon" title="Partager (bientôt disponible)">
+                                                <Share2 className="h-4 w-4 text-muted-foreground" />
                                             </Button> */}
                                         </TableCell>
                                     </TableRow>

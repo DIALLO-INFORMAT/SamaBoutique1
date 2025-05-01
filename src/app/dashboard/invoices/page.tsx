@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Printer, Download, FileText, AlertTriangle } from "lucide-react";
+import { Eye, Printer, Download, FileText, AlertTriangle, Share2 } from "lucide-react"; // Added Share2
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Order, OrderStatus } from '@/lib/types';
@@ -36,9 +36,23 @@ const fetchMyInvoiceableOrdersFromAPI = async (userId: string): Promise<Order[]>
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort newest first
 };
 
-// Placeholder for printing/viewing (same as admin)
-const handlePrintInvoice = (orderId: string) => {
-    alert(`Fonctionnalité d'impression/affichage pour la facture ${orderId} à implémenter.`);
+// Placeholder for printing/viewing/sharing (enhanced alert)
+const handleViewInvoice = (orderId: string) => {
+    // In a real app, this would open a new tab/modal with the formatted invoice.
+    // You could use window.open('/invoice-viewer?orderId=' + orderId)
+    // The invoice viewer page would fetch order details and render them.
+    alert(`Fonctionnalité d'affichage/impression pour la facture ${orderId} à implémenter.
+
+Ici, on pourrait générer une version imprimable/PDF de la facture avec tous les détails :
+- Infos boutique (Logo, Nom, Adresse)
+- Infos client (Nom, Adresse)
+- N° Facture, N° Commande, Date
+- Détails produits (Nom, Qté, Prix Unitaire, Total Ligne)
+- Total HT, TVA (si applicable), Total TTC
+- Méthode de paiement
+- Statut commande
+
+Un bouton "Partager" (WhatsApp, Email) pourrait aussi être ajouté ici.`);
 };
 
 // --- Component ---
@@ -112,7 +126,7 @@ export default function UserInvoicesPage() {
             <Card className="shadow-md border-border">
                 <CardHeader className="border-b border-border px-6 py-4">
                     <CardTitle>Historique des Factures</CardTitle>
-                    <CardDescription>Retrouvez ici les factures de vos commandes.</CardDescription>
+                    <CardDescription>Retrouvez ici les factures de vos commandes complétées.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
                     {invoices.length === 0 ? (
@@ -146,7 +160,12 @@ export default function UserInvoicesPage() {
                                                  invoice.status === 'Livré' ? 'default' :
                                                  invoice.status === 'Annulé' || invoice.status === 'Remboursé' ? 'destructive' : 'secondary'
                                                 }
-                                                className="text-xs"
+                                                className={cn("text-xs",
+                                                     invoice.status === 'Livré' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 border-green-300' :
+                                                     invoice.status === 'Expédié' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 border-purple-300' :
+                                                     invoice.status === 'Payé' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-blue-300' :
+                                                     'border-border' // Default outline/secondary style
+                                                    )}
                                              >
                                                  {invoice.status}
                                              </Badge>
@@ -155,15 +174,17 @@ export default function UserInvoicesPage() {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                title="Imprimer/Voir"
-                                                onClick={() => handlePrintInvoice(invoice.orderNumber)}
+                                                title="Voir / Imprimer"
+                                                onClick={() => handleViewInvoice(invoice.orderNumber)}
                                                 className="flex items-center gap-1"
                                             >
                                                 <Printer className="h-4 w-4" />
-                                                <span className="hidden sm:inline">Imprimer</span>
+                                                <span className="hidden sm:inline">Voir</span>
                                             </Button>
-                                            {/* Maybe download button */}
-                                            {/* <Button variant="ghost" size="icon" title="Télécharger"> <Download className="h-4 w-4" /> </Button> */}
+                                            {/* Optional Share Button Placeholder */}
+                                            {/* <Button variant="ghost" size="icon" title="Partager (bientôt disponible)">
+                                                <Share2 className="h-4 w-4 text-muted-foreground" />
+                                            </Button> */}
                                         </TableCell>
                                     </TableRow>
                                 ))}
