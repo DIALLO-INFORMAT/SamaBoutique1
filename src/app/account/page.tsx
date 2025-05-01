@@ -84,7 +84,8 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="flex justify-center items-center py-12">
+     // Added container and max-width here
+    <div className="container mx-auto max-w-4xl flex justify-center items-center py-12">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center pb-2">
           <CardTitle className="text-2xl font-bold text-primary">

@@ -15,7 +15,8 @@ export type Product = typeof products[0];
 
 export default function Home() {
   return (
-    <div className="space-y-8">
+     // Added container and max-width here for homepage content
+    <div className="container mx-auto max-w-4xl space-y-8">
       <h1 className="text-3xl font-bold text-center text-primary">Nos Produits & Services</h1>
       <FilterSortControls />
       <ProductList initialProducts={products} />

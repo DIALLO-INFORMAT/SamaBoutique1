@@ -24,7 +24,8 @@ export default function OrderConfirmationPage() {
   // const orderDetails = order ? JSON.parse(order as string) : null;
 
   return (
-    <div className="flex justify-center items-center py-16">
+     // Added container and max-width here
+    <div className="container mx-auto max-w-4xl flex justify-center items-center py-16">
       <Card className={`w-full max-w-lg shadow-xl transform transition-all duration-700 ease-out ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
         <CardHeader className="text-center items-center pt-8 pb-4">
           <div className={`p-3 rounded-full bg-primary mb-4 transition-transform duration-500 delay-200 ${isVisible ? 'scale-100' : 'scale-0'}`}>

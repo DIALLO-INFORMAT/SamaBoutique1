@@ -64,7 +64,8 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="flex justify-center py-8">
+    // Added container and max-width here
+    <div className="container mx-auto max-w-4xl flex justify-center py-8">
       <Card className="w-full max-w-2xl shadow-lg">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-2">
@@ -143,8 +144,9 @@ export default function ContactPage() {
               <Button
                  type="submit"
                  className="w-full"
-                 style={{ backgroundColor: 'hsl(35, 100%, 63%)', color: 'white' }}
+                 style={{ backgroundColor: 'hsl(35, 100%, 63%)', color: 'white' }} // Consider using variant="destructive" instead of inline style
                  disabled={form.formState.isSubmitting}
+                 variant="destructive" // Use destructive variant for consistency
               >
                  {form.formState.isSubmitting ? 'Envoi en cours...' : 'Envoyer le Message'}
               </Button>

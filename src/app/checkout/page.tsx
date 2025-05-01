@@ -110,7 +110,8 @@ export default function CheckoutPage() {
 
 
   return (
-    <div className="space-y-8">
+     // Added container and max-width here
+    <div className="container mx-auto max-w-4xl space-y-8">
       <h1 className="text-3xl font-bold text-center text-primary flex items-center justify-center gap-2">
         <CreditCard className="h-8 w-8" /> Passage à la caisse
       </h1>

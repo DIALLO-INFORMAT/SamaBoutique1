@@ -26,7 +26,8 @@ export default function RootLayout({
       >
         <CartProvider> {/* Wrap with CartProvider */}
           <Header />
-          <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+          {/* Adjusted main padding - container/max-w will be handled within specific page layouts if needed */}
+          <main className="flex-grow px-4 py-8">
             {children}
           </main>
           <Toaster />
