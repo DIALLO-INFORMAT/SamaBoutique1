@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Mail } from "lucide-react";
+// Removed Mail import from lucide-react
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -68,9 +68,7 @@ export default function ContactPage() {
     <div className="container mx-auto max-w-4xl flex justify-center py-8">
       <Card className="w-full max-w-2xl shadow-lg">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-2">
-             <Mail className="h-8 w-8 text-primary"/>
-          </div>
+          {/* Removed Mail icon */}
           <CardTitle className="text-2xl font-bold text-primary">Contactez-nous</CardTitle>
           <CardDescription>
             Remplissez le formulaire ci-dessous pour nous envoyer un message.

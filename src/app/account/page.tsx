@@ -12,12 +12,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription, // Added FormDescription
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
-import { LogIn, UserPlus, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react'; // Only keep Loader2
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import { useRouter } from 'next/navigation';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; // Import RadioGroup
@@ -102,13 +103,14 @@ export default function AccountPage() {
       // Prevent non-admin users from creating admin/manager accounts through UI for security
       // In a real app, backend validation is crucial. This is a basic UI guard.
       if ((values.role === 'admin' || values.role === 'manager') && user?.role !== 'admin') {
+          // Default non-admins trying to create privileged accounts to 'customer'
+          values.role = 'customer';
           toast({
-              title: "Action non autorisée",
-              description: "Seul un administrateur peut créer des comptes Admin ou Gestionnaire.",
-              variant: "destructive",
+              title: "Type de Compte Ajusté",
+              description: "Le compte sera créé en tant que Client.",
+              variant: "default", // Use default or a warning style
           });
-          setIsLoading(false);
-          return; // Stop registration
+          // Continue registration as customer
       }
 
 
@@ -150,10 +152,10 @@ export default function AccountPage() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6 bg-secondary rounded-md p-1">
               <TabsTrigger value="login" disabled={isLoading} className="data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-sm py-2 text-sm font-medium">
-                <LogIn className="mr-2 h-4 w-4"/>Se Connecter
+                {/* Removed LogIn icon */}Se Connecter
               </TabsTrigger>
               <TabsTrigger value="register" disabled={isLoading} className="data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-sm py-2 text-sm font-medium">
-                <UserPlus className="mr-2 h-4 w-4"/>S'inscrire
+                {/* Removed UserPlus icon */}S'inscrire
               </TabsTrigger>
             </TabsList>
 
@@ -188,7 +190,7 @@ export default function AccountPage() {
                     )}
                   />
                   <Button type="submit" className="w-full h-11 text-base" disabled={isLoading} variant="destructive">
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null /* Removed LogIn icon */}
                     {isLoading ? "Connexion..." : "Se Connecter"}
                   </Button>
                 </form>
@@ -252,55 +254,58 @@ export default function AccountPage() {
                     )}
                   />
                    {/* Role Selection - Conditionally render based on if current user is admin */}
-                   {user?.role === 'admin' && ( // Only show if the logged-in user is admin
-                      <FormField
-                        control={registerForm.control}
-                        name="role"
-                        render={({ field }) => (
-                          <FormItem className="space-y-3">
-                            <FormLabel>Type de compte</FormLabel>
-                            <FormControl>
-                              <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
+                   {/* Always show 'Client' option, hide others if not admin */}
+                   <FormField
+                      control={registerForm.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <FormLabel>Type de compte</FormLabel>
+                          <FormControl>
+                             <RadioGroup
+                               onValueChange={(value) => {
+                                    // Only allow setting admin/manager if the logged-in user is admin
+                                    if ((value === 'admin' || value === 'manager') && user?.role !== 'admin') {
+                                        field.onChange('customer'); // Force back to customer if not admin
+                                    } else {
+                                        field.onChange(value as "admin" | "manager" | "customer");
+                                    }
+                                }}
+                                value={field.value}
                                 className="flex flex-col space-y-1"
-                              >
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="customer" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">
-                                    Client
-                                  </FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="manager" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">
-                                    Gestionnaire
-                                  </FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="admin" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal">
-                                    Administrateur
-                                  </FormLabel>
-                                </FormItem>
-                              </RadioGroup>
-                            </FormControl>
-                             <FormDescription>
-                                Sélectionnez le rôle pour le nouvel utilisateur.
-                             </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                   )}
+                             >
+                               <FormItem className="flex items-center space-x-3 space-y-0">
+                                 <FormControl>
+                                   <RadioGroupItem value="customer" />
+                                 </FormControl>
+                                 <FormLabel className="font-normal">Client</FormLabel>
+                               </FormItem>
+                               {/* Only show Manager/Admin options if the current user is an admin */}
+                               {user?.role === 'admin' && (
+                                  <>
+                                    <FormItem className="flex items-center space-x-3 space-y-0">
+                                      <FormControl><RadioGroupItem value="manager" /></FormControl>
+                                      <FormLabel className="font-normal">Gestionnaire</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-3 space-y-0">
+                                      <FormControl><RadioGroupItem value="admin" /></FormControl>
+                                      <FormLabel className="font-normal">Administrateur</FormLabel>
+                                    </FormItem>
+                                  </>
+                               )}
+                             </RadioGroup>
+                          </FormControl>
+                           <FormDescription>
+                              {user?.role === 'admin'
+                                ? "Sélectionnez le rôle pour le nouvel utilisateur."
+                                : "Vous créez un compte Client."}
+                           </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   <Button type="submit" className="w-full h-11 text-base" disabled={isLoading} variant="destructive">
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null /* Removed UserPlus icon */}
                     {isLoading ? "Inscription..." : "Créer le Compte"}
                   </Button>
                 </form>

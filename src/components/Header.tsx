@@ -1,8 +1,9 @@
+// src/components/Header.tsx
 'use client'; // Make it a client component to use hooks
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Mail, ShoppingCart, User, LayoutGrid, Gauge, LogOut } from 'lucide-react'; // Added LogOut
+import { ShoppingBag, ShoppingCart, User, LayoutGrid, Gauge, LogOut, Search } from 'lucide-react'; // Added Search for Suivi, removed Mail
 import { useCart } from '@/context/CartContext'; // Import useCart
 import { Badge } from '@/components/ui/badge'; // Import Badge
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
@@ -36,6 +37,7 @@ export function Header() {
           SamaBoutique
         </Link>
         <div className="flex items-center gap-1 md:gap-2"> {/* Reduced gap slightly */}
+          {/* Reordered Links */}
           <Link href="/" passHref>
             <Button variant="ghost" className="px-2 md:px-4 text-sm">Accueil</Button>
           </Link>
@@ -43,7 +45,7 @@ export function Header() {
               <Button variant="ghost" className="px-2 md:px-4 text-sm">Boutique</Button>
           </Link>
 
-           {/* Conditional Dashboard Link */}
+          {/* Conditional Dashboard Link (before Account/Login) */}
           {userRole === 'admin' && (
               <Link href="/admin" passHref>
                  <Button variant="ghost" className="flex items-center gap-1 px-2 md:px-4 text-sm">
@@ -59,17 +61,6 @@ export function Header() {
                </Link>
           )}
 
-          {/* Tracking Link */}
-          <Link href="/suivi" passHref>
-             <Button variant="ghost" className="px-2 md:px-4 text-sm">Suivi</Button>
-          </Link>
-
-          <Link href="/contact" passHref>
-            <Button variant="ghost" className="flex items-center gap-1 px-2 md:px-4 text-sm">
-               <Mail className="h-4 w-4 hidden sm:inline-block" /> Contact
-            </Button>
-          </Link>
-
           {/* Account/Logout link */}
           {userRole === 'guest' ? (
             <Link href="/account" passHref>
@@ -83,9 +74,22 @@ export function Header() {
              </Button>
           )}
 
-           {/* Cart Link - Icon only by default, text on sm+ */}
+          {/* Tracking Link */}
+          <Link href="/suivi" passHref>
+             <Button variant="ghost" className="flex items-center gap-1 px-2 md:px-4 text-sm">
+                <Search className="h-4 w-4 hidden sm:inline-block"/> Suivi
+             </Button>
+          </Link>
+
+          <Link href="/contact" passHref>
+            <Button variant="ghost" className="px-2 md:px-4 text-sm"> {/* Removed icon */}
+               Contact
+            </Button>
+          </Link>
+
+           {/* Cart Link - Icon only */}
           <Link href="/panier" passHref>
-            <Button variant="ghost" size="icon" className="relative md:hidden"> {/* Icon only on small screens */}
+            <Button variant="ghost" size="icon" className="relative"> {/* Always icon size */}
               <ShoppingCart className="h-5 w-5" />
               {itemCount > 0 && (
                 <Badge variant="destructive" className="absolute -top-1 -right-1 px-1.5 py-0.5 text-xs rounded-full">
@@ -93,15 +97,6 @@ export function Header() {
                 </Badge>
               )}
                <span className="sr-only">Panier</span>
-            </Button>
-             <Button variant="ghost" className="relative hidden md:inline-flex items-center gap-1 px-2 md:px-4 text-sm"> {/* Icon and text on medium+ screens */}
-              <ShoppingCart className="h-5 w-5" />
-              <span>Panier</span>
-              {itemCount > 0 && (
-                <Badge variant="destructive" className="absolute -top-2 -right-1 md:-right-2 px-1.5 py-0.5 text-xs rounded-full">
-                  {itemCount}
-                </Badge>
-              )}
             </Button>
           </Link>
         </div>
