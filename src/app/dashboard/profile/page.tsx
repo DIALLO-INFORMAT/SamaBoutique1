@@ -23,8 +23,8 @@ import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import { useEffect, useState } from "react";
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
-// Get translations
-const t = useTranslation().t;
+// Remove global `t` definition - Call `useTranslation` inside the component
+// const t = useTranslation().t;
 
 // Schema for profile update (including optional phone)
 const createProfileSchema = (t: Function) => z.object({
@@ -50,12 +50,12 @@ const createPasswordSchema = (t: Function) => z.object({
 export default function UserProfilePage() {
   const { toast } = useToast();
   const { user, updateUserProfile, changePassword, isLoading: authLoading } = useAuth(); // Use context hooks
-  const { t } = useTranslation(); // Use translation hook
+  const { t } = useTranslation(); // Use translation hook *inside* the component
 
   const [isProfileSubmitting, setIsProfileSubmitting] = useState(false);
   const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false);
 
-  // Create schemas using the translation function
+  // Create schemas using the translation function obtained from the hook
   const profileSchema = createProfileSchema(t);
   const passwordSchema = createPasswordSchema(t);
 
