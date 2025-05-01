@@ -3,7 +3,7 @@
 'use client';
 
 import { useLocale, Locale, defaultLocale } from '@/context/LocaleContext';
-import { useState, useEffect, useCallback } from 'react'; // Import useCallback
+import { useState, useEffect, useCallback } from 'react'; // Import useCallback from react
 import type { TOptions } from 'i18next'; // Use i18next type for interpolation
 
 type TranslationData = Record<string, string | object>; // Allow nested objects

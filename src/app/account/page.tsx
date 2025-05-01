@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react'; // Import useCallback from react
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -23,7 +23,7 @@ import { Loader2, Phone } from 'lucide-react'; // Added Phone
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useTranslation, useCallback } from '@/hooks/useTranslation'; // Import useTranslation and useCallback
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation only
 
 // Wrap schema creation in a function to use the `t` function
 const createLoginSchema = (t: Function) => z.object({
