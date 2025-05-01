@@ -11,9 +11,16 @@ export type OrderStatus =
     | 'Annulé'
     | 'Remboursé';
 
+// Define specific payment method types
+export type PaymentMethod =
+    | 'Paiement à la livraison'
+    | 'Wave'
+    | 'Orange Money'
+    | 'Carte Bancaire';
+
 export interface Order {
   id: string;
-  orderNumber: string;
+  orderNumber: string; // Unique identifier for the order, suitable for tracking
   userId: string; // Link to user who placed the order ('guest' if not logged in)
   customerInfo: {
     name: string;
@@ -24,7 +31,7 @@ export interface Order {
   items: CartItem[];
   total: number;
   status: OrderStatus;
-  paymentMethod: string; // e.g., "Paiement à la livraison"
+  paymentMethod: PaymentMethod; // Use the specific type here
   notes?: string;
   createdAt: Date;
   updatedAt: Date; // To track status changes

@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer"; // Import Footer
 import { cn } from "@/lib/utils";
 import { CartProvider } from "@/context/CartContext"; // Import CartProvider
 import { AuthProvider } from "@/context/AuthContext"; // Import AuthProvider
+import { WelcomePopup } from "@/components/WelcomePopup"; // Import WelcomePopup
 
 export const metadata: Metadata = {
   title: "SamaBoutique",
@@ -33,6 +34,7 @@ export default function RootLayout({
             <main className="flex-grow px-4 py-8">
               {children}
             </main>
+             <WelcomePopup /> {/* Add WelcomePopup here */}
             <Footer /> {/* Add Footer */}
             <Toaster />
           </CartProvider> {/* Close CartProvider */}
