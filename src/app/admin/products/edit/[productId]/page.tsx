@@ -290,7 +290,44 @@ export default function EditProductPage() {
 
 
   if (isLoading) {
-    return ( /* Skeleton loading state... */ );
+    // Restore the skeleton code here
+    return (
+         <div className="space-y-8">
+              <div className="flex items-center gap-4 mb-6">
+                  <Skeleton className="h-10 w-10 rounded" />
+                  <div className="space-y-2">
+                      <Skeleton className="h-8 w-64" />
+                      <Skeleton className="h-4 w-80" />
+                  </div>
+              </div>
+              <Card className="shadow-md border-border overflow-hidden">
+                   <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><Skeleton className="h-6 w-1/4" /></CardHeader>
+                   <CardContent className="p-6 space-y-6">
+                      <div className="space-y-2"><Skeleton className="h-4 w-1/6"/><Skeleton className="h-10 w-full"/></div>
+                      <div className="space-y-2"><Skeleton className="h-4 w-1/6"/><Skeleton className="h-20 w-full"/></div>
+                   </CardContent>
+               </Card>
+               <Card className="shadow-md border-border overflow-hidden">
+                   <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><Skeleton className="h-6 w-1/3" /></CardHeader>
+                   <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                     <div className="space-y-2"><Skeleton className="h-4 w-1/3"/><Skeleton className="h-10 w-full"/></div>
+                     <div className="space-y-2"><Skeleton className="h-4 w-1/3"/><Skeleton className="h-10 w-full"/></div>
+                     <div className="space-y-2"><Skeleton className="h-4 w-1/3"/><Skeleton className="h-10 w-full"/></div>
+                   </CardContent>
+              </Card>
+              <Card className="shadow-md border-border overflow-hidden">
+                  <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><Skeleton className="h-6 w-1/5" /></CardHeader>
+                  <CardContent className="p-6 space-y-4">
+                     <Skeleton className="h-32 w-40 rounded-md border border-border"/>
+                     <Skeleton className="h-10 w-1/2"/>
+                     <Skeleton className="h-10 w-full"/>
+                  </CardContent>
+              </Card>
+              <div className="flex justify-end pt-4">
+                 <Skeleton className="h-11 w-48 rounded-md"/>
+              </div>
+         </div>
+     );
   }
    if (!product) {
        return <div className="text-center py-10"><p className="text-destructive">{t('admin_edit_product_not_found_description')}</p></div>;
@@ -392,7 +429,3 @@ export default function EditProductPage() {
     </div>
   );
 }
-
-
-
-    
