@@ -1,4 +1,3 @@
-
 'use client';
 
 import './globals.css';
@@ -12,6 +11,8 @@ import { LocaleProvider } from '@/context/LocaleContext'; // Import LocaleProvid
 import { WelcomePopup } from '@/components/WelcomePopup';
 import React, { useEffect } from 'react';
 import { useSettings } from '@/hooks/useSettings';
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import { useIsMobile } from '@/hooks/use-mobile'; // Import useIsMobile
 
 export default function RootLayout({
   children,
@@ -28,8 +29,6 @@ export default function RootLayout({
       <body
         className={cn(
           'antialiased flex flex-col min-h-screen'
-          // Tailwind classes for LTR/RTL can be added here if needed,
-          // but setting dir attribute on <html> is usually sufficient
         )}
       >
         {/* Wrap everything with LocaleProvider */}
@@ -51,17 +50,15 @@ export default function RootLayout({
 // Renamed ClientLayout to ClientLayoutContent to avoid confusion
 // This component now sits inside all providers, including LocaleProvider
 function ClientLayoutContent({ children }: { children: React.ReactNode }) {
-    // Now we can safely use hooks that depend on LocaleProvider
     const settings = useSettings();
-    // const { isLoading: localeLoading } = useLocale(); // Get locale loading state if needed
+    const { t } = useTranslation(); // Get translation function
+    const isMobile = useIsMobile(); // Check if mobile
 
     useEffect(() => {
-        // Update CSS variable for primary color
         if (settings.primaryColor) {
           document.documentElement.style.setProperty('--primary', settings.primaryColor.match(/\d+/g)?.join(', ') + '%');
         }
 
-        // Dynamically add favicon link tag
         const head = document.head;
         let faviconLink = head.querySelector('link[rel="icon"]');
 
@@ -80,40 +77,40 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
     }, [settings.primaryColor, settings.faviconUrl]);
 
     useEffect(() => {
-        // Set document title based on settings and potentially locale
-        // You might integrate useTranslation here later
         document.title = settings.storeName || 'SamaBoutique';
     }, [settings.storeName]);
 
-    // Show loading if settings OR locale are loading
-    if (settings.isLoading /*|| localeLoading*/) {
+    if (settings.isLoading) {
         return (
-             <div className="fixed inset-0 bg-background z-[9999] flex items-center justify-center">
+             <div className="fixed inset-0 bg-background z-[9999] flex flex-col items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+                {/* Add loading text */}
+                <p className="mt-4 text-muted-foreground">{t('loading_in_progress')}</p>
             </div>
         );
     }
 
     if (settings.enableMaintenance) {
-        // Render maintenance mode page
         return (
              <div className="flex flex-col min-h-screen justify-center items-center text-center p-4 bg-background">
-                 <h1 className="text-3xl font-bold text-primary mb-4">Site en Maintenance</h1>
-                 <p className="text-muted-foreground">Nous serons bientôt de retour. Merci de votre patience.</p>
-                 {settings.supportEmail && <p className="mt-4 text-sm">Contact: {settings.supportEmail}</p>}
+                 <h1 className="text-3xl font-bold text-primary mb-4">{t('maintenance_mode_title')}</h1>
+                 <p className="text-muted-foreground">{t('maintenance_mode_description')}</p>
+                 {settings.supportEmail && <p className="mt-4 text-sm">{t('maintenance_mode_contact', { email: settings.supportEmail })}</p>}
              </div>
         );
     }
 
-    // Render the actual layout once everything is loaded
+    // Render the actual layout
+    // Header is now positioned conditionally via CSS in its own component
     return (
         <>
             <Header />
-            <main className="flex-grow px-4 py-8">{children}</main>
+            {/* Add padding-bottom to main content on mobile to prevent overlap with bottom header */}
+            <main className={cn("flex-grow px-4 py-8", isMobile ? "pb-24" : "")}>
+                {children}
+            </main>
             <WelcomePopup />
             <Footer />
         </>
     );
 }
-
-// Metadata is removed as it cannot be exported from a client component

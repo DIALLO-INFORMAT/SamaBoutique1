@@ -1,4 +1,3 @@
-
 {
   "site_name": "SamaBoutique",
   "developed_by": "Développé par WKB",
@@ -542,6 +541,7 @@
   "admin_settings_toast_save_error_title": "Erreur",
   "admin_settings_toast_save_error_description": "Impossible d'enregistrer les paramètres.",
   "loading": "Chargement...",
+  "loading_in_progress": "Chargement en cours...",
   "general_error": "Erreur",
   "general_cancel": "Cancel",
   "general_delete": "Supprimer",

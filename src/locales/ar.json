@@ -1,4 +1,3 @@
-
 {
   "site_name": "سما بوتيك",
   "developed_by": "تطوير بواسطة WKB",
@@ -316,7 +315,7 @@
   "dashboard_edit_product_page_title": "تعديل المنتج",
   "dashboard_edit_product_description": "تحديث \"{productName}\".",
   "dashboard_edit_product_back_button": "رجوع",
-  "dashboard_edit_product_general_info_title": "Informations Générales",
+  "dashboard_edit_product_general_info_title": "Infos Générales",
   "dashboard_edit_product_form_name": "الاسم",
   "dashboard_edit_product_form_description": "الوصف",
   "dashboard_edit_product_pricing_category_title": "التسعير والتصنيف",
@@ -542,6 +541,7 @@
   "admin_settings_toast_save_error_title": "خطأ",
   "admin_settings_toast_save_error_description": "تعذر حفظ الإعدادات.",
   "loading": "جارٍ التحميل...",
+  "loading_in_progress": "جارٍ التحميل...",
   "general_error": "خطأ",
   "general_cancel": "إلغاء",
   "general_delete": "حذف",
