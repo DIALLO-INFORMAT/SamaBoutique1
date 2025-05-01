@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Phone } from 'lucide-react'; // Added Phone
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -27,13 +27,17 @@ import { useTranslation, useCallback } from '@/hooks/useTranslation'; // Import 
 
 // Wrap schema creation in a function to use the `t` function
 const createLoginSchema = (t: Function) => z.object({
-  email: z.string().email({ message: t('account_form_email') + " invalid." }),
+  emailOrPhone: z.string().min(1, { message: t('account_form_email') + " ou " + t('checkout_form_phone') + " requis." }), // Accept email or phone
   password: z.string().min(6, { message: t('account_form_password') + " must contain at least 6 characters." }),
 });
 
 const createRegisterSchema = (t: Function) => z.object({
   name: z.string().min(2, { message: t('account_form_name') + " must contain at least 2 characters." }),
   email: z.string().email({ message: t('account_form_email') + " invalid." }),
+  phone: z.string().optional().or(z.literal('')).refine(value => { // Add optional phone field
+      if (!value) return true;
+      return /^\+?[0-9\s-]{8,}$/.test(value);
+  }, { message: t('checkout_form_phone') + " invalid." }),
   password: z.string().min(6, { message: t('account_form_password') + " must contain at least 6 characters." }),
   confirmPassword: z.string().min(6, { message: t('account_form_password') + " must contain at least 6 characters." }),
   role: z.enum(["admin", "manager", "customer"], {
@@ -69,19 +73,19 @@ export default function AccountPage() {
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { emailOrPhone: "", password: "" },
   });
 
   const registerForm = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "", role: "customer" },
+    defaultValues: { name: "", email: "", phone: "", password: "", confirmPassword: "", role: "customer" },
   });
 
   // Use useCallback for event handlers if needed, though not strictly necessary here
   const onLoginSubmit = useCallback(async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
     try {
-      const loggedInUser = await login(values.email, values.password);
+      const loggedInUser = await login(values.emailOrPhone, values.password); // Use emailOrPhone
       toast({
         title: t('account_toast_login_success_title'),
         description: t('account_toast_login_success_description', { name: loggedInUser.name }),
@@ -116,7 +120,8 @@ export default function AccountPage() {
           });
       }
 
-      await signup(values.name, values.email, values.password, values.role);
+       // Pass phone number to signup function
+      await signup(values.name, values.email, values.password, values.phone || undefined, values.role);
       toast({
         title: t('account_toast_register_success_title'),
         description: t('account_toast_register_success_description'),
@@ -124,7 +129,7 @@ export default function AccountPage() {
       });
       setActiveTab("login");
       registerForm.reset();
-      loginForm.setValue("email", values.email);
+      loginForm.setValue("emailOrPhone", values.email); // Set email in login form
     } catch (error: any) {
         console.error("Signup failed:", error);
         toast({
@@ -167,12 +172,12 @@ export default function AccountPage() {
                 <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-6">
                   <FormField
                     control={loginForm.control}
-                    name="email"
+                    name="emailOrPhone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('account_form_email')}</FormLabel>
+                        <FormLabel>{t('account_form_email')} / {t('checkout_form_phone')}</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder={t('account_form_email_placeholder')} {...field} className="text-base"/>
+                          <Input placeholder={t('account_form_email_placeholder') + " ou " + t('checkout_form_phone_placeholder')} {...field} className="text-base"/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -229,6 +234,20 @@ export default function AccountPage() {
                       </FormItem>
                     )}
                   />
+                   {/* Phone Number Field */}
+                   <FormField
+                     control={registerForm.control}
+                     name="phone"
+                     render={({ field }) => (
+                       <FormItem>
+                         <FormLabel className="flex items-center gap-1"><Phone className="h-4 w-4"/> {t('checkout_form_phone')} ({t('checkout_form_optional')})</FormLabel>
+                         <FormControl>
+                           <Input type="tel" placeholder={t('checkout_form_phone_placeholder')} {...field} className="text-base"/>
+                         </FormControl>
+                         <FormMessage />
+                       </FormItem>
+                     )}
+                   />
                   <FormField
                     control={registerForm.control}
                     name="password"
@@ -313,3 +332,4 @@ export default function AccountPage() {
     </div>
   );
 }
+

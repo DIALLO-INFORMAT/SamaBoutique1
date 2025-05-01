@@ -1,3 +1,4 @@
+// src/app/admin/users/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle, Edit, Trash2, ShieldCheck, UserX, Briefcase, Loader2 } from "lucide-react"; // Added Briefcase, Loader2
+import { MoreHorizontal, PlusCircle, Edit, Trash2, ShieldCheck, UserX, Briefcase, Loader2, KeyRound } from "lucide-react"; // Added KeyRound
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -35,7 +36,7 @@ const fetchUsersFromAPI = async (): Promise<AdminUser[]> => {
     const storedUsers = localStorage.getItem('users');
     const users = storedUsers ? JSON.parse(storedUsers) : [];
     // Ensure dates are parsed correctly if stored as strings
-    return users.map((u: any) => ({ ...u, createdAt: new Date(u.createdAt) }));
+    return users.map((u: any) => ({ ...u, createdAt: u.createdAt ? new Date(u.createdAt) : new Date() })); // Added fallback for createdAt
 };
 
 const updateUserRoleAPI = async (userId: string, newRole: UserRole): Promise<void> => {
@@ -62,11 +63,12 @@ const deleteUserAPI = async (userId: string): Promise<void> => {
 
 
 export default function AdminUsersPage() {
-  const { user: loggedInUser } = useAuth(); // Get the currently logged-in admin user
+  const { user: loggedInUser, resetPassword } = useAuth(); // Get the currently logged-in admin user and resetPassword function
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null); // Track updating user ID
   const [isDeleting, setIsDeleting] = useState<string | null>(null); // Track deleting user ID
+  const [isResetting, setIsResetting] = useState<string | null>(null); // Track resetting user ID
   const { toast } = useToast();
 
   // Fetch users on mount
@@ -133,6 +135,33 @@ export default function AdminUsersPage() {
         setIsDeleting(null);
      }
   };
+
+   const handleResetPassword = async (userId: string, userName: string) => {
+     if (userId === loggedInUser?.id) {
+        toast({ title: "Action non autorisée", description: "Vous ne pouvez pas réinitialiser votre propre mot de passe ici.", variant: "destructive" });
+        return;
+     }
+     // Optional: Add check if trying to reset default admin's password unnecessarily
+
+     setIsResetting(userId);
+     try {
+        await resetPassword(userId);
+        toast({
+            title: "Mot de Passe Réinitialisé",
+            // WARNING: Do not show the default password in a real application toast.
+            // Send an email instead. This is for simulation only.
+            description: `Le mot de passe pour ${userName} a été réinitialisé (à 'password123' pour cette démo). L'utilisateur devra le changer.`,
+            className: "bg-primary text-primary-foreground border-primary",
+            duration: 7000 // Longer duration for important info
+        });
+     } catch (error: any) {
+         console.error("Failed to reset password:", error);
+         toast({ title: "Erreur", description: error.message || "Impossible de réinitialiser le mot de passe.", variant: "destructive" });
+     } finally {
+        setIsResetting(null);
+     }
+  };
+
 
    const getRoleBadgeVariant = (role: UserRole): "default" | "secondary" | "destructive" | "outline" => {
         switch (role) {
@@ -211,7 +240,7 @@ export default function AdminUsersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell px-6 py-3">
-                        {user.createdAt.toLocaleDateString('fr-FR')}
+                        {user.createdAt ? user.createdAt.toLocaleDateString('fr-FR') : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right px-6 py-3">
                       <AlertDialog>
@@ -221,9 +250,9 @@ export default function AdminUsersPage() {
                                aria-haspopup="true"
                                size="icon"
                                variant="ghost"
-                               disabled={isUpdating === user.id || isDeleting === user.id || user.id === loggedInUser?.id || user.id === 'admin-default'} // Disable actions for self, default admin, or during operation
+                               disabled={isUpdating === user.id || isDeleting === user.id || isResetting === user.id || user.id === loggedInUser?.id} // Disable actions for self or during operation
                              >
-                               {(isUpdating === user.id || isDeleting === user.id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                               {(isUpdating === user.id || isDeleting === user.id || isResetting === user.id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
                                <span className="sr-only">Toggle menu</span>
                              </Button>
                            </DropdownMenuTrigger>
@@ -231,7 +260,11 @@ export default function AdminUsersPage() {
                              <DropdownMenuLabel>Modifier le rôle</DropdownMenuLabel>
                               {/* Role Change Options */}
                               {user.role !== 'admin' && (
-                                <DropdownMenuItem onClick={() => handleRoleChange(user.id, user.name, user.role, 'admin')} className="cursor-pointer flex items-center text-green-600 focus:text-green-700 focus:bg-green-50">
+                                <DropdownMenuItem
+                                   onClick={() => handleRoleChange(user.id, user.name, user.role, 'admin')}
+                                   disabled={userId === 'admin-default'} // Disable changing default admin role
+                                   className="cursor-pointer flex items-center text-green-600 focus:text-green-700 focus:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
                                   <ShieldCheck className="mr-2 h-4 w-4" /> Promouvoir Admin
                                 </DropdownMenuItem>
                               )}
@@ -241,38 +274,65 @@ export default function AdminUsersPage() {
                                 </DropdownMenuItem>
                                )}
                                {user.role !== 'customer' && (
-                                <DropdownMenuItem onClick={() => handleRoleChange(user.id, user.name, user.role, 'customer')} className="cursor-pointer flex items-center text-orange-600 focus:text-orange-700 focus:bg-orange-50">
+                                <DropdownMenuItem
+                                    onClick={() => handleRoleChange(user.id, user.name, user.role, 'customer')}
+                                    disabled={userId === 'admin-default'} // Disable demoting default admin
+                                    className="cursor-pointer flex items-center text-orange-600 focus:text-orange-700 focus:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
                                   <UserX className="mr-2 h-4 w-4" /> Rétrograder Client
                                 </DropdownMenuItem>
                               )}
                              <DropdownMenuSeparator />
                              <DropdownMenuLabel>Autres Actions</DropdownMenuLabel>
+                             {/* Reset Password */}
+                             <AlertDialogTrigger asChild>
+                                <Button variant="ghost" data-alert-type="reset" className="w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                                     <KeyRound className="mr-2 h-4 w-4"/>Réinitialiser MDP
+                                </Button>
+                             </AlertDialogTrigger>
                               {/* Delete Option */}
                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                                <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                                    <Trash2 className="mr-2 h-4 w-4"/>Supprimer le compte
                                 </Button>
                              </AlertDialogTrigger>
                            </DropdownMenuContent>
                          </DropdownMenu>
 
-                         {/* Delete Confirmation Dialog */}
+                         {/* Separate AlertDialogContent for each action type */}
+                         {/* Delete Confirmation */}
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Supprimer l'utilisateur?</AlertDialogTitle>
-                              <AlertDialogDescription>
+                              <AlertDialogTitle data-alert-type="delete">Supprimer l'utilisateur?</AlertDialogTitle>
+                              <AlertDialogTitle data-alert-type="reset">Réinitialiser le mot de passe?</AlertDialogTitle>
+                              <AlertDialogDescription data-alert-type="delete">
                                 Êtes-vous sûr de vouloir supprimer le compte de "{user.name}" ({user.email})? Cette action est irréversible.
+                              </AlertDialogDescription>
+                               <AlertDialogDescription data-alert-type="reset">
+                                Êtes-vous sûr de vouloir réinitialiser le mot de passe pour "{user.name}" ({user.email})? Un mot de passe par défaut sera défini.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              {/* Delete Action */}
                               <AlertDialogAction
+                                 data-alert-type="delete"
                                  onClick={() => handleDeleteUser(user.id, user.name)}
                                  className={buttonVariants({ variant: "destructive" })}
                                  disabled={isDeleting === user.id}
                               >
                                   {isDeleting === user.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                   Supprimer
+                              </AlertDialogAction>
+                              {/* Reset Password Action */}
+                               <AlertDialogAction
+                                 data-alert-type="reset"
+                                 onClick={() => handleResetPassword(user.id, user.name)}
+                                 className={buttonVariants({ variant: "destructive" })}
+                                 disabled={isResetting === user.id}
+                              >
+                                  {isResetting === user.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                  Réinitialiser
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -287,6 +347,29 @@ export default function AdminUsersPage() {
          {/* Optional: Pagination */}
         {/* <CardFooter className="p-4 border-t"> Pagination Controls </CardFooter> */}
       </Card>
+
+       {/* CSS to conditionally hide AlertDialog parts based on trigger */}
+       <style jsx global>{`
+        [data-radix-alert-dialog-content]:not([data-triggered-by="delete"]) [data-alert-type="reset"],
+        [data-radix-alert-dialog-content]:not([data-triggered-by="reset"]) [data-alert-type="delete"] {
+            display: none;
+         }
+       `}</style>
+       <script dangerouslySetInnerHTML={{ __html: `
+         document.addEventListener('click', function(event) {
+           const trigger = event.target.closest('[data-radix-collection-item][role="menuitem"]');
+           if (trigger && trigger.hasAttribute('aria-controls') && trigger.getAttribute('aria-haspopup') === 'dialog') {
+             const alertType = trigger.dataset.alertType;
+             const contentId = trigger.getAttribute('aria-controls');
+             const content = document.getElementById(contentId);
+             if (content) {
+               content.dataset.triggeredBy = alertType;
+             }
+           }
+         }, true);
+       `}}/>
+
+
     </div>
   );
 }
