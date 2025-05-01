@@ -54,16 +54,25 @@ TableFooter.displayName = "TableFooter"
 const TableRow = React.forwardRef<
   HTMLTableRowElement,
   React.HTMLAttributes<HTMLTableRowElement>
->(({ className, ...props }, ref) => (
-  <tr
-    ref={ref}
-    className={cn(
-      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
-      className
-    )}
-    {...props} // Remove any potential whitespace children here
-  />
-))
+>(({ className, children, ...props }, ref) => {
+  // Filter out pure whitespace text nodes to prevent hydration errors
+  const filteredChildren = React.Children.toArray(children).filter(child => {
+    return !(typeof child === 'string' && child.trim() === '');
+  });
+
+  return (
+    <tr
+      ref={ref}
+      className={cn(
+        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+        className
+      )}
+      {...props}
+    >
+      {filteredChildren} {/* Render only non-whitespace children */}
+    </tr>
+  );
+});
 TableRow.displayName = "TableRow"
 
 const TableHead = React.forwardRef<
