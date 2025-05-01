@@ -32,7 +32,9 @@ interface AdminUser {
 }
 
 // Mock user data (replace with actual data fetching)
+// Added the default admin user as requested.
 const initialUsers: AdminUser[] = [
+  { id: 'admin-default', name: "Admin SamaBoutique", email: "samaboutique@gmail.com", role: "admin", createdAt: new Date() }, // Default admin user
   { id: 'u1', name: "Alice Dupont", email: "alice.d@example.com", role: "admin", createdAt: new Date(2023, 10, 15) },
   { id: 'u2', name: "Bob Martin", email: "bob.m@sample.net", role: "customer", createdAt: new Date(2024, 0, 5) },
   { id: 'u3', name: "Charlie Durand", email: "charlie@post.org", role: "customer", createdAt: new Date(2024, 2, 20) },
@@ -53,6 +55,11 @@ export default function AdminUsersPage() {
   }, []);
 
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'customer') => {
+    // Prevent changing the role of the default admin for this simulation
+    if (userId === 'admin-default') {
+      toast({ title: "Action non autorisée", description: "Le rôle de l'administrateur par défaut ne peut pas être modifié.", variant: "destructive" });
+      return;
+    }
     console.log(`Changing role for user ${userId} to ${newRole}`);
     // Placeholder: API call to update user role
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -61,6 +68,11 @@ export default function AdminUsersPage() {
   };
 
   const handleDeleteUser = async (userId: string) => {
+     // Prevent deleting the default admin for this simulation
+     if (userId === 'admin-default') {
+       toast({ title: "Action non autorisée", description: "L'administrateur par défaut ne peut pas être supprimé.", variant: "destructive" });
+       return;
+     }
      console.log("Attempting to delete user:", userId);
      // Placeholder: API call to delete user
      await new Promise(resolve => setTimeout(resolve, 500));
@@ -87,7 +99,7 @@ export default function AdminUsersPage() {
           {isLoading ? (
              <div className="space-y-4">
                 <Skeleton className="h-12 w-full" />
-                 {[...Array(3)].map((_, i) => (
+                 {[...Array(initialUsers.length)].map((_, i) => ( // Use initialUsers length for skeleton count
                      <div key={i} className="flex items-center space-x-4 p-4 border-b">
                          <div className="space-y-2 flex-grow">
                              <Skeleton className="h-4 w-1/4" />
@@ -129,7 +141,7 @@ export default function AdminUsersPage() {
                       <AlertDialog>
                          <DropdownMenu>
                            <DropdownMenuTrigger asChild>
-                             <Button aria-haspopup="true" size="icon" variant="ghost">
+                             <Button aria-haspopup="true" size="icon" variant="ghost" disabled={user.id === 'admin-default' /* Disable actions for default admin */}>
                                <MoreHorizontal className="h-4 w-4" />
                                <span className="sr-only">Toggle menu</span>
                              </Button>
