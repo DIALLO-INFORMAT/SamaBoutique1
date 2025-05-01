@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 
 // Mock product data (replace with actual data fetching later)
 const allProducts = [
@@ -21,6 +22,17 @@ export type Product = typeof allProducts[0];
 
 // Get a few featured products (e.g., first 3)
 const featuredProducts = allProducts.slice(0, 3);
+
+// Array of partner logos with placeholder URLs
+const partnerLogos = [
+    { id: 'logo1', src: "https://picsum.photos/seed/logo1/100/50", alt: "Partner Logo 1", hint: "partner technology" },
+    { id: 'logo2', src: "https://picsum.photos/seed/logo2/100/50", alt: "Partner Logo 2", hint: "partner business" },
+    { id: 'logo3', src: "https://picsum.photos/seed/logo3/100/50", alt: "Partner Logo 3", hint: "partner finance" },
+    { id: 'logo4', src: "https://picsum.photos/seed/logo4/100/50", alt: "Partner Logo 4", hint: "partner innovation" },
+    { id: 'logo5', src: "https://picsum.photos/seed/logo5/100/50", alt: "Partner Logo 5", hint: "partner solutions" },
+    { id: 'logo6', src: "https://picsum.photos/seed/logo6/100/50", alt: "Partner Logo 6", hint: "partner network" },
+];
+
 
 export default function Home() {
   return (
@@ -64,13 +76,24 @@ export default function Home() {
         </Card>
       </section>
 
-       {/* Optional: Categories or Brand Highlights */}
-       {/* <section className="container mx-auto px-4">
-           <h2 className="text-3xl font-bold text-center mb-8 text-primary">Catégories Populaires</h2>
-           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-               {/* Map through categories with images/links */}
-           {/*</div>
-       </section> */}
+      {/* Partner Logos Section */}
+      <section className="container mx-auto px-4 py-8">
+        <h2 className="text-2xl font-bold text-center mb-4 text-primary">Nos Partenaires</h2>
+        <div className="flex flex-wrap justify-center gap-6">
+          {partnerLogos.map((logo) => (
+            <div key={logo.id} className="flex items-center justify-center h-20 w-40 border border-border rounded-md overflow-hidden">
+              <Image
+                src={logo.src}
+                alt={logo.alt}
+                width={160}
+                height={80}
+                className="object-contain w-full h-full"
+                data-ai-hint={logo.hint}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
