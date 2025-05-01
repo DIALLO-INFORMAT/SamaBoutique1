@@ -1,3 +1,4 @@
+
 // src/lib/types.ts
 import type { CartItem } from '@/context/CartContext';
 
@@ -28,7 +29,7 @@ export interface Order {
     phone: string;
     address: string;
   };
-  items: CartItem[];
+  items: CartItem[]; // CartItem already includes optional imageUrl
   total: number;
   status: OrderStatus;
   paymentMethod: PaymentMethod; // Use the specific type here
@@ -36,3 +37,16 @@ export interface Order {
   createdAt: Date;
   updatedAt: Date; // To track status changes
 }
+
+// Interface for Admin Products (might be identical to Product in boutique)
+export interface AdminProduct {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  brand: string;
+  imageUrl?: string; // Optional image URL
+}
+
+    

@@ -64,14 +64,9 @@ const fetchProductsFromAPI = async (): Promise<AdminProduct[]> => {
    }
    // Fallback mock data if localStorage is empty or SSR
    const mockProducts: AdminProduct[] = [
-      { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A", imageUrl: `https://picsum.photos/seed/1/64/64` },
-      { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/2/64/64` },
-      { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B", imageUrl: `https://picsum.photos/seed/3/64/64` },
-      { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/4/64/64` },
-      { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A", imageUrl: `https://picsum.photos/seed/5/64/64` },
-      { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C", imageUrl: `https://picsum.photos/seed/6/64/64` },
+      // Fallback data is removed as localStorage should be populated by adding products
    ];
-   // Save mock data to localStorage if it was empty
+   // Initialize localStorage if empty
    if (typeof window !== 'undefined' && !localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY)) {
        localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(mockProducts));
    }
@@ -170,14 +165,14 @@ export default function AdminProductsPage() {
              <div className="space-y-2 p-6"> {/* Add padding back for skeleton */}
                  {[...Array(5)].map((_, i) => (
                      <div key={i} className="flex items-center space-x-4 py-3 border-b last:border-b-0">
-                         <Skeleton className="h-10 w-10 rounded-md hidden sm:block" />
+                         <Skeleton className="h-10 w-10 rounded-md hidden sm:block bg-muted" />
                          <div className="space-y-2 flex-grow">
-                             <Skeleton className="h-4 w-3/5" />
-                             <Skeleton className="h-4 w-2/5" />
+                             <Skeleton className="h-4 w-3/5 bg-muted" />
+                             <Skeleton className="h-4 w-2/5 bg-muted" />
                          </div>
-                         <Skeleton className="h-6 w-16 hidden md:block" />
-                         <Skeleton className="h-6 w-20 text-right" />
-                         <Skeleton className="h-8 w-8" />
+                         <Skeleton className="h-6 w-16 hidden md:block bg-muted" />
+                         <Skeleton className="h-6 w-20 text-right bg-muted" />
+                         <Skeleton className="h-8 w-8 bg-muted" />
                      </div>
                  ))}
              </div>

@@ -1,6 +1,17 @@
+
 'use client';
 
-import type { Product } from '@/app/page';
+// Assuming Product type is defined like this (ensure imageUrl is optional)
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  brand: string;
+  imageUrl?: string; // Make imageUrl optional
+}
+
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 
 export interface CartItem extends Product {
@@ -64,7 +75,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
             : item
         );
       } else {
-        // Add new item to cart
+        // Add new item to cart, including imageUrl if it exists
         return [...prevCart, { ...product, quantity }];
       }
     });
@@ -110,3 +121,5 @@ export const useCart = (): CartContextType => {
   }
   return context;
 };
+
+    

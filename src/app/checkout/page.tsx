@@ -1,3 +1,4 @@
+
 // src/app/checkout/page.tsx
 'use client';
 
@@ -360,10 +361,14 @@ export default function CheckoutPage() {
                    <div key={item.id} className="flex justify-between items-center text-sm gap-2">
                       <div className="flex items-center gap-2 flex-grow min-w-0">
                          <Image
-                           src={`https://picsum.photos/seed/${item.id}/40/40`}
+                           src={item.imageUrl || `https://picsum.photos/seed/${item.id}/40/40`} // Use actual URL or fallback
                            alt={item.name} width={40} height={40}
-                           className="rounded object-cover flex-shrink-0"
+                           className="rounded object-cover flex-shrink-0 border"
                            data-ai-hint={item.category === 'Services' ? 'service tech icon' : item.name.toLowerCase().split(' ')[0]}
+                           onError={(e) => {
+                               (e.target as HTMLImageElement).srcset = `https://picsum.photos/seed/${item.id}/40/40`;
+                               (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${item.id}/40/40`;
+                           }}
                          />
                          <div className="min-w-0">
                             <p className="font-medium truncate">{item.name}</p>
@@ -417,3 +422,5 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
+    

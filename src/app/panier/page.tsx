@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCart } from '@/context/CartContext';
@@ -90,12 +91,16 @@ export default function CartPage() {
                     <TableRow key={item.id}>
                         <TableCell>
                            <Image
-                             src={`https://picsum.photos/seed/${item.id}/64/64`}
+                             src={item.imageUrl || `https://picsum.photos/seed/${item.id}/64/64`} // Use actual URL or fallback
                              alt={item.name}
                              width={64}
                              height={64}
                              className="rounded-md object-cover border"
                              data-ai-hint={item.category === 'Services' ? 'service tech icon' : item.name.toLowerCase().split(' ')[0]}
+                             onError={(e) => {
+                                 (e.target as HTMLImageElement).srcset = `https://picsum.photos/seed/${item.id}/64/64`;
+                                 (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${item.id}/64/64`;
+                             }}
                            />
                         </TableCell>
                         <TableCell className="font-medium">{item.name}</TableCell>
@@ -169,12 +174,16 @@ export default function CartPage() {
                 {cart.map((item) => (
                     <div key={item.id} className="flex gap-4 p-4">
                         <Image
-                            src={`https://picsum.photos/seed/${item.id}/80/80`}
+                            src={item.imageUrl || `https://picsum.photos/seed/${item.id}/80/80`} // Use actual URL or fallback
                             alt={item.name}
                             width={80}
                             height={80}
                             className="rounded-md object-cover border"
                             data-ai-hint={item.category === 'Services' ? 'service tech icon' : item.name.toLowerCase().split(' ')[0]}
+                             onError={(e) => {
+                                (e.target as HTMLImageElement).srcset = `https://picsum.photos/seed/${item.id}/80/80`;
+                                (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${item.id}/80/80`;
+                             }}
                         />
                         <div className="flex-grow space-y-2">
                             <div className="flex justify-between items-start">
@@ -283,3 +292,5 @@ export default function CartPage() {
     </div>
   );
 }
+
+    

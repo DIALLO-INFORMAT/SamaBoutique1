@@ -12,18 +12,28 @@ import Image from "next/image";
 import { useTranslation } from '@/hooks/useTranslation'; // Import the hook
 
 // Mock product data (replace with actual data fetching later)
-const allProducts = [
-  { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" },
-  { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices" },
-  { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" },
-  { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", brand: "SamaServices" },
-  { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A" },
-  { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C" },
-  { id: '7', name: "Chemise Élégante", description: "Chemise pour occasions spéciales.", price: 35000, category: "Vêtements", brand: "Marque B" },
-  { id: '8', name: "Maintenance Site Web", description: "Pack maintenance mensuel.", price: 50000, category: "Services", brand: "SamaServices" },
+// Ensure Product interface includes imageUrl
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  brand: string;
+  imageUrl?: string; // Add optional imageUrl
+}
+
+const allProducts: Product[] = [
+  { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A", imageUrl: `https://picsum.photos/seed/1/400/300` },
+  { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/2/400/300` },
+  { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B", imageUrl: `https://picsum.photos/seed/3/400/300` },
+  { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/4/400/300` },
+  { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A", imageUrl: `https://picsum.photos/seed/5/400/300` },
+  { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C", imageUrl: `https://picsum.photos/seed/6/400/300` },
+  { id: '7', name: "Chemise Élégante", description: "Chemise pour occasions spéciales.", price: 35000, category: "Vêtements", brand: "Marque B", imageUrl: `https://picsum.photos/seed/7/400/300` },
+  { id: '8', name: "Maintenance Site Web", description: "Pack maintenance mensuel.", price: 50000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/8/400/300` },
 ];
 
-export type Product = typeof allProducts[0];
 
 const featuredProducts = allProducts.slice(0, 3);
 
@@ -49,8 +59,7 @@ export default function Home() {
       {/* Featured Products Section */}
       <section className="container mx-auto px-4">
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-primary">{t('home_featured_products')}</h2>
-        {/* Assume initialProducts are passed correctly */}
-        {/* Add a default viewMode or fetch it if needed */}
+        {/* Pass featuredProducts and viewMode */}
         <ProductList initialProducts={featuredProducts} viewMode="grid" />
         <div className="text-center mt-6 md:mt-8">
            <Link href="/boutique" >
@@ -102,3 +111,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

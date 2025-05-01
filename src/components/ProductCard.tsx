@@ -1,8 +1,18 @@
+
 'use client';
 
 import Image from 'next/image';
 // Re-import Product type definition if needed
-import type { Product } from '@/app/boutique/page';
+// Assuming Product interface now includes optional imageUrl
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  brand: string;
+  imageUrl?: string; // Make imageUrl optional
+}
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Tag, ShoppingCart, Building } from 'lucide-react';
@@ -22,6 +32,7 @@ export function ProductCard({ product, viewMode }: ProductCardProps) {
   const { t, currentLocale } = useTranslation();
 
   const imageHint = product.category === 'Services' ? 'service tech' : product.name.toLowerCase().split(' ')[0];
+  const imageUrl = product.imageUrl || `https://picsum.photos/seed/${product.id}/400/300`; // Use actual URL or fallback
 
   const handleAddToCart = () => {
     addToCart(product);
@@ -43,7 +54,7 @@ export function ProductCard({ product, viewMode }: ProductCardProps) {
           viewMode === 'grid' ? "w-full" : "w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0" // Conditional size
       )}>
         <Image
-          src={`https://picsum.photos/seed/${product.id}/400/300`}
+          src={imageUrl} // Use the determined image URL
           alt={product.name}
           width={viewMode === 'grid' ? 400 : 128}
           height={viewMode === 'grid' ? 300 : 128}
@@ -52,6 +63,11 @@ export function ProductCard({ product, viewMode }: ProductCardProps) {
               viewMode === 'grid' ? "w-full h-48" : "w-full h-full rounded-l-lg" // Conditional height/rounding
           )}
           data-ai-hint={imageHint}
+          onError={(e) => {
+             // Fallback if the provided imageUrl fails to load
+             (e.target as HTMLImageElement).srcset = `https://picsum.photos/seed/${product.id}/400/300`;
+             (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${product.id}/400/300`;
+          }}
         />
          {viewMode === 'grid' && ( // Show category tag only in grid view
              <div className="absolute top-2 right-2 bg-secondary px-2 py-1 rounded-full text-xs font-medium text-secondary-foreground flex items-center gap-1 shadow">
@@ -116,3 +132,5 @@ export function ProductCard({ product, viewMode }: ProductCardProps) {
     </Card>
   );
 }
+
+    

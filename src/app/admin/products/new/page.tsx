@@ -60,11 +60,21 @@ const addProductAPI = async (values: z.infer<ReturnType<typeof createProductSche
          // Create the product data excluding the 'image' field
          const { image, ...productDataToSave } = values;
 
+         // Simulate generating an image URL if a file was provided
+         // In a real scenario, this URL would come from the image upload service
+         let imageUrl = `https://picsum.photos/seed/prod-${Date.now()}/400/300`; // Default fallback
+         if (imageFile) {
+            // For simulation, we'll create a blob URL. In reality, this would be the result of an upload.
+            // Since blob URLs are temporary, we'll just keep the picsum fallback for consistency in localStorage.
+            // imageUrl = URL.createObjectURL(imageFile); // Example blob URL (temporary)
+            console.log("Simulating image upload, using fallback picsum URL for storage.");
+         }
+
          const newProduct = {
              ...productDataToSave,
              id: `prod-${Date.now()}`,
-             // imageUrl: imageUrl || `https://picsum.photos/seed/prod-${Date.now()}/400/300`, // Use uploaded URL or fallback
-             imageUrl: `https://picsum.photos/seed/prod-${Date.now()}/400/300`, // Simulation fallback
+             imageUrl: imageUrl, // Use simulated or fallback URL
+             price: Number(productDataToSave.price), // Ensure price is number
          };
          const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
          const products = storedProducts ? JSON.parse(storedProducts) : [];

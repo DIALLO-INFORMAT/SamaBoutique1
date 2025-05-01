@@ -20,25 +20,43 @@ export interface Product {
   price: number; // Should be in XOF already
   category: string;
   brand: string;
+  imageUrl?: string; // Add optional imageUrl
 }
 
 const fetchAllProducts = async (): Promise<Product[]> => {
     await new Promise(resolve => setTimeout(resolve, 500)); // Simulate slightly longer load
      const allProductsData: Product[] = [
-        // Using the existing product list
-        { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" },
-        { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices" },
-        { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" },
-        { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", brand: "SamaServices" },
-        { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A" },
-        { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C" },
-        { id: '7', name: "Chemise Élégante", description: "Chemise pour occasions spéciales.", price: 35000, category: "Vêtements", brand: "Marque B" },
-        { id: '8', name: "Maintenance Site Web", description: "Pack maintenance mensuel.", price: 50000, category: "Services", brand: "SamaServices" },
-        { id: '9', name: "Autocollants Logo", description: "Lot de 50 autocollants.", price: 5000, category: "Accessoires", brand: "Marque C" },
-        { id: '10', name: "Pantalon Cargo", description: "Pantalon pratique et résistant.", price: 30000, category: "Vêtements", brand: "Marque A" },
-        { id: '11', name: "Rédaction Contenu Web", description: "Service de rédaction SEO (500 mots).", price: 25000, category: "Services", brand: "SamaServices" },
-        { id: '12', name: "Porte-clés Design", description: "Porte-clés en métal.", price: 3000, category: "Accessoires", brand: "Marque B" },
+        { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A", imageUrl: `https://picsum.photos/seed/1/400/300` },
+        { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/2/400/300` },
+        { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B", imageUrl: `https://picsum.photos/seed/3/400/300` },
+        { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/4/400/300` },
+        { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A", imageUrl: `https://picsum.photos/seed/5/400/300` },
+        { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C", imageUrl: `https://picsum.photos/seed/6/400/300` },
+        { id: '7', name: "Chemise Élégante", description: "Chemise pour occasions spéciales.", price: 35000, category: "Vêtements", brand: "Marque B", imageUrl: `https://picsum.photos/seed/7/400/300` },
+        { id: '8', name: "Maintenance Site Web", description: "Pack maintenance mensuel.", price: 50000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/8/400/300` },
+        { id: '9', name: "Autocollants Logo", description: "Lot de 50 autocollants.", price: 5000, category: "Accessoires", brand: "Marque C", imageUrl: `https://picsum.photos/seed/9/400/300` },
+        { id: '10', name: "Pantalon Cargo", description: "Pantalon pratique et résistant.", price: 30000, category: "Vêtements", brand: "Marque A", imageUrl: `https://picsum.photos/seed/10/400/300` },
+        { id: '11', name: "Rédaction Contenu Web", description: "Service de rédaction SEO (500 mots).", price: 25000, category: "Services", brand: "SamaServices", imageUrl: `https://picsum.photos/seed/11/400/300` },
+        { id: '12', name: "Porte-clés Design", description: "Porte-clés en métal.", price: 3000, category: "Accessoires", brand: "Marque B", imageUrl: `https://picsum.photos/seed/12/400/300` },
      ];
+     // Ensure products in localStorage also have imageUrl (for consistency)
+     if (typeof window !== 'undefined') {
+        const storedProducts = localStorage.getItem('admin_products'); // Or relevant key
+        if (storedProducts) {
+            try {
+                const parsedProducts: Product[] = JSON.parse(storedProducts);
+                 return parsedProducts.map(p => ({
+                     ...p,
+                     imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/400/300`
+                 }));
+            } catch (error) {
+                console.error("Error parsing stored products:", error);
+            }
+        } else {
+             localStorage.setItem('admin_products', JSON.stringify(allProductsData)); // Store initial if empty
+        }
+     }
+
     return allProductsData;
 }
 
@@ -137,7 +155,7 @@ export default function BoutiquePage() {
                        </Button>
                      </div>
                 </div>
-                {/* Pass viewMode to ProductList */}
+                {/* Pass viewMode and products to ProductList */}
                 <ProductList initialProducts={allProducts} viewMode={viewMode} />
             </main>
         </div>
@@ -151,3 +169,5 @@ export { useMemo } from 'react';
 // Keep dynamic rendering if relying on searchParams client-side
 export const dynamic = 'force-dynamic';
 
+
+    

@@ -63,8 +63,8 @@ const statusConfig: Record<Order['status'], StatusConfig> = {
 };
 
 // Function for viewing/downloading invoice (moved from pages for reuse)
-const handleInvoiceDownload = async (order: Order) => {
-    const { t } = useTranslation(); // Get t function inside the handler
+const handleInvoiceDownload = async (order: Order | null, t: (key: string, options?: any) => string) => {
+     if (!order) return; // Guard against null order
      try {
         // Generate the PDF blob
         const pdfBlob = await generateInvoicePDF(order, t);
@@ -80,7 +80,8 @@ const handleInvoiceDownload = async (order: Order) => {
         URL.revokeObjectURL(pdfUrl); // Clean up the blob URL
      } catch (error) {
          console.error("Error generating or downloading PDF:", error);
-         alert(t('invoice_generate_error')); // Show a user-friendly error
+         // Use t function safely
+         alert(t('invoice_generate_error') || "Erreur lors de la génération de la facture PDF.");
      }
 };
 
@@ -165,7 +166,7 @@ export function OrderDetailsDialog({
               {order.items.map((item) => (
                 <div key={item.id} className="flex items-center gap-3 text-sm">
                   <Image
-                    src={`https://picsum.photos/seed/${item.id}/50/50`}
+                    src={item.imageUrl || `https://picsum.photos/seed/${item.id}/50/50`} // Use actual image URL if available
                     alt={item.name}
                     width={50}
                     height={50}
@@ -215,7 +216,7 @@ export function OrderDetailsDialog({
             <div className="text-center">
                 <Button
                     variant="outline"
-                    onClick={() => handleInvoiceDownload(order)}
+                    onClick={() => handleInvoiceDownload(order, t)} // Pass t function
                     className="flex items-center gap-1"
                     disabled={!isInvoiceDownloadable} // Disable if not downloadable
                 >
