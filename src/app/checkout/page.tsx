@@ -206,22 +206,24 @@ export default function CheckoutPage() {
 
 
   return (
-    <div className="container mx-auto max-w-4xl space-y-8">
-      <h1 className="text-3xl font-bold text-center text-primary flex items-center justify-center gap-2">
-        <CreditCard className="h-8 w-8" /> Passage à la caisse
+    <div className="container mx-auto max-w-6xl px-2 sm:px-4 space-y-8 py-6 md:py-10"> {/* Adjusted max-width */}
+      <h1 className="text-2xl sm:text-3xl font-bold text-center text-primary flex items-center justify-center gap-2">
+        <CreditCard className="h-6 w-6 sm:h-8 sm:w-8" /> Passage à la caisse
       </h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      {/* Adjusted grid for better responsiveness */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 md:gap-8 items-start">
         {/* Customer Information & Payment Form */}
+        {/* Increased column span on larger screens */}
         <Form {...form}>
-           <form onSubmit={form.handleSubmit(onSubmit)} id="checkout-form" className="lg:col-span-2 space-y-6">
+           <form onSubmit={form.handleSubmit(onSubmit)} id="checkout-form" className="lg:col-span-3 space-y-6">
                {/* Customer Info Card */}
                 <Card className="shadow-lg">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/> Vos Informations</CardTitle>
                         <CardDescription>Entrez vos détails pour la livraison.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
+                    <CardContent className="space-y-4 md:space-y-6">
                         <FormField control={form.control} name="name" render={({ field }) => (
                             <FormItem>
                             <FormLabel className="flex items-center gap-1"><User className="h-4 w-4"/> Nom Complet</FormLabel>
@@ -232,7 +234,7 @@ export default function CheckoutPage() {
                         <FormField control={form.control} name="address" render={({ field }) => (
                             <FormItem>
                             <FormLabel className="flex items-center gap-1"><Home className="h-4 w-4"/> Adresse de Livraison</FormLabel>
-                            <FormControl><Textarea placeholder="Votre adresse complète..." {...field} /></FormControl>
+                            <FormControl><Textarea placeholder="Votre adresse complète..." {...field} rows={3} /></FormControl> {/* Reduced rows */}
                             <FormMessage />
                             </FormItem>
                         )} />
@@ -255,8 +257,8 @@ export default function CheckoutPage() {
                         <FormField control={form.control} name="notes" render={({ field }) => (
                             <FormItem>
                             <FormLabel>Notes Additionnelles (Optionnel)</FormLabel>
-                            <FormControl><Textarea placeholder="Instructions spéciales..." className="resize-none" rows={3} {...field} /></FormControl>
-                            <FormDescription className="text-right">{field.value?.length ?? 0}/200</FormDescription>
+                            <FormControl><Textarea placeholder="Instructions spéciales..." className="resize-none" rows={2} {...field} /></FormControl> {/* Reduced rows */}
+                            <FormDescription className="text-right text-xs">{field.value?.length ?? 0}/200</FormDescription>
                             <FormMessage />
                             </FormItem>
                         )} />
@@ -277,29 +279,30 @@ export default function CheckoutPage() {
                             <FormItem className="space-y-3">
                                 <FormLabel className="sr-only">Méthode de Paiement</FormLabel>
                                 <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {/* Adjusted grid for payment methods */}
+                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-3 sm:gap-4">
                                         {/* COD */}
-                                        <Label htmlFor="cod" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer">
+                                        <Label htmlFor="cod" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-3 sm:p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer text-center text-xs sm:text-sm">
                                             <RadioGroupItem value="Paiement à la livraison" id="cod" className="sr-only" />
-                                            <Truck className="mb-3 h-6 w-6" />
+                                            <Truck className="mb-2 h-5 w-5 sm:mb-3 sm:h-6 sm:w-6" />
                                             Paiement à la livraison
                                          </Label>
                                          {/* Wave */}
-                                         <Label htmlFor="wave" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer">
+                                         <Label htmlFor="wave" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-3 sm:p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer text-center text-xs sm:text-sm">
                                              <RadioGroupItem value="Wave" id="wave" className="sr-only" />
-                                             <Smartphone className="mb-3 h-6 w-6" /> {/* Placeholder icon */}
+                                             <Smartphone className="mb-2 h-5 w-5 sm:mb-3 sm:h-6 sm:w-6" /> {/* Placeholder icon */}
                                              Wave Sénégal
                                          </Label>
                                          {/* Orange Money */}
-                                         <Label htmlFor="orange" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer">
+                                         <Label htmlFor="orange" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-3 sm:p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer text-center text-xs sm:text-sm">
                                              <RadioGroupItem value="Orange Money" id="orange" className="sr-only" />
-                                              <Smartphone className="mb-3 h-6 w-6" /> {/* Placeholder icon */}
+                                              <Smartphone className="mb-2 h-5 w-5 sm:mb-3 sm:h-6 sm:w-6" /> {/* Placeholder icon */}
                                              Orange Money
                                          </Label>
                                           {/* Card */}
-                                         <Label htmlFor="card" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer">
+                                         <Label htmlFor="card" className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-3 sm:p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary cursor-pointer text-center text-xs sm:text-sm">
                                              <RadioGroupItem value="Carte Bancaire" id="card" className="sr-only" />
-                                             <CreditCard className="mb-3 h-6 w-6" />
+                                             <CreditCard className="mb-2 h-5 w-5 sm:mb-3 sm:h-6 sm:w-6" />
                                              Carte Bancaire
                                          </Label>
                                     </RadioGroup>
@@ -351,44 +354,32 @@ export default function CheckoutPage() {
                     </CardContent>
                 </Card>
 
-                {/* Submit Button (moved outside cards but within form) */}
-                 <div className="flex justify-end">
-                     <Button
-                         type="submit"
-                         form="checkout-form"
-                         className="w-full lg:w-auto"
-                         variant="destructive"
-                         disabled={isSubmitting || cart.length === 0}
-                     >
-                         {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Traitement...</> : 'Confirmer la Commande'}
-                     </Button>
-                 </div>
-
            </form>
         </Form>
 
-        {/* Order Summary Card (Remains the same) */}
-        <Card className="shadow-lg">
+        {/* Order Summary Card */}
+        {/* Increased column span on larger screens */}
+        <Card className="shadow-lg lg:col-span-2 sticky top-24"> {/* Make summary sticky on large screens */}
           <CardHeader>
             <CardTitle>Résumé de la Commande</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-             <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+             <div className="space-y-3 max-h-60 overflow-y-auto pr-2"> {/* Adjusted spacing */}
                  {cart.map(item => (
-                   <div key={item.id} className="flex justify-between items-center text-sm">
-                      <div className="flex items-center gap-2">
+                   <div key={item.id} className="flex justify-between items-center text-sm gap-2"> {/* Added gap */}
+                      <div className="flex items-center gap-2 flex-grow min-w-0"> {/* Added min-width */}
                          <Image
                            src={`https://picsum.photos/seed/${item.id}/40/40`}
                            alt={item.name} width={40} height={40}
-                           className="rounded object-cover"
+                           className="rounded object-cover flex-shrink-0" // Prevent image shrinking
                            data-ai-hint={item.category === 'Services' ? 'service tech icon' : item.name.toLowerCase().split(' ')[0]}
                          />
-                         <div>
-                            <p className="font-medium">{item.name}</p>
-                            <p className="text-muted-foreground">Qté: {item.quantity}</p>
+                         <div className="min-w-0"> {/* Allow text to wrap */}
+                            <p className="font-medium truncate">{item.name}</p>
+                            <p className="text-muted-foreground text-xs">Qté: {item.quantity}</p>
                          </div>
                       </div>
-                      <p className="font-medium">{(item.price * item.quantity).toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</p>
+                      <p className="font-medium text-right flex-shrink-0">{(item.price * item.quantity).toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</p>
                    </div>
                  ))}
              </div>
@@ -401,19 +392,30 @@ export default function CheckoutPage() {
             {selectedPaymentMethod && (
                 <>
                  <Separator />
-                 <div>
+                 <div className="text-sm">
                      <p className="font-medium mb-1">Méthode Choisie</p>
-                     <p className="text-sm text-muted-foreground">{selectedPaymentMethod}</p>
+                     <p className="text-muted-foreground">{selectedPaymentMethod}</p>
                  </div>
                 </>
             )}
             <Separator />
-             <div>
+             <div className="text-sm">
                 <p className="font-medium mb-1">Boutique</p>
-                <p className="text-sm text-muted-foreground">SamaBoutique</p>
+                <p className="text-muted-foreground">SamaBoutique</p>
              </div>
           </CardContent>
-           {/* Footer moved to inside the form */}
+           {/* Submit Button for the form */}
+           <CardFooter className="mt-4">
+              <Button
+                 type="submit"
+                 form="checkout-form" // Associate with the form
+                 className="w-full"
+                 variant="destructive"
+                 disabled={isSubmitting || cart.length === 0}
+              >
+                  {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Traitement...</> : 'Confirmer la Commande'}
+              </Button>
+           </CardFooter>
         </Card>
       </div>
     </div>
