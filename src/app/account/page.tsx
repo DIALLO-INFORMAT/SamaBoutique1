@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Phone } from 'lucide-react'; // Added Phone
+import { Loader2, Phone, Eye, EyeOff } from 'lucide-react'; // Added Phone, Eye, EyeOff
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation'; // Import useSearchParams
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -56,6 +56,8 @@ export default function AccountPage() {
   const searchParams = useSearchParams(); // Get search params
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State for confirm password visibility
 
   // Redirect URL from query params, default to dashboard/admin
   const redirectUrl = searchParams.get('redirect') || null;
@@ -157,6 +159,9 @@ export default function AccountPage() {
   }, [signup, user, toast, setActiveTab, registerForm, loginForm, t]); // Include dependencies
 
 
+   // Toggle password visibility functions
+   const toggleShowPassword = () => setShowPassword(prev => !prev);
+   const toggleShowConfirmPassword = () => setShowConfirmPassword(prev => !prev);
 
    // If user exists but useEffect hasn't redirected yet, show loading
    if (user) {
@@ -270,32 +275,68 @@ export default function AccountPage() {
                        </FormItem>
                      )}
                    />
-                  <FormField
-                    control={registerForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('account_form_password')}</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder={t('account_form_password_placeholder')} {...field} className="text-base"/>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={registerForm.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('account_form_confirm_password')}</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder={t('account_form_confirm_password_placeholder')} {...field} className="text-base"/>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                   {/* Password Field */}
+                   <FormField
+                      control={registerForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('account_form_password')}</FormLabel>
+                          <div className="relative">
+                            <FormControl>
+                              <Input
+                                type={showPassword ? "text" : "password"}
+                                placeholder={t('account_form_password_placeholder')}
+                                {...field}
+                                className="text-base pr-10" // Add padding for the icon
+                              />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:text-foreground"
+                              onClick={toggleShowPassword}
+                              aria-label={showPassword ? "Hide password" : "Show password"}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {/* Confirm Password Field */}
+                    <FormField
+                      control={registerForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t('account_form_confirm_password')}</FormLabel>
+                          <div className="relative">
+                            <FormControl>
+                              <Input
+                                type={showConfirmPassword ? "text" : "password"}
+                                placeholder={t('account_form_confirm_password_placeholder')}
+                                {...field}
+                                className="text-base pr-10" // Add padding for the icon
+                              />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:text-foreground"
+                              onClick={toggleShowConfirmPassword}
+                              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                            >
+                              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                    <FormField
                       control={registerForm.control}
                       name="role"

@@ -57,7 +57,12 @@ const TableRow = React.forwardRef<
 >(({ className, children, ...props }, ref) => {
   // Filter out pure whitespace text nodes to prevent hydration errors
   const filteredChildren = React.Children.toArray(children).filter(child => {
-    return !(typeof child === 'string' && child.trim() === '');
+    // Keep non-string children (components, elements)
+    if (typeof child !== 'string') {
+      return true;
+    }
+    // Keep string children only if they contain non-whitespace characters
+    return child.trim() !== '';
   });
 
   return (
@@ -124,3 +129,4 @@ export {
   TableCell,
   TableCaption,
 }
+
