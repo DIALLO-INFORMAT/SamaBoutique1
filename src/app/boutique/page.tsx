@@ -1,6 +1,7 @@
 // src/app/boutique/page.tsx
 import { ProductList } from "@/components/ProductList";
 import { BoutiqueSidebar } from "@/components/BoutiqueSidebar";
+import { ShopSortControls } from "@/components/FilterSortControls"; // Renamed component
 
 // Mock product data (replace with actual data fetching)
 // Ensure this type includes 'brand'
@@ -8,31 +9,38 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number;
+  price: number; // Should be in XOF already
   category: string;
   brand: string; // Added brand
 }
 
-const allProducts: Product[] = [
-  { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 19.99, category: "Vêtements", brand: "Marque A" },
-  { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 499.00, category: "Services", brand: "SamaServices" },
-  { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 24.99, category: "Accessoires", brand: "Marque B" },
-  { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 150.00, category: "Services", brand: "SamaServices" },
-  { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 45.00, category: "Vêtements", brand: "Marque A" },
-  { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 14.99, category: "Accessoires", brand: "Marque C" },
-  { id: '7', name: "Chemise Élégante", description: "Chemise pour occasions spéciales.", price: 59.99, category: "Vêtements", brand: "Marque B" },
-  { id: '8', name: "Maintenance Site Web", description: "Pack maintenance mensuel.", price: 99.00, category: "Services", brand: "SamaServices" },
-  // Add more products...
-];
+// In a real app, this fetch would happen server-side, potentially using searchParams
+const fetchAllProducts = async (): Promise<Product[]> => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 100)); // Minimal delay for demo
+    // Re-using the same mock data
+     const allProductsData: Product[] = [
+        { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" },
+        { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", brand: "SamaServices" },
+        { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" },
+        { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", brand: "SamaServices" },
+        { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A" },
+        { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", brand: "Marque C" },
+        { id: '7', name: "Chemise Élégante", description: "Chemise pour occasions spéciales.", price: 35000, category: "Vêtements", brand: "Marque B" },
+        { id: '8', name: "Maintenance Site Web", description: "Pack maintenance mensuel.", price: 50000, category: "Services", brand: "SamaServices" },
+        // Add more products...
+     ];
+    return allProductsData;
+}
 
-// Extract unique categories and brands for filtering options
-const categories = [...new Set(allProducts.map(p => p.category))];
-const brands = [...new Set(allProducts.map(p => p.brand))];
 
-export default function BoutiquePage() {
-  // In a real app, you would pass searchParams to ProductList
-  // and potentially fetch products based on them server-side.
-  // const { searchParams } = props;
+export default async function BoutiquePage() {
+  // Fetch all products initially. Filtering/sorting will happen client-side in ProductList for this example.
+  const allProducts = await fetchAllProducts();
+
+  // Extract unique categories and brands for filtering options
+  const categories = [...new Set(allProducts.map(p => p.category))];
+  const brands = [...new Set(allProducts.map(p => p.brand))];
 
   return (
     <div className="container mx-auto px-4">
@@ -45,11 +53,14 @@ export default function BoutiquePage() {
 
         {/* Product Listing Area */}
         <main className="w-full md:w-3/4 lg:w-4/5">
-          {/* Optional: Add sort controls here if needed, similar to FilterSortControls but potentially integrated differently */}
-          {/* <FilterSortControls /> */}
+          {/* Sorting Controls */}
+          <ShopSortControls />
           <ProductList initialProducts={allProducts} />
         </main>
       </div>
     </div>
   );
 }
+
+// Force dynamic rendering to ensure searchParams are available client-side for filtering/sorting hooks
+export const dynamic = 'force-dynamic';

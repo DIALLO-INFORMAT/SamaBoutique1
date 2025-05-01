@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Filter, ListFilter, Search, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface BoutiqueSidebarProps {
   categories: string[];
@@ -23,32 +23,47 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
   const searchParams = useSearchParams();
 
   // --- State for Filters ---
-  // Initialize state from URL params or defaults
-  const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get('category') || 'all');
-  const [selectedBrands, setSelectedBrands] = useState<string[]>(searchParams.getAll('brand') || []);
-  const [minPrice, setMinPrice] = useState<string>(searchParams.get('minPrice') || '');
-  const [maxPrice, setMaxPrice] = useState<string>(searchParams.get('maxPrice') || '');
-  const [searchTerm, setSearchTerm] = useState<string>(searchParams.get('search') || '');
+  // Initialize state directly from URL params on component mount/hydration
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [minPrice, setMinPrice] = useState<string>('');
+  const [maxPrice, setMaxPrice] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+
+  // Effect to synchronize state with URL on initial load and when URL changes externally
+  useEffect(() => {
+    setSelectedCategory(searchParams.get('category') || 'all');
+    setSelectedBrands(searchParams.getAll('brand') || []);
+    setMinPrice(searchParams.get('minPrice') || '');
+    setMaxPrice(searchParams.get('maxPrice') || '');
+    setSearchTerm(searchParams.get('search') || '');
+  }, [searchParams]);
+
 
    // --- Update URL Params Function ---
-   const updateUrlParams = () => {
-       const params = new URLSearchParams();
+   // Use useCallback to memoize the function
+   const updateUrlParams = useCallback(() => {
+       const params = new URLSearchParams(searchParams); // Start with current params (including sort)
 
-       // Add params only if they have a non-default value
+       // Update or delete params based on current state
        if (selectedCategory !== 'all') params.set('category', selectedCategory);
-       selectedBrands.forEach(brand => params.append('brand', brand));
-       if (minPrice) params.set('minPrice', minPrice);
-       if (maxPrice) params.set('maxPrice', maxPrice);
-       if (searchTerm) params.set('search', searchTerm);
+       else params.delete('category');
 
-       // Add existing sort parameter if present
-       const currentSort = searchParams.get('sort');
-       if (currentSort) {
-           params.set('sort', currentSort);
-       }
+       params.delete('brand'); // Clear existing brands before adding current selection
+       selectedBrands.forEach(brand => params.append('brand', brand));
+
+       if (minPrice) params.set('minPrice', minPrice);
+       else params.delete('minPrice');
+
+       if (maxPrice) params.set('maxPrice', maxPrice);
+       else params.delete('maxPrice');
+
+       if (searchTerm.length >= 2) params.set('search', searchTerm); // Only add search if >= 2 chars
+       else params.delete('search');
+
 
        router.push(`${pathname}?${params.toString()}`, { scroll: false });
-   };
+   }, [selectedCategory, selectedBrands, minPrice, maxPrice, searchTerm, pathname, router, searchParams]); // Add all dependencies
 
    // --- Handlers ---
    const handleCategoryChange = (value: string) => {
@@ -62,38 +77,39 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
    };
 
     const handlePriceChange = (type: 'min' | 'max', value: string) => {
-        if (type === 'min') setMinPrice(value);
-        else setMaxPrice(value);
+        // Basic validation: allow only numbers and empty string
+        const numericValue = value.replace(/[^0-9]/g, '');
+        if (type === 'min') setMinPrice(numericValue);
+        else setMaxPrice(numericValue);
     };
 
      const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
          setSearchTerm(event.target.value);
+         // Live search update (optional - requires debouncing usually)
+         // For now, rely on the apply button
      };
 
+     // Apply button click handler
      const applyFilters = () => {
          updateUrlParams();
      };
 
+     // Clear button click handler
      const clearFilters = () => {
          setSelectedCategory('all');
          setSelectedBrands([]);
          setMinPrice('');
          setMaxPrice('');
          setSearchTerm('');
-         // Clear URL params as well
+
+         // Clear URL params, keeping sort if present
          const params = new URLSearchParams();
          const currentSort = searchParams.get('sort');
           if (currentSort) {
-              params.set('sort', currentSort); // Keep sort if present
+              params.set('sort', currentSort);
           }
          router.push(`${pathname}?${params.toString()}`, { scroll: false });
      };
-
-     // Effect to apply filters immediately on simple changes (like category)
-     // Use a button for more complex filter applications (like price range, multiple brands)
-     // useEffect(() => {
-     //     updateUrlParams();
-     // }, [selectedCategory, selectedBrands]); // Add other relevant states if needed
 
 
   return (
@@ -117,6 +133,7 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
                  />
                  <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             </div>
+             <p className="text-xs text-muted-foreground">Tapez au moins 2 lettres et appliquez.</p>
         </div>
 
         <Separator />
@@ -131,8 +148,8 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
             </div>
             {categories.map(category => (
               <div key={category} className="flex items-center space-x-2">
-                <RadioGroupItem value={category.toLowerCase()} id={`cat-${category}`} />
-                <Label htmlFor={`cat-${category}`} className="font-normal cursor-pointer">{category}</Label>
+                <RadioGroupItem value={category.toLowerCase()} id={`cat-${category.toLowerCase()}`} /> {/* Ensure value is lowercase */}
+                <Label htmlFor={`cat-${category.toLowerCase()}`} className="font-normal cursor-pointer">{category}</Label>
               </div>
             ))}
           </RadioGroup>
@@ -146,11 +163,11 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
           {brands.map(brand => (
             <div key={brand} className="flex items-center space-x-2">
               <Checkbox
-                id={`brand-${brand}`}
+                id={`brand-${brand.toLowerCase()}`} // Ensure id is lowercase
                 checked={selectedBrands.includes(brand.toLowerCase())}
                 onCheckedChange={(checked) => handleBrandChange(brand.toLowerCase(), checked)}
               />
-              <Label htmlFor={`brand-${brand}`} className="font-normal cursor-pointer">{brand}</Label>
+              <Label htmlFor={`brand-${brand.toLowerCase()}`} className="font-normal cursor-pointer">{brand}</Label>
             </div>
           ))}
         </div>
@@ -159,24 +176,26 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
 
         {/* Price Filter */}
         <div className="space-y-2">
-             <Label className="font-medium">Prix</Label>
+             <Label className="font-medium">Prix (FCFA)</Label>
              <div className="flex gap-2 items-center">
                  <Input
-                     type="number"
-                     placeholder="Min €"
+                     type="number" // Use number for better input handling on mobile
+                     placeholder="Min"
                      value={minPrice}
                      onChange={(e) => handlePriceChange('min', e.target.value)}
-                     className="w-full text-sm h-9"
+                     className="w-full text-sm h-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" // Hide spinners
                      min="0"
+                     step="1" // Allow only whole numbers common for XOF
                  />
                  <span>-</span>
                  <Input
                      type="number"
-                     placeholder="Max €"
+                     placeholder="Max"
                      value={maxPrice}
                       onChange={(e) => handlePriceChange('max', e.target.value)}
-                     className="w-full text-sm h-9"
+                     className="w-full text-sm h-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                      min="0"
+                     step="1"
                  />
              </div>
         </div>

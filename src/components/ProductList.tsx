@@ -1,58 +1,50 @@
+// src/components/ProductList.tsx
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 // Use the specific Product type from boutique page or a shared location
-import type { Product } from '@/app/boutique/page';
+import type { Product } from '@/app/boutique/page'; // Assuming Product includes brand
 import { ProductCard } from './ProductCard';
 import { useSearchParams } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Filter } from 'lucide-react'; // Import Filter icon
 
 interface ProductListProps {
-  initialProducts: Product[]; // Now expecting products with brand
+  initialProducts: Product[]; // Expecting products with brand
 }
 
 export function ProductList({ initialProducts }: ProductListProps) {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [isLoading, setIsLoading] = useState(true); // Simulate loading
+  const [products] = useState<Product[]>(initialProducts); // Keep initial products as the base dataset
+  const [isLoading, setIsLoading] = useState(false); // Manage loading state for simulated delay
   const searchParams = useSearchParams();
 
-  // Extract filter parameters from URL
-  const categoryFilter = searchParams.get('category') || 'all';
-  const brandFilters = searchParams.getAll('brand'); // Can be multiple
-  const minPriceFilter = searchParams.get('minPrice');
-  const maxPriceFilter = searchParams.get('maxPrice');
-  const searchTermFilter = searchParams.get('search')?.toLowerCase() || '';
-  const sort = searchParams.get('sort') || 'name_asc'; // Get sort param
-
-  // Simulate data fetching/loading effect on initial render and when params change
-  useEffect(() => {
-    setIsLoading(true);
-    // In a real app, you'd fetch data based on *all* filters server-side
-    // For client-side simulation, we just use initialProducts
-    const timer = setTimeout(() => {
-      setProducts(initialProducts); // Reset to initial or fetch new data
-      setIsLoading(false);
-    }, 500); // Simulate network delay
-
-    return () => clearTimeout(timer);
-  // Depend on searchParams string representation to refetch/re-filter
-  }, [searchParams.toString(), initialProducts]);
-
-
+  // Re-run filtering/sorting whenever searchParams change
   const filteredAndSortedProducts = useMemo(() => {
+    setIsLoading(true); // Set loading true when recalculating
+
+    // Extract filter parameters from URL
+    const categoryFilter = searchParams.get('category')?.toLowerCase() || 'all';
+    const brandFilters = searchParams.getAll('brand'); // Already lowercase from sidebar
+    const minPriceFilter = searchParams.get('minPrice');
+    const maxPriceFilter = searchParams.get('maxPrice');
+    const searchTermFilter = searchParams.get('search')?.toLowerCase() || '';
+    const sort = searchParams.get('sort') || 'name_asc';
+
     let result = [...products];
 
-    // Apply Search Filter
-    if (searchTermFilter) {
+    // Apply Search Filter (only if >= 2 chars)
+    if (searchTermFilter.length >= 2) {
         result = result.filter(p =>
             p.name.toLowerCase().includes(searchTermFilter) ||
-            p.description.toLowerCase().includes(searchTermFilter)
+            p.description.toLowerCase().includes(searchTermFilter) ||
+            p.brand.toLowerCase().includes(searchTermFilter) ||
+            p.category.toLowerCase().includes(searchTermFilter)
         );
     }
 
     // Apply Category Filter
     if (categoryFilter !== 'all') {
-      result = result.filter(p => p.category.toLowerCase() === categoryFilter.toLowerCase());
+      result = result.filter(p => p.category.toLowerCase() === categoryFilter);
     }
 
     // Apply Brand Filter (Multiple)
@@ -64,10 +56,10 @@ export function ProductList({ initialProducts }: ProductListProps) {
     const minPriceNum = minPriceFilter ? parseFloat(minPriceFilter) : null;
     const maxPriceNum = maxPriceFilter ? parseFloat(maxPriceFilter) : null;
 
-    if (minPriceNum !== null) {
+    if (minPriceNum !== null && !isNaN(minPriceNum)) {
         result = result.filter(p => p.price >= minPriceNum);
     }
-    if (maxPriceNum !== null) {
+    if (maxPriceNum !== null && !isNaN(maxPriceNum)) {
         result = result.filter(p => p.price <= maxPriceNum);
     }
 
@@ -88,8 +80,27 @@ export function ProductList({ initialProducts }: ProductListProps) {
         result.sort((a, b) => a.name.localeCompare(a.name));
         break;
     }
+
+    // Simulate delay for loading indicator
+     const timer = setTimeout(() => {
+       setIsLoading(false);
+     }, 300); // Short delay
+
+    // Return result immediately for responsiveness, loading handles visual delay
     return result;
-  }, [products, categoryFilter, brandFilters, minPriceFilter, maxPriceFilter, searchTermFilter, sort]); // Add all filters to dependency array
+
+  }, [products, searchParams]); // Depend on base products and searchParams
+
+  // Cleanup timer on unmount or if dependencies change before timeout
+   useEffect(() => {
+     // This effect is primarily for cleanup if needed, main logic is in useMemo
+     let timer: NodeJS.Timeout;
+     if(isLoading){
+        timer = setTimeout(() => setIsLoading(false), 300); // Ensure loading resets
+     }
+     return () => clearTimeout(timer);
+   }, [isLoading]);
+
 
   if (isLoading) {
      return (
