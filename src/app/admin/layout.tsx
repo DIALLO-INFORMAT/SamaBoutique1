@@ -1,27 +1,50 @@
+// src/app/admin/layout.tsx
+'use client';
+
 import type { ReactNode } from 'react';
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
-import { LayoutGrid, Box, Settings, Users } from 'lucide-react';
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
+import { LayoutGrid, Box, Settings, Users, LogOut } from 'lucide-react';
 import Link from 'next/link';
-import { Header } from '@/components/Header'; // Reuse existing header if needed, or create a specific admin header
+import { useAuth } from '@/context/AuthContext'; // Import useAuth
+import { useRouter } from 'next/navigation'; // Import useRouter
+import { Button } from '@/components/ui/button'; // Import Button for styling
+import { useToast } from '@/hooks/use-toast'; // Import useToast
 
 interface AdminLayoutProps {
     children: ReactNode;
 }
 
-// Simple auth check placeholder - Replace with actual authentication logic
-const isAuthenticated = true; // Simulate logged-in admin
-
 export default function AdminLayout({ children }: AdminLayoutProps) {
+    const { user, logout, isLoading } = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
 
-    if (!isAuthenticated) {
-        // Redirect to login or show an unauthorized message
-        // In a real app, use Next.js middleware or getServerSideProps for protected routes
+    const handleLogout = () => {
+        logout();
+        toast({
+            title: "Déconnexion réussie",
+            description: "Vous avez été déconnecté.",
+        });
+        router.push('/'); // Redirect to home after logout
+    };
+
+    // Handle loading state
+    if (isLoading) {
         return (
             <div className="flex justify-center items-center min-h-screen">
-                <p>Accès non autorisé. Veuillez vous connecter.</p>
-                {/* Optionally add a link to the login page */}
+                <p>Chargement...</p>
+            </div>
+        );
+    }
+
+    // Redirect if not logged in or not an admin
+    if (!user || user.role !== 'admin') {
+        return (
+            <div className="flex flex-col justify-center items-center min-h-screen text-center p-4">
+                <p className="text-xl text-destructive mb-4">Accès non autorisé.</p>
+                <p className="mb-6 text-muted-foreground">Vous devez être administrateur pour accéder à cette page.</p>
                 <Link href="/account">
-                    <button className="ml-4 px-4 py-2 bg-primary text-primary-foreground rounded">Connexion</button>
+                    <Button variant="destructive">Connexion</Button>
                 </Link>
             </div>
         );
@@ -29,20 +52,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
     return (
         <SidebarProvider>
-            {/* Optional: Reuse main Header or create a specific AdminHeader */}
-            {/* <Header /> */}
             <div className="flex min-h-screen">
-                <Sidebar side="left" variant="sidebar" collapsible="icon">
-                    <SidebarHeader className="items-center justify-between">
-                        {/* Sidebar Trigger for mobile/collapsible */}
+                <Sidebar side="left" variant="sidebar" collapsible="icon" className="border-r border-border">
+                    <SidebarHeader className="items-center justify-between p-2 border-b border-border">
                          <SidebarTrigger className="md:hidden"/>
-                         <span className="font-semibold text-lg hidden group-data-[state=expanded]:inline">Admin</span>
+                         <span className="font-semibold text-lg hidden group-data-[state=expanded]:inline text-primary">Admin</span>
                     </SidebarHeader>
-                    <SidebarContent>
+                    <SidebarContent className="p-2">
                         <SidebarMenu>
                             <SidebarMenuItem>
                                 <Link href="/admin" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Tableau de bord">
+                                    <SidebarMenuButton tooltip="Tableau de bord" className="text-sm" isActive={router.pathname === '/admin'}>
                                         <LayoutGrid />
                                         <span>Tableau de bord</span>
                                     </SidebarMenuButton>
@@ -50,16 +70,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             </SidebarMenuItem>
                              <SidebarMenuItem>
                                 <Link href="/admin/products" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Produits">
+                                    <SidebarMenuButton tooltip="Produits" className="text-sm" isActive={router.pathname?.startsWith('/admin/products')}>
                                         <Box />
                                         <span>Produits</span>
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
-                             {/* Add more admin links as needed */}
                              <SidebarMenuItem>
                                 <Link href="/admin/users" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Utilisateurs">
+                                    <SidebarMenuButton tooltip="Utilisateurs" className="text-sm" isActive={router.pathname === '/admin/users'}>
                                         <Users />
                                         <span>Utilisateurs</span>
                                     </SidebarMenuButton>
@@ -67,7 +86,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             </SidebarMenuItem>
                             <SidebarMenuItem>
                                 <Link href="/admin/settings" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Paramètres">
+                                    <SidebarMenuButton tooltip="Paramètres" className="text-sm" isActive={router.pathname === '/admin/settings'}>
                                         <Settings />
                                         <span>Paramètres</span>
                                     </SidebarMenuButton>
@@ -75,12 +94,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarContent>
-                    {/* Optional Footer */}
-                    {/* <SidebarFooter>...</SidebarFooter> */}
+                    {/* Logout Button in Footer */}
+                    <SidebarFooter className="p-2 border-t border-border">
+                         <SidebarMenu>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                     tooltip="Déconnexion"
+                                     onClick={handleLogout}
+                                     className="text-destructive hover:bg-destructive/10 hover:text-destructive text-sm"
+                                >
+                                     <LogOut />
+                                     <span>Déconnexion</span>
+                                 </SidebarMenuButton>
+                             </SidebarMenuItem>
+                         </SidebarMenu>
+                    </SidebarFooter>
                 </Sidebar>
                  <SidebarInset>
                     {/* Main content area for admin pages */}
-                    <div className="p-4 md:p-8">
+                    <div className="p-4 md:p-8 bg-background min-h-screen"> {/* Added bg-background */}
                         {children}
                     </div>
                 </SidebarInset>

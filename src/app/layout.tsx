@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Header } from "@/components/Header";
 import { cn } from "@/lib/utils";
 import { CartProvider } from "@/context/CartContext"; // Import CartProvider
+import { AuthProvider } from "@/context/AuthContext"; // Import AuthProvider
 
 export const metadata: Metadata = {
   title: "SamaBoutique",
@@ -24,14 +25,16 @@ export default function RootLayout({
           "antialiased flex flex-col min-h-screen"
         )}
       >
-        <CartProvider> {/* Wrap with CartProvider */}
-          <Header />
-          {/* Adjusted main padding - container/max-w will be handled within specific page layouts if needed */}
-          <main className="flex-grow px-4 py-8">
-            {children}
-          </main>
-          <Toaster />
-        </CartProvider> {/* Close CartProvider */}
+        <AuthProvider> {/* Wrap with AuthProvider */}
+          <CartProvider> {/* Wrap with CartProvider */}
+            <Header />
+            {/* Adjusted main padding - container/max-w will be handled within specific page layouts if needed */}
+            <main className="flex-grow px-4 py-8">
+              {children}
+            </main>
+            <Toaster />
+          </CartProvider> {/* Close CartProvider */}
+        </AuthProvider> {/* Close AuthProvider */}
       </body>
     </html>
   );

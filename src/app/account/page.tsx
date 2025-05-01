@@ -14,24 +14,28 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
-import { LogIn, UserPlus } from 'lucide-react';
-
-// Placeholder for future auth implementation
-// import { signIn, signUp } from '@/lib/auth'; // Adjust path as needed
+import { LogIn, UserPlus, Loader2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext'; // Import useAuth
+import { useRouter } from 'next/navigation';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; // Import RadioGroup
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email invalide." }),
   password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères." }),
 });
 
+// Add role to register schema
 const registerSchema = z.object({
   name: z.string().min(2, { message: "Le nom doit contenir au moins 2 caractères." }),
   email: z.string().email({ message: "Email invalide." }),
   password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères." }),
   confirmPassword: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères." }),
+  role: z.enum(["admin", "manager", "customer"], {
+    required_error: "Vous devez sélectionner un type de compte.",
+  }), // Role selection added
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas.",
   path: ["confirmPassword"], // path of error
@@ -40,8 +44,20 @@ const registerSchema = z.object({
 
 export default function AccountPage() {
   const { toast } = useToast();
+  const { login, signup, user } = useAuth(); // Use login and signup from context
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
+
+  // Redirect if user is already logged in
+  if (user) {
+     if (user.role === 'admin') {
+       router.replace('/admin');
+     } else {
+        router.replace('/dashboard');
+     }
+     return <div className="text-center py-10">Redirection...</div>; // Show loading while redirecting
+  }
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -50,58 +66,95 @@ export default function AccountPage() {
 
   const registerForm = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "", role: "customer" }, // Default role to customer
   });
 
   async function onLoginSubmit(values: z.infer<typeof loginSchema>) {
     setIsLoading(true);
-    console.log("Login attempt:", values);
-    // Placeholder: Replace with actual authentication logic
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast({
-      title: "Connexion réussie (simulation)",
-      description: "Vous êtes maintenant connecté.",
-      className: "bg-primary text-primary-foreground border-primary"
-    });
-    // Redirect user after successful login, e.g., router.push('/dashboard');
-    setIsLoading(false);
-    // loginForm.reset(); // Reset form on success? Maybe not needed if redirecting
+    try {
+      const loggedInUser = await login(values.email, values.password);
+      toast({
+        title: "Connexion réussie",
+        description: `Bienvenue ${loggedInUser.name}!`,
+        className: "bg-primary text-primary-foreground border-primary"
+      });
+      // Redirect based on role
+      if (loggedInUser.role === 'admin') {
+        router.push('/admin');
+      } else { // customer or manager
+        router.push('/dashboard');
+      }
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      toast({
+        title: "Échec de la connexion",
+        description: error.message || "Email ou mot de passe incorrect.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function onRegisterSubmit(values: z.infer<typeof registerSchema>) {
     setIsLoading(true);
-    console.log("Registration attempt:", values);
-    // Placeholder: Replace with actual registration logic
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    toast({
-      title: "Inscription réussie (simulation)",
-      description: "Votre compte a été créé. Vous pouvez maintenant vous connecter.",
-      className: "bg-primary text-primary-foreground border-primary"
-    });
-    setActiveTab("login"); // Switch to login tab after registration
-    setIsLoading(false);
-    registerForm.reset();
+    try {
+      // Prevent non-admin users from creating admin/manager accounts through UI for security
+      // In a real app, backend validation is crucial. This is a basic UI guard.
+      if ((values.role === 'admin' || values.role === 'manager') && user?.role !== 'admin') {
+          toast({
+              title: "Action non autorisée",
+              description: "Seul un administrateur peut créer des comptes Admin ou Gestionnaire.",
+              variant: "destructive",
+          });
+          setIsLoading(false);
+          return; // Stop registration
+      }
+
+
+      await signup(values.name, values.email, values.password, values.role);
+      toast({
+        title: "Inscription réussie",
+        description: "Votre compte a été créé. Vous pouvez maintenant vous connecter.",
+        className: "bg-primary text-primary-foreground border-primary"
+      });
+      setActiveTab("login"); // Switch to login tab after registration
+      registerForm.reset(); // Clear the registration form
+      loginForm.setValue("email", values.email); // Pre-fill login email
+    } catch (error: any) {
+        console.error("Signup failed:", error);
+        toast({
+            title: "Échec de l'inscription",
+            description: error.message || "Impossible de créer le compte. L'email existe peut-être déjà.",
+            variant: "destructive",
+        });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
-     // Added container and max-width here
-    <div className="container mx-auto max-w-4xl flex justify-center items-center py-12">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="text-center pb-2">
-          <CardTitle className="text-2xl font-bold text-primary">
-            {activeTab === "login" ? "Connexion" : "Créer un Compte"}
+    <div className="container mx-auto max-w-lg flex justify-center items-center py-12"> {/* Adjusted max-width */}
+      <Card className="w-full shadow-xl rounded-lg border-primary/20"> {/* Enhanced styling */}
+        <CardHeader className="text-center pb-4 pt-6">
+          <CardTitle className="text-3xl font-bold text-primary">
+            {activeTab === "login" ? "Accès Membre" : "Créer un Compte"}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-muted-foreground">
             {activeTab === "login"
-              ? "Accédez à votre compte SamaBoutique."
-              : "Rejoignez-nous pour gérer vos commandes."}
+              ? "Connectez-vous à votre espace SamaBoutique."
+              : "Rejoignez notre communauté."}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-6 pb-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login" disabled={isLoading}><LogIn className="mr-2 h-4 w-4"/>Se Connecter</TabsTrigger>
-              <TabsTrigger value="register" disabled={isLoading}><UserPlus className="mr-2 h-4 w-4"/>S'inscrire</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6 bg-secondary rounded-md p-1">
+              <TabsTrigger value="login" disabled={isLoading} className="data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-sm py-2 text-sm font-medium">
+                <LogIn className="mr-2 h-4 w-4"/>Se Connecter
+              </TabsTrigger>
+              <TabsTrigger value="register" disabled={isLoading} className="data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md rounded-sm py-2 text-sm font-medium">
+                <UserPlus className="mr-2 h-4 w-4"/>S'inscrire
+              </TabsTrigger>
             </TabsList>
 
             {/* Login Form */}
@@ -115,7 +168,7 @@ export default function AccountPage() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="votre.email@exemple.com" {...field} />
+                          <Input type="email" placeholder="votre.email@exemple.com" {...field} className="text-base"/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -128,13 +181,14 @@ export default function AccountPage() {
                       <FormItem>
                         <FormLabel>Mot de passe</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="********" {...field} />
+                          <Input type="password" placeholder="********" {...field} className="text-base"/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" disabled={isLoading} variant="destructive">
+                  <Button type="submit" className="w-full h-11 text-base" disabled={isLoading} variant="destructive">
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
                     {isLoading ? "Connexion..." : "Se Connecter"}
                   </Button>
                 </form>
@@ -152,7 +206,7 @@ export default function AccountPage() {
                       <FormItem>
                         <FormLabel>Nom Complet</FormLabel>
                         <FormControl>
-                          <Input placeholder="Votre nom et prénom" {...field} />
+                          <Input placeholder="Votre nom et prénom" {...field} className="text-base"/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -165,7 +219,7 @@ export default function AccountPage() {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="votre.email@exemple.com" {...field} />
+                          <Input type="email" placeholder="votre.email@exemple.com" {...field} className="text-base"/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -178,7 +232,7 @@ export default function AccountPage() {
                       <FormItem>
                         <FormLabel>Mot de passe</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="Choisissez un mot de passe" {...field} />
+                          <Input type="password" placeholder="Choisissez un mot de passe" {...field} className="text-base"/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -191,13 +245,62 @@ export default function AccountPage() {
                       <FormItem>
                         <FormLabel>Confirmer le mot de passe</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="Retapez votre mot de passe" {...field} />
+                          <Input type="password" placeholder="Retapez votre mot de passe" {...field} className="text-base"/>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" disabled={isLoading} variant="destructive">
+                   {/* Role Selection - Conditionally render based on if current user is admin */}
+                   {user?.role === 'admin' && ( // Only show if the logged-in user is admin
+                      <FormField
+                        control={registerForm.control}
+                        name="role"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3">
+                            <FormLabel>Type de compte</FormLabel>
+                            <FormControl>
+                              <RadioGroup
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="flex flex-col space-y-1"
+                              >
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                  <FormControl>
+                                    <RadioGroupItem value="customer" />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    Client
+                                  </FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                  <FormControl>
+                                    <RadioGroupItem value="manager" />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    Gestionnaire
+                                  </FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                  <FormControl>
+                                    <RadioGroupItem value="admin" />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    Administrateur
+                                  </FormLabel>
+                                </FormItem>
+                              </RadioGroup>
+                            </FormControl>
+                             <FormDescription>
+                                Sélectionnez le rôle pour le nouvel utilisateur.
+                             </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                   )}
+                  <Button type="submit" className="w-full h-11 text-base" disabled={isLoading} variant="destructive">
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
                     {isLoading ? "Inscription..." : "Créer le Compte"}
                   </Button>
                 </form>
@@ -205,8 +308,6 @@ export default function AccountPage() {
             </TabsContent>
           </Tabs>
         </CardContent>
-        {/* Optional Footer can be added here */}
-        {/* <CardFooter> ... </CardFooter> */}
       </Card>
     </div>
   );

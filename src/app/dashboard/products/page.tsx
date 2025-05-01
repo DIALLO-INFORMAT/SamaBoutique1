@@ -1,0 +1,234 @@
+// src/app/dashboard/products/page.tsx (Manager's Product Page)
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2 } from "lucide-react";
+import Image from 'next/image';
+import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { buttonVariants } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/context/AuthContext'; // To verify role
+
+// Reusing Product type from boutique or define here
+export interface ManagerProduct {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  brand: string;
+}
+
+// Mock data fetching/deleting functions (similar to admin page, but potentially scoped)
+const fetchManagerProductsFromAPI = async (): Promise<ManagerProduct[]> => {
+   await new Promise(resolve => setTimeout(resolve, 1000));
+   // In a real app, this might fetch products the manager specifically has rights to edit,
+   // or it might be the same endpoint as admin depending on backend logic.
+   const storedProducts = localStorage.getItem('manager_products'); // Use a separate key or same as admin
+   return storedProducts ? JSON.parse(storedProducts) : [
+        // Example data if none exists
+      { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 19.99, category: "Vêtements", brand: "Marque A" },
+      { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 24.99, category: "Accessoires", brand: "Marque B" },
+      { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 45.00, category: "Vêtements", brand: "Marque A" },
+   ];
+}
+
+const deleteManagerProductFromAPI = async (productId: string): Promise<void> => {
+    console.log("Manager attempting to delete product via API:", productId);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    // Update localStorage or call API
+     let products = await fetchManagerProductsFromAPI();
+     products = products.filter(p => p.id !== productId);
+     localStorage.setItem('manager_products', JSON.stringify(products)); // Example update
+}
+
+
+export default function ManagerProductsPage() {
+  const { user, isLoading: authLoading } = useAuth();
+  const [products, setProducts] = useState<ManagerProduct[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Redirect or show error if not a manager
+  useEffect(() => {
+    if (!authLoading && user?.role !== 'manager') {
+       // Redirect to dashboard or show an error message
+       // router.replace('/dashboard'); // Assuming useRouter is imported
+        toast({ title: "Accès non autorisé", description: "Seuls les gestionnaires peuvent accéder à cette page.", variant: "destructive" });
+    }
+  }, [user, authLoading, toast]);
+
+
+  // Fetch products on component mount (if user is manager)
+  useEffect(() => {
+    if (user?.role === 'manager') {
+        const loadProducts = async () => {
+            setIsLoading(true);
+            try {
+                const fetchedProducts = await fetchManagerProductsFromAPI();
+                // Simulate adding products if localStorage is empty for demo
+                if (fetchedProducts.length === 0 && !localStorage.getItem('manager_products')) {
+                    const demoProducts = [
+                          { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 19.99, category: "Vêtements", brand: "Marque A" },
+                          { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 24.99, category: "Accessoires", brand: "Marque B" },
+                          { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 45.00, category: "Vêtements", brand: "Marque A" },
+                    ];
+                    localStorage.setItem('manager_products', JSON.stringify(demoProducts));
+                    setProducts(demoProducts);
+                } else {
+                    setProducts(fetchedProducts);
+                }
+
+            } catch (error) {
+                console.error("Failed to fetch products:", error);
+                toast({ title: "Erreur", description: "Impossible de charger les produits.", variant: "destructive" });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadProducts();
+    } else {
+        setIsLoading(false); // Stop loading if not manager
+    }
+  }, [user, toast]);
+
+
+  const handleDeleteProduct = async (productId: string, productName: string) => {
+    setIsDeleting(productId);
+    try {
+        await deleteManagerProductFromAPI(productId);
+        setProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
+        toast({
+          title: "Produit Supprimé",
+          description: `Le produit "${productName}" a été supprimé.`,
+           className: "bg-primary text-primary-foreground border-primary",
+        });
+    } catch (error) {
+         console.error("Failed to delete product:", error);
+         toast({ title: "Erreur", description: `Impossible de supprimer "${productName}".`, variant: "destructive" });
+    } finally {
+        setIsDeleting(null);
+    }
+  };
+
+   // Render loading or unauthorized state
+  if (isLoading || authLoading) {
+      return <div className="p-6"><Skeleton className="h-10 w-1/2 mb-4" /> <Skeleton className="h-64 w-full" /></div>;
+  }
+
+   if (user?.role !== 'manager') {
+      return <div className="p-6 text-center text-destructive">Accès réservé aux gestionnaires.</div>;
+   }
+
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+            <h1 className="text-3xl font-bold text-primary">Gestion des Produits (Gestionnaire)</h1>
+            <p className="text-muted-foreground">Ajoutez ou modifiez les produits.</p>
+        </div>
+        <Link href="/dashboard/products/new" passHref legacyBehavior> {/* Link to manager's add page */}
+          <Button variant="destructive" size="sm">
+            <PlusCircle className="mr-2 h-4 w-4" /> Ajouter Produit
+          </Button>
+        </Link>
+      </div>
+
+      <Card className="shadow-md border-border">
+        <CardHeader className="border-b border-border px-6 py-4">
+          <CardTitle>Vos Produits</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {products.length === 0 ? (
+            <p className="text-center text-muted-foreground py-12">Aucun produit à gérer pour le moment.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="hidden w-[80px] sm:table-cell px-6">Image</TableHead>
+                  <TableHead className="px-6">Nom</TableHead>
+                  <TableHead className="px-6">Catégorie</TableHead>
+                   <TableHead className="hidden md:table-cell px-6">Marque</TableHead>
+                  <TableHead className="text-right px-6">Prix</TableHead>
+                  <TableHead className="text-right px-6 w-[100px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products.map((product) => (
+                  <TableRow key={product.id} className="hover:bg-muted/50">
+                    <TableCell className="hidden sm:table-cell px-6 py-3">
+                       <Image
+                         alt={product.name}
+                         className="aspect-square rounded-md object-cover border border-border"
+                         height="48"
+                         src={`https://picsum.photos/seed/${product.id}/64/64`}
+                         width="48"
+                         data-ai-hint={product.category === 'Services' ? 'service tech icon' : product.name.toLowerCase().split(' ')[0]}
+                       />
+                    </TableCell>
+                    <TableCell className="font-medium px-6 py-3">{product.name}</TableCell>
+                    <TableCell className="px-6 py-3">{product.category}</TableCell>
+                     <TableCell className="hidden md:table-cell px-6 py-3">{product.brand}</TableCell>
+                    <TableCell className="text-right px-6 py-3">{product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</TableCell>
+                    <TableCell className="text-right px-6 py-3">
+                      <AlertDialog>
+                           <DropdownMenu>
+                               <DropdownMenuTrigger asChild>
+                                   <Button aria-haspopup="true" size="icon" variant="ghost" disabled={isDeleting === product.id}>
+                                       {isDeleting === product.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                                       <span className="sr-only">Toggle menu</span>
+                                   </Button>
+                               </DropdownMenuTrigger>
+                               <DropdownMenuContent align="end">
+                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                   <DropdownMenuItem asChild>
+                                        {/* Link to manager's edit page */}
+                                        <Link href={`/dashboard/products/edit/${product.id}`} className="flex items-center cursor-pointer w-full">
+                                            <Edit className="mr-2 h-4 w-4"/>Modifier
+                                        </Link>
+                                   </DropdownMenuItem>
+                                   {/* Manager might not have delete permission, or only for products they added */}
+                                   {/* <DropdownMenuSeparator />
+                                   <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                                         <Trash2 className="mr-2 h-4 w-4"/>Supprimer
+                                      </Button>
+                                   </AlertDialogTrigger> */}
+                               </DropdownMenuContent>
+                           </DropdownMenu>
+
+                           {/* Delete Confirmation (If managers can delete) */}
+                            {/* <AlertDialogContent>
+                                <AlertDialogHeader> ... </AlertDialogHeader>
+                                <AlertDialogFooter> ... </AlertDialogFooter>
+                           </AlertDialogContent> */}
+                       </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+           )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

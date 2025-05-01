@@ -18,18 +18,19 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from "@/components/ui/separator";
-import { KeyRound } from "lucide-react"; // Icon for password section
+import { KeyRound, User, Loader2 } from "lucide-react"; // Added User, Loader2
+import { useAuth } from '@/context/AuthContext'; // Import useAuth
+import { useEffect, useState } from "react";
 
-// Schema for profile update
+// Schema for profile update (excluding email for now)
 const profileSchema = z.object({
   name: z.string().min(2, { message: "Le nom doit contenir au moins 2 caractères." }),
-  email: z.string().email({ message: "Email invalide." }),
-  // Add other fields like phone, address if needed
+  // email: z.string().email({ message: "Email invalide." }), // Keep email display-only
 });
 
 // Schema for password change
 const passwordSchema = z.object({
-    currentPassword: z.string().min(6, { message: "Le mot de passe actuel est requis." }),
+    currentPassword: z.string().min(1, { message: "Le mot de passe actuel est requis." }), // Min 1 to ensure it's not empty
     newPassword: z.string().min(6, { message: "Le nouveau mot de passe doit contenir au moins 6 caractères." }),
     confirmPassword: z.string().min(6, { message: "Veuillez confirmer le nouveau mot de passe." }),
 }).refine((data) => data.newPassword === data.confirmPassword, {
@@ -37,19 +38,18 @@ const passwordSchema = z.object({
   path: ["confirmPassword"],
 });
 
-
-// Placeholder user data - replace with actual data fetching
-const currentUser = {
-    name: "Alice Dupont",
-    email: "alice.d@example.com",
-};
-
 export default function UserProfilePage() {
   const { toast } = useToast();
+  const { user, updateUserProfile, changePassword, isLoading: authLoading } = useAuth(); // Use context hooks
+  const [isProfileSubmitting, setIsProfileSubmitting] = useState(false);
+  const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false);
+
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
-    defaultValues: currentUser, // Load current user data
+    defaultValues: {
+        name: "", // Initialize empty, will be set by useEffect
+    },
   });
 
   const passwordForm = useForm<z.infer<typeof passwordSchema>>({
@@ -61,46 +61,91 @@ export default function UserProfilePage() {
     },
   });
 
+  // Load user data into profile form once available
+  useEffect(() => {
+    if (user) {
+      profileForm.reset({ name: user.name });
+    }
+  }, [user, profileForm]);
+
 
   async function onProfileSubmit(values: z.infer<typeof profileSchema>) {
-    // Simulate updating profile information
-    console.log("Updating Profile:", values);
-    // In a real app, send this data to your backend API
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    toast({
-      title: "Profil Mis à Jour!",
-      description: "Vos informations ont été enregistrées.",
-       className: "bg-primary text-primary-foreground border-primary",
-    });
-    // Optionally update local state or refetch user data
+    if (!user) return;
+    setIsProfileSubmitting(true);
+    try {
+      await updateUserProfile(user.id, { name: values.name }); // Update only name for now
+      toast({
+        title: "Profil Mis à Jour!",
+        description: "Vos informations ont été enregistrées.",
+         className: "bg-primary text-primary-foreground border-primary",
+      });
+    } catch (error: any) {
+        console.error("Profile update failed:", error);
+        toast({ title: "Erreur", description: error.message || "La mise à jour du profil a échoué.", variant: "destructive" });
+    } finally {
+        setIsProfileSubmitting(false);
+    }
   }
 
   async function onPasswordSubmit(values: z.infer<typeof passwordSchema>) {
-    // Simulate changing password
-    console.log("Changing Password for:", currentUser.email); // Log email for context
-    // In a real app, send values to your backend API for validation and update
-    // Make sure to handle errors (e.g., incorrect current password)
-    await new Promise(resolve => setTimeout(resolve, 1000));
+     if (!user) return;
+     setIsPasswordSubmitting(true);
+    try {
+      await changePassword(user.email, values.currentPassword, values.newPassword);
+      toast({
+        title: "Mot de Passe Modifié!",
+        description: "Votre mot de passe a été changé avec succès.",
+         className: "bg-primary text-primary-foreground border-primary",
+      });
+      passwordForm.reset(); // Reset password form
+    } catch (error: any) {
+        console.error("Password change failed:", error);
+        // Determine specific error message
+        let description = "La modification du mot de passe a échoué.";
+        if (error.message === 'Incorrect current password') {
+            description = "Le mot de passe actuel est incorrect.";
+             passwordForm.setError("currentPassword", { type: "manual", message: "Mot de passe actuel incorrect." });
+        } else if (error.message.includes('same as the current password')) {
+            description = "Le nouveau mot de passe doit être différent de l'actuel.";
+            passwordForm.setError("newPassword", { type: "manual", message: "Doit être différent du mot de passe actuel." });
+        }
+        toast({ title: "Erreur", description, variant: "destructive" });
+    } finally {
+        setIsPasswordSubmitting(false);
+    }
+  }
 
-    // Example success feedback
-    toast({
-      title: "Mot de Passe Modifié!",
-      description: "Votre mot de passe a été changé avec succès.",
-       className: "bg-primary text-primary-foreground border-primary",
-    });
-    passwordForm.reset(); // Reset password form
+  // Show loading skeleton or message if user data is not yet loaded
+  if (authLoading || !user) {
+      return (
+          <div className="space-y-8">
+              <Skeleton className="h-8 w-48" />
+              {[...Array(2)].map((_, i) => (
+                  <Card key={i}>
+                      <CardHeader><Skeleton className="h-6 w-1/3" /></CardHeader>
+                      <CardContent className="space-y-6">
+                          <Skeleton className="h-10 w-full" />
+                          <Skeleton className="h-10 w-full" />
+                          <Skeleton className="h-10 w-32" />
+                      </CardContent>
+                  </Card>
+              ))}
+          </div>
+      );
   }
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-primary">Mon Profil</h1>
+       <div>
+          <h1 className="text-3xl font-bold text-primary flex items-center gap-2"><User /> Mon Profil</h1>
+          <p className="text-muted-foreground">Gérez vos informations personnelles et de sécurité.</p>
+       </div>
 
       {/* Profile Information Card */}
-      <Card>
+      <Card className="shadow-md border-border">
         <CardHeader>
           <CardTitle>Informations Personnelles</CardTitle>
-          <CardDescription>Mettez à jour votre nom et votre adresse email.</CardDescription>
+          <CardDescription>Mettez à jour votre nom.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...profileForm}>
@@ -118,30 +163,25 @@ export default function UserProfilePage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={profileForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="votre.email@exemple.com" {...field} disabled />
-                      {/* Typically email is not editable directly, or requires verification */}
-                    </FormControl>
-                     <FormDescription>
-                        L'email ne peut pas être modifié ici. Contactez le support si nécessaire.
-                     </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {/* Add fields for phone, address here if managed by user */}
+               {/* Display Email (read-only) */}
+               <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" value={user.email} readOnly disabled className="bg-muted/50 cursor-not-allowed" />
+                  </FormControl>
+                   <FormDescription>
+                      L'adresse email ne peut pas être modifiée.
+                   </FormDescription>
+               </FormItem>
+
               <Button
                  type="submit"
                  variant="destructive"
-                 disabled={profileForm.formState.isSubmitting}
+                 disabled={isProfileSubmitting || authLoading}
+                 className="min-w-[150px]"
               >
-                 {profileForm.formState.isSubmitting ? 'Sauvegarde...' : 'Sauvegarder les Informations'}
+                 {isProfileSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                 {isProfileSubmitting ? 'Sauvegarde...' : 'Sauvegarder'}
               </Button>
             </form>
           </Form>
@@ -151,10 +191,10 @@ export default function UserProfilePage() {
       <Separator />
 
       {/* Change Password Card */}
-      <Card>
+      <Card className="shadow-md border-border">
          <CardHeader>
-           <CardTitle className="flex items-center gap-2"><KeyRound /> Changer le Mot de Passe</CardTitle>
-           <CardDescription>Mettez à jour votre mot de passe pour sécuriser votre compte.</CardDescription>
+           <CardTitle className="flex items-center gap-2"><KeyRound /> Sécurité</CardTitle>
+           <CardDescription>Changez votre mot de passe.</CardDescription>
          </CardHeader>
          <CardContent>
            <Form {...passwordForm}>
@@ -179,7 +219,7 @@ export default function UserProfilePage() {
                    <FormItem>
                      <FormLabel>Nouveau Mot de Passe</FormLabel>
                      <FormControl>
-                       <Input type="password" placeholder="Nouveau mot de passe" {...field} />
+                       <Input type="password" placeholder="Nouveau mot de passe (min. 6 caractères)" {...field} />
                      </FormControl>
                      <FormMessage />
                    </FormItem>
@@ -201,9 +241,11 @@ export default function UserProfilePage() {
                <Button
                    type="submit"
                    variant="destructive"
-                   disabled={passwordForm.formState.isSubmitting}
+                   disabled={isPasswordSubmitting || authLoading}
+                   className="min-w-[200px]"
                >
-                   {passwordForm.formState.isSubmitting ? 'Modification...' : 'Changer le Mot de Passe'}
+                   {isPasswordSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                   {isPasswordSubmitting ? 'Modification...' : 'Changer le Mot de Passe'}
                </Button>
              </form>
            </Form>
