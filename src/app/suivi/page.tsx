@@ -26,8 +26,11 @@ import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslatio
 
 const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 
+// Adjust schema validation for shorter order number format (e.g., SB-XXXXXX)
 const createTrackingSchema = (t: Function) => z.object({
-  orderNumber: z.string().min(5, { message: t('track_order_input_placeholder') + " seems too short." }).trim(),
+  orderNumber: z.string().min(9, { message: t('track_order_input_placeholder') + " doit être au format SB-XXXXXX." })
+                       .regex(/^SB-[A-Z0-9]{6}$/i, { message: "Format invalide (ex: SB-ABC123)." }) // Regex for SB-XXXXXX
+                       .trim(),
 });
 
 // --- Order Status Configuration (with translation keys) ---
@@ -55,6 +58,7 @@ const findOrder = (orderNumber: string): Order | null => {
     if (typeof window === 'undefined') return null;
     const storedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
     const orders: Order[] = storedOrders ? JSON.parse(storedOrders) : [];
+    // Find by the display orderNumber (SB-XXXXXX)
     const foundOrder = orders.find(order => order.orderNumber.toLowerCase() === orderNumber.toLowerCase());
 
     if (!foundOrder) return null;
@@ -85,6 +89,12 @@ export default function OrderTrackingPage() {
     setOrder(null);
 
     setTimeout(() => {
+      // Ensure the input matches the expected format before searching
+      if (!/^SB-[A-Z0-9]{6}$/i.test(values.orderNumber)) {
+          setError("Format de numéro de commande invalide (ex: SB-ABC123).");
+          setIsLoading(false);
+          return;
+      }
       const foundOrder = findOrder(values.orderNumber);
       if (foundOrder) {
         setOrder(foundOrder);
@@ -123,7 +133,8 @@ export default function OrderTrackingPage() {
                   <FormItem className="flex-grow w-full">
                     <FormLabel className="sr-only">{t('track_order_input_placeholder')}</FormLabel>
                     <FormControl>
-                      <Input placeholder={t('track_order_input_placeholder')} {...field} />
+                       {/* Ensure placeholder reflects the new format */}
+                      <Input placeholder={t('track_order_input_placeholder_format')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

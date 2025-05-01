@@ -78,6 +78,14 @@ const createFormSchema = (t: Function) => z.object({
 
 const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 
+// Function to generate a short, human-readable order number like SB-XXXXXX
+const generateOrderNumber = (): string => {
+    const prefix = "SB";
+    const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase(); // 6 random chars
+    return `${prefix}-${randomPart}`;
+};
+
+
 const saveOrder = (order: Order) => {
     if (typeof window === 'undefined') return;
     const storedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
@@ -103,7 +111,7 @@ export default function CheckoutPage() {
     defaultValues: {
       name: user?.name || "",
       address: "",
-      phone: "",
+      phone: user?.phone || "", // Pre-fill phone if available
       email: user?.email || "",
       notes: "",
       paymentMethod: 'Paiement à la livraison',
@@ -121,6 +129,7 @@ export default function CheckoutPage() {
         ...form.getValues(),
         name: user.name,
         email: user.email,
+        phone: user.phone || form.getValues().phone || "", // Prioritize user phone, then form value
       });
     }
   }, [user, form]);
@@ -140,10 +149,13 @@ export default function CheckoutPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
 
-    const orderId = `SB-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    // Generate unique ID for storage and short number for display/tracking
+    const internalId = `order-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const displayOrderNumber = generateOrderNumber(); // Generate SB-XXXXXX format
+
     const newOrder: Order = {
-        id: orderId,
-        orderNumber: orderId,
+        id: internalId, // Use the full unique ID internally
+        orderNumber: displayOrderNumber, // Use the shorter number for display and tracking
         userId: user?.id ?? 'guest',
         customerInfo: {
             name: values.name,
@@ -170,6 +182,7 @@ export default function CheckoutPage() {
             window.dispatchEvent(event);
          }
         clearCart();
+        // Redirect using the displayOrderNumber
         router.push(`/order-confirmation?orderNumber=${newOrder.orderNumber}`);
     } catch (error) {
         console.error("Failed to save or process order:", error);
@@ -190,7 +203,7 @@ export default function CheckoutPage() {
   return (
     <div className="container mx-auto max-w-6xl px-2 sm:px-4 space-y-8 py-6 md:py-10">
       <h1 className="text-2xl sm:text-3xl font-bold text-center text-primary flex items-center justify-center gap-2">
-        <CreditCard className="h-6 w-6 sm:h-8 sm:w-8" /> {t('checkout_page_title')}
+         {/* Removed CreditCard icon */} {t('checkout_page_title')}
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 md:gap-8 items-start">
@@ -226,7 +239,7 @@ export default function CheckoutPage() {
                             )} />
                             <FormField control={form.control} name="email" render={({ field }) => (
                                 <FormItem>
-                                <FormLabel className="flex items-center gap-1"><Mail className="h-4 w-4"/> {t('checkout_form_email')}</FormLabel>
+                                <FormLabel className="flex items-center gap-1"><Mail className="h-4 w-4"/> {t('checkout_form_email')} ({t('checkout_form_optional')})</FormLabel>
                                 <FormControl><Input type="email" placeholder={t('checkout_form_email_placeholder')} {...field} /></FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -234,7 +247,7 @@ export default function CheckoutPage() {
                         </div>
                         <FormField control={form.control} name="notes" render={({ field }) => (
                             <FormItem>
-                            <FormLabel>{t('checkout_form_notes')}</FormLabel>
+                            <FormLabel>{t('checkout_form_notes')} ({t('checkout_form_optional')})</FormLabel>
                             <FormControl><Textarea placeholder={t('checkout_form_notes_placeholder')} className="resize-none" rows={2} {...field} /></FormControl>
                             <FormDescription className="text-right text-xs">{t('contact_form_char_count', { count: field.value?.length ?? 0 })}</FormDescription>
                             <FormMessage />

@@ -25,7 +25,7 @@ export default function OrderConfirmationPage() {
   useEffect(() => {
       if (typeof window !== 'undefined') {
           const params = new URLSearchParams(window.location.search);
-          setOrderNumber(params.get('orderNumber'));
+          setOrderNumber(params.get('orderNumber')); // This will get the SB-XXXXXX number
       }
   }, []);
 
@@ -39,7 +39,7 @@ export default function OrderConfirmationPage() {
           <CardTitle className="text-3xl font-bold text-primary">{t('order_confirmation_title')}</CardTitle>
           <CardDescription className="text-lg text-muted-foreground pt-2">
             {t('order_confirmation_success')}
-            {orderNumber && <><br/>Commande #{orderNumber.substring(0, 8)}...</>} {/* Display partial order number */}
+            {orderNumber && <><br/>Commande #{orderNumber}</>} {/* Display the order number */}
             <br/>
             {t('order_confirmation_contact_soon')}
           </CardDescription>

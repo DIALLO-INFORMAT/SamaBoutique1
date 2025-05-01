@@ -1,18 +1,20 @@
 // src/app/dashboard/orders/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createElement } from 'react'; // Added createElement
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react"; // For a view details button
+import { Eye, Loader2, AlertTriangle } from "lucide-react"; // Import icons
 import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 import { useAuth } from '@/context/AuthContext'; // Import useAuth to fetch user-specific orders
 import type { Order, OrderStatus } from '@/lib/types'; // Import full Order type
 import { cn } from '@/lib/utils';
 import { HelpCircle, Clock, Truck, PackageCheck, PackageX, RefreshCw, CircleDollarSign } from 'lucide-react'; // Import icons
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import Link from 'next/link'; // Import Link for unauthorized message
+import { OrderDetailsDialog } from '@/components/OrderDetailsDialog'; // Import the new dialog
 
 const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 
@@ -56,9 +58,11 @@ const fetchMyOrdersFromAPI = async (userId: string): Promise<Order[]> => {
 
 export default function UserOrdersPage() {
     const { user, isLoading: authLoading } = useAuth();
-    const { t } = useTranslation(); // Use translation hook
+    const { t, currentLocale } = useTranslation(); // Use translation hook
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null); // State for the selected order for details
+    const [isDialogOpen, setIsDialogOpen] = useState(false); // State to control the dialog
 
     useEffect(() => {
         if (user && !authLoading) {
@@ -86,11 +90,51 @@ export default function UserOrdersPage() {
         const IconComponent = config.icon && typeof config.icon !== 'string' ? config.icon : HelpCircle;
         return (
             <Badge variant={config.variant} className={cn("flex items-center gap-1 whitespace-nowrap", config.colorClass, `border-${config.colorClass.replace('text-', '')}`)}>
-                <IconComponent className="h-3 w-3" />
+                 {createElement(IconComponent, { className: "h-3 w-3" })}
                 {t(config.labelKey)} {/* Translate the label */}
             </Badge>
         );
     };
+
+    const handleViewDetails = (order: Order) => {
+        setSelectedOrder(order);
+        setIsDialogOpen(true);
+    };
+
+    // Render loading state
+   if (isLoading || authLoading) {
+        return (
+             <div className="space-y-8">
+                 <Skeleton className="h-9 w-1/3 mb-4" />
+                 <Card>
+                     <CardHeader>
+                         <Skeleton className="h-6 w-1/2" />
+                     </CardHeader>
+                     <CardContent className="space-y-4">
+                         <Skeleton className="h-10 w-full" />
+                         <Skeleton className="h-10 w-full" />
+                         <Skeleton className="h-10 w-full" />
+                     </CardContent>
+                 </Card>
+             </div>
+        );
+    }
+
+    // Render unauthorized state
+   if (!user) {
+       return (
+           <Card className="border-destructive bg-destructive/10 shadow-md mt-8">
+               <CardContent className="p-6 flex flex-col items-center gap-4 text-destructive text-center">
+                   <AlertTriangle className="h-10 w-10" />
+                   <p className="font-semibold text-lg">{t('dashboard_unauthorized_title')}</p>
+                   <p>{t('dashboard_unauthorized_description')}</p>
+                   <Button variant="destructive" asChild className="mt-2">
+                       <Link href="/account">{t('dashboard_unauthorized_login')}</Link>
+                   </Button>
+               </CardContent>
+           </Card>
+       );
+   }
 
 
   return (
@@ -99,51 +143,38 @@ export default function UserOrdersPage() {
       <Card>
         <CardHeader>
           <CardTitle>{t('dashboard_my_orders_description')}</CardTitle>
-          {/* Removed CardDescription as title is descriptive enough */}
         </CardHeader>
-        <CardContent>
-           {isLoading || authLoading ? (
-                <div className="space-y-4">
-                    <Skeleton className="h-12 w-full" />
-                    {[...Array(3)].map((_, i) => ( // Show fewer skeletons
-                         <div key={i} className="flex items-center space-x-4 p-4 border-b">
-                             <div className="space-y-2 flex-grow">
-                                 <Skeleton className="h-4 w-1/4" />
-                                 <Skeleton className="h-4 w-1/5" />
-                             </div>
-                             <Skeleton className="h-6 w-24" />
-                             <Skeleton className="h-8 w-20" />
-                             <Skeleton className="h-8 w-8" />
-                         </div>
-                     ))}
-                 </div>
-            ) : !user ? (
-                 <p className="text-center text-muted-foreground py-8">{t('dashboard_unauthorized_description')}</p> // Use generic unauthorized message
-            ): orders.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">{t('dashboard_my_orders_no_orders')}</p>
+        <CardContent className="p-0 md:p-6"> {/* Adjusted padding */}
+           {orders.length === 0 ? (
+                <p className="text-center text-muted-foreground py-12">{t('dashboard_my_orders_no_orders')}</p>
             ) : (
                 <Table>
                     <TableHeader>
                         <TableRow>
-                        <TableHead>{t('dashboard_my_orders_table_number')}</TableHead>
-                        <TableHead>{t('dashboard_my_orders_table_date')}</TableHead>
-                        <TableHead className="text-right">{t('dashboard_my_orders_table_total')}</TableHead>
-                        <TableHead className="text-center">{t('dashboard_my_orders_table_status')}</TableHead>
-                        <TableHead className="text-right">{t('dashboard_my_orders_table_actions')}</TableHead>
+                        <TableHead className="px-4 md:px-6">{t('dashboard_my_orders_table_number')}</TableHead>
+                        <TableHead className="px-4 md:px-6">{t('dashboard_my_orders_table_date')}</TableHead>
+                        <TableHead className="text-right px-4 md:px-6">{t('dashboard_my_orders_table_total')}</TableHead>
+                        <TableHead className="text-center px-4 md:px-6">{t('dashboard_my_orders_table_status')}</TableHead>
+                        <TableHead className="text-right px-4 md:px-6">{t('dashboard_my_orders_table_actions')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {orders.map((order) => (
                         <TableRow key={order.id}>
-                            <TableCell className="font-medium font-mono text-xs">{order.orderNumber}</TableCell>
-                            <TableCell>{order.createdAt.toLocaleDateString('fr-FR')}</TableCell>
-                            <TableCell className="text-right font-medium">{order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
-                            <TableCell className="text-center">
+                             {/* Ensure orderNumber is displayed */}
+                             <TableCell className="font-medium font-mono text-xs px-4 md:px-6">{order.orderNumber}</TableCell>
+                             <TableCell className="px-4 md:px-6">{order.createdAt.toLocaleDateString(currentLocale)}</TableCell>
+                             <TableCell className="text-right font-medium px-4 md:px-6">{order.total.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
+                             <TableCell className="text-center px-4 md:px-6">
                                 {getStatusBadge(order.status)}
                             </TableCell>
-                            <TableCell className="text-right">
-                                {/* Placeholder for view details action */}
-                                <Button variant="ghost" size="icon" title={t('dashboard_my_orders_view_details')}>
+                            <TableCell className="text-right px-4 md:px-6">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    title={t('dashboard_my_orders_view_details')}
+                                    onClick={() => handleViewDetails(order)}
+                                >
                                     <Eye className="h-4 w-4" />
                                     <span className="sr-only">{t('dashboard_my_orders_view_details')}</span>
                                 </Button>
@@ -155,6 +186,13 @@ export default function UserOrdersPage() {
             )}
         </CardContent>
       </Card>
+
+        {/* Order Details Dialog */}
+        <OrderDetailsDialog
+            order={selectedOrder}
+            isOpen={isDialogOpen}
+            onClose={() => setIsDialogOpen(false)}
+        />
     </div>
   );
 }
