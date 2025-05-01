@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DollarSign, ShoppingBag, Users, Box, Settings, ArrowRight, BarChart, Package } from "lucide-react"; // Added BarChart, Package
+import { DollarSign, ShoppingBag, Users, Box, Settings, ArrowRight, BarChart3, Package, FileText } from "lucide-react"; // Added BarChart3, Package, FileText
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext"; // Import useAuth to welcome the admin
 
@@ -44,7 +44,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats.revenue.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}
+              {stats.revenue.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </div>
              <p className="text-xs text-muted-foreground mt-1">
                Statistiques globales
@@ -95,7 +95,7 @@ export default function AdminDashboardPage() {
                <CardTitle>Actions Rapides</CardTitle>
                <CardDescription>Accès direct aux sections clés.</CardDescription>
            </CardHeader>
-           <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+           <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"> {/* Adjusted grid for more items */}
                <Link href="/admin/products" passHref legacyBehavior>
                    <Button variant="outline" className="w-full justify-start gap-3 p-4 h-auto hover:bg-secondary transition-colors">
                        <Box className="h-5 w-5 text-primary" />
@@ -116,12 +116,33 @@ export default function AdminDashboardPage() {
                        <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" />
                    </Button>
                </Link>
+                 <Link href="/admin/invoices" passHref legacyBehavior>
+                   <Button variant="outline" className="w-full justify-start gap-3 p-4 h-auto hover:bg-secondary transition-colors">
+                       <FileText className="h-5 w-5 text-primary" />
+                        <div>
+                           <span className="font-medium">Gérer les Factures</span>
+                            <p className="text-xs text-muted-foreground">Voir et imprimer</p>
+                       </div>
+                       <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" />
+                   </Button>
+               </Link>
                <Link href="/admin/users" passHref legacyBehavior>
                    <Button variant="outline" className="w-full justify-start gap-3 p-4 h-auto hover:bg-secondary transition-colors">
                        <Users className="h-5 w-5 text-primary" />
                         <div>
                            <span className="font-medium">Gérer les Utilisateurs</span>
                             <p className="text-xs text-muted-foreground">Comptes et permissions</p>
+                       </div>
+                       <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" />
+                   </Button>
+               </Link>
+                {/* Statistics Link */}
+                <Link href="/admin/statistics" passHref legacyBehavior>
+                   <Button variant="outline" className="w-full justify-start gap-3 p-4 h-auto hover:bg-secondary transition-colors">
+                       <BarChart3 className="h-5 w-5 text-primary" />
+                        <div>
+                           <span className="font-medium">Statistiques</span>
+                            <p className="text-xs text-muted-foreground">Performances boutique</p>
                        </div>
                        <ArrowRight className="h-4 w-4 ml-auto text-muted-foreground" />
                    </Button>
@@ -142,7 +163,7 @@ export default function AdminDashboardPage() {
       {/* Placeholder for recent activity or reports */}
       <Card className="shadow-md border border-border">
           <CardHeader>
-              <CardTitle className="flex items-center gap-2"><BarChart className="h-5 w-5 text-primary"/> Activité Récente</CardTitle>
+              <CardTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary"/> Activité Récente</CardTitle> {/* Use consistent icon */}
               <CardDescription>Un aperçu des dernières actions.</CardDescription>
           </CardHeader>
           <CardContent>

@@ -1,4 +1,3 @@
-
 // src/components/Footer.tsx
 'use client';
 
@@ -19,8 +18,8 @@ export function Footer() {
   const { storeDescription } = useSettings();
   const { t, currentLocale } = useTranslation(); // Use the translation hook
 
-  // Determine text direction based on locale
-  const textDir = currentLocale === 'ar' ? 'rtl' : 'ltr';
+  // Determine text direction based on locale (always LTR now)
+  const textDir = 'ltr'; // Hardcoded to Left-to-Right
 
   return (
     <footer className="bg-secondary text-secondary-foreground mt-16 border-t border-border" dir={textDir}>
@@ -87,7 +86,7 @@ export function Footer() {
                       {product.name}
                     </Link>
                     <p className="text-xs text-muted-foreground">
-                      {product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF' })}
+                      {product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </p>
                   </div>
                 </li>

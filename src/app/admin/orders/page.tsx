@@ -202,7 +202,7 @@ export default function AdminOrdersPage() {
                                             {getStatusBadge(order.status)}
                                         </TableCell>
                                         <TableCell className="text-right px-6 py-3 font-medium">
-                                            {order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}
+                                            {order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                         </TableCell>
                                         <TableCell className="text-right px-6 py-3">
                                             <DropdownMenu>
@@ -268,3 +268,4 @@ export default function AdminOrdersPage() {
         </div>
     );
 }
+

@@ -3,10 +3,10 @@
 
 import type { ReactNode } from 'react';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
-import { LayoutGrid, Box, Settings, Users, LogOut, Package, FileText } from 'lucide-react'; // Added FileText for Invoices
+import { LayoutGrid, Box, Settings, Users, LogOut, Package, FileText, BarChart3 } from 'lucide-react'; // Added FileText for Invoices, BarChart3 for Stats
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter, usePathname } from 'next/navigation'; // Import useRouter, usePathname
 import { Button } from '@/components/ui/button'; // Import Button for styling
 import { useToast } from '@/hooks/use-toast'; // Import useToast
 import { useNotificationListener } from '@/hooks/useNotificationListener.tsx'; // Import notification hook
@@ -18,6 +18,7 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
     const { user, logout, isLoading } = useAuth();
     const router = useRouter();
+    const pathname = usePathname(); // Get current path
     const { toast } = useToast();
     useNotificationListener(['admin', 'manager']); // Listen for new orders if admin or manager
 
@@ -41,6 +42,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
     // Redirect if not logged in or not an admin
     if (!user || user.role !== 'admin') {
+        // Redirect happens in AuthContext, but good to have a fallback message
         return (
             <div className="flex flex-col justify-center items-center min-h-screen text-center p-4">
                 <p className="text-xl text-destructive mb-4">Accès non autorisé.</p>
@@ -64,7 +66,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         <SidebarMenu>
                             <SidebarMenuItem>
                                 <Link href="/admin" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Tableau de bord" className="text-sm" isActive={router.pathname === '/admin'}>
+                                    <SidebarMenuButton tooltip="Tableau de bord" className="text-sm" isActive={pathname === '/admin'}>
                                         <LayoutGrid />
                                         <span>Tableau de bord</span>
                                     </SidebarMenuButton>
@@ -72,7 +74,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             </SidebarMenuItem>
                              <SidebarMenuItem>
                                 <Link href="/admin/products" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Produits" className="text-sm" isActive={router.pathname?.startsWith('/admin/products')}>
+                                    <SidebarMenuButton tooltip="Produits" className="text-sm" isActive={pathname?.startsWith('/admin/products')}>
                                         <Box />
                                         <span>Produits</span>
                                     </SidebarMenuButton>
@@ -81,7 +83,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                              {/* Orders Link */}
                              <SidebarMenuItem>
                                 <Link href="/admin/orders" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Commandes" className="text-sm" isActive={router.pathname?.startsWith('/admin/orders')}>
+                                    <SidebarMenuButton tooltip="Commandes" className="text-sm" isActive={pathname?.startsWith('/admin/orders')}>
                                         <Package />
                                         <span>Commandes</span>
                                     </SidebarMenuButton>
@@ -90,7 +92,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                              {/* Invoices Link */}
                              <SidebarMenuItem>
                                 <Link href="/admin/invoices" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Factures" className="text-sm" isActive={router.pathname?.startsWith('/admin/invoices')}>
+                                    <SidebarMenuButton tooltip="Factures" className="text-sm" isActive={pathname?.startsWith('/admin/invoices')}>
                                         <FileText />
                                         <span>Factures</span>
                                     </SidebarMenuButton>
@@ -98,15 +100,24 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             </SidebarMenuItem>
                              <SidebarMenuItem>
                                 <Link href="/admin/users" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Utilisateurs" className="text-sm" isActive={router.pathname === '/admin/users'}>
+                                    <SidebarMenuButton tooltip="Utilisateurs" className="text-sm" isActive={pathname === '/admin/users'}>
                                         <Users />
                                         <span>Utilisateurs</span>
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
+                            {/* Statistics Link */}
+                             <SidebarMenuItem>
+                                <Link href="/admin/statistics" passHref legacyBehavior>
+                                    <SidebarMenuButton tooltip="Statistiques" className="text-sm" isActive={pathname === '/admin/statistics'}>
+                                        <BarChart3 />
+                                        <span>Statistiques</span>
+                                    </SidebarMenuButton>
+                                </Link>
+                            </SidebarMenuItem>
                             <SidebarMenuItem>
                                 <Link href="/admin/settings" passHref legacyBehavior>
-                                    <SidebarMenuButton tooltip="Paramètres" className="text-sm" isActive={router.pathname === '/admin/settings'}>
+                                    <SidebarMenuButton tooltip="Paramètres" className="text-sm" isActive={pathname === '/admin/settings'}>
                                         <Settings />
                                         <span>Paramètres</span>
                                     </SidebarMenuButton>

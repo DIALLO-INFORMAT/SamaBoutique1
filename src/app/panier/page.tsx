@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCart } from '@/context/CartContext';
@@ -131,8 +130,8 @@ export default function CartPage() {
                             </Button>
                         </div>
                         </TableCell>
-                        <TableCell className="text-right">{item.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF' })}</TableCell>
-                        <TableCell className="text-right font-semibold">{(item.price * item.quantity).toLocaleString(currentLocale, { style: 'currency', currency: 'XOF' })}</TableCell>
+                        <TableCell className="text-right">{item.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
+                        <TableCell className="text-right font-semibold">{(item.price * item.quantity).toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
                         <TableCell className="text-right">
                            <AlertDialog>
                                <AlertDialogTrigger asChild>
@@ -235,9 +234,9 @@ export default function CartPage() {
                                     <Plus className="h-3 w-3" />
                                     </Button>
                                 </div>
-                                <span className="font-semibold text-base">{(item.price * item.quantity).toLocaleString(currentLocale, { style: 'currency', currency: 'XOF' })}</span>
+                                <span className="font-semibold text-base">{(item.price * item.quantity).toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                             </div>
-                             <p className="text-xs text-muted-foreground">{item.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF' })} / {t('cart_table_unit_price')}</p>
+                             <p className="text-xs text-muted-foreground">{item.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })} / {t('cart_table_unit_price')}</p>
                         </div>
                     </div>
                 ))}
@@ -246,7 +245,7 @@ export default function CartPage() {
           </CardContent>
           <CardFooter className="flex flex-col items-end space-y-4 pt-4 md:pt-6 px-4 md:px-6 pb-6">
             <div className="text-xl font-semibold">
-              {t('cart_total_label')}: {totalPrice.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF' })}
+              {t('cart_total_label')}: {totalPrice.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </div>
              <Separator className="my-2" />
              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto justify-end">

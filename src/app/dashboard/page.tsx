@@ -1,4 +1,3 @@
-
 // src/app/dashboard/page.tsx
 'use client';
 
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Package, User, ArrowRight, Box, Loader2 } from "lucide-react"; // Added Loader2
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import type { Order } from "@/lib/types";
+import type { Order, OrderStatus } from '@/lib/types'; // Import OrderStatus
 import { useState, useEffect } from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from '@/lib/utils';
@@ -197,7 +196,7 @@ export default function UserDashboardPage() {
                     <p className="font-medium">
                         {t('track_order_number_label')} #{order.orderNumber.substring(0, 8)} <span className="text-muted-foreground text-sm">({order.createdAt.toLocaleDateString(currentLocale)})</span>
                     </p>
-                    <p className="text-sm text-muted-foreground">{t('track_order_total_label')} : {order.total.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF' })}</p>
+                    <p className="text-sm text-muted-foreground">{t('track_order_total_label')} : {order.total.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
                   </div>
                   <span className={cn(
                         "mt-1 sm:mt-0 text-xs font-medium px-2 py-0.5 rounded-full",

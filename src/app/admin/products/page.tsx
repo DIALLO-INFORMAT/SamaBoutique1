@@ -179,7 +179,7 @@ export default function AdminProductsPage() {
                     <TableCell className="px-6 py-3">{product.category}</TableCell>
                      <TableCell className="hidden md:table-cell px-6 py-3">{product.brand}</TableCell> {/* Added Brand */}
                     {/* <TableCell className="hidden lg:table-cell max-w-xs truncate px-6 py-3">{product.description}</TableCell> */}
-                    <TableCell className="text-right px-6 py-3">{product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</TableCell>
+                    <TableCell className="text-right px-6 py-3">{product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
                     <TableCell className="text-right px-6 py-3">
                       <AlertDialog>
                            <DropdownMenu>

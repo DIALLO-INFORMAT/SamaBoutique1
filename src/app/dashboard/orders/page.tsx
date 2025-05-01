@@ -12,27 +12,29 @@ import { useAuth } from '@/context/AuthContext'; // Import useAuth to fetch user
 import type { Order, OrderStatus } from '@/lib/types'; // Import full Order type
 import { cn } from '@/lib/utils';
 import { HelpCircle, Clock, Truck, PackageCheck, PackageX, RefreshCw, CircleDollarSign } from 'lucide-react'; // Import icons
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
 const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 
 // --- Order Status Configuration (Same as Admin/Manager) ---
 interface StatusConfig {
-    label: string;
+    labelKey: string; // Use key for translation
     icon: React.ElementType;
     variant: "default" | "secondary" | "destructive" | "outline";
     colorClass: string;
 }
 
 const statusConfig: Record<OrderStatus, StatusConfig> = {
-    'En attente de paiement': { label: 'Attente Paiement', icon: Clock, variant: 'outline', colorClass: 'text-yellow-600 dark:text-yellow-400' },
-    'Payé': { label: 'Payé', icon: CircleDollarSign, variant: 'default', colorClass: 'text-green-600 dark:text-green-400' },
-    'En cours de préparation': { label: 'Préparation', icon: RefreshCw, variant: 'secondary', colorClass: 'text-blue-600 dark:text-blue-400' },
-    'Expédié': { label: 'Expédié', icon: Truck, variant: 'secondary', colorClass: 'text-purple-600 dark:text-purple-400' },
-    'Livraison en cours': { label: 'En Livraison', icon: Truck, variant: 'secondary', colorClass: 'text-cyan-600 dark:text-cyan-400' },
-    'Livré': { label: 'Livré', icon: PackageCheck, variant: 'default', colorClass: 'text-green-700 dark:text-green-500' },
-    'Annulé': { label: 'Annulé', icon: PackageX, variant: 'destructive', colorClass: 'text-red-600 dark:text-red-400' },
-    'Remboursé': { label: 'Remboursé', icon: RefreshCw, variant: 'destructive', colorClass: 'text-gray-500' },
+    'En attente de paiement': { labelKey: 'order_status_pending_payment', icon: Clock, variant: 'outline', colorClass: 'text-yellow-600 dark:text-yellow-400' },
+    'Payé': { labelKey: 'order_status_paid', icon: CircleDollarSign, variant: 'default', colorClass: 'text-green-600 dark:text-green-400' },
+    'En cours de préparation': { labelKey: 'order_status_processing', icon: RefreshCw, variant: 'secondary', colorClass: 'text-blue-600 dark:text-blue-400' },
+    'Expédié': { labelKey: 'order_status_shipped', icon: Truck, variant: 'secondary', colorClass: 'text-purple-600 dark:text-purple-400' },
+    'Livraison en cours': { labelKey: 'order_status_delivering', icon: Truck, variant: 'secondary', colorClass: 'text-cyan-600 dark:text-cyan-400' },
+    'Livré': { labelKey: 'order_status_delivered', icon: PackageCheck, variant: 'default', colorClass: 'text-green-700 dark:text-green-500' },
+    'Annulé': { labelKey: 'order_status_cancelled', icon: PackageX, variant: 'destructive', colorClass: 'text-red-600 dark:text-red-400' },
+    'Remboursé': { labelKey: 'order_status_refunded', icon: RefreshCw, variant: 'destructive', colorClass: 'text-gray-500' },
 };
+
 
 // --- Mock API Function to fetch orders for the current user ---
 const fetchMyOrdersFromAPI = async (userId: string): Promise<Order[]> => {
@@ -54,6 +56,7 @@ const fetchMyOrdersFromAPI = async (userId: string): Promise<Order[]> => {
 
 export default function UserOrdersPage() {
     const { user, isLoading: authLoading } = useAuth();
+    const { t } = useTranslation(); // Use translation hook
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -79,12 +82,12 @@ export default function UserOrdersPage() {
     }, [user, authLoading]);
 
      const getStatusBadge = (status: OrderStatus) => {
-        const config = statusConfig[status] || { label: status, icon: HelpCircle, variant: 'outline', colorClass: 'text-muted-foreground' };
+        const config = statusConfig[status] || { labelKey: status, icon: HelpCircle, variant: 'outline', colorClass: 'text-muted-foreground' };
         const IconComponent = config.icon && typeof config.icon !== 'string' ? config.icon : HelpCircle;
         return (
             <Badge variant={config.variant} className={cn("flex items-center gap-1 whitespace-nowrap", config.colorClass, `border-${config.colorClass.replace('text-', '')}`)}>
                 <IconComponent className="h-3 w-3" />
-                {config.label}
+                {t(config.labelKey)} {/* Translate the label */}
             </Badge>
         );
     };
@@ -92,11 +95,11 @@ export default function UserOrdersPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-primary">Mes Commandes</h1>
+      <h1 className="text-3xl font-bold text-primary">{t('dashboard_my_orders_page_title')}</h1>
       <Card>
         <CardHeader>
-          <CardTitle>Historique des Commandes</CardTitle>
-          <CardDescription>Retrouvez ici toutes les commandes que vous avez passées.</CardDescription>
+          <CardTitle>{t('dashboard_my_orders_description')}</CardTitle>
+          {/* Removed CardDescription as title is descriptive enough */}
         </CardHeader>
         <CardContent>
            {isLoading || authLoading ? (
@@ -115,18 +118,18 @@ export default function UserOrdersPage() {
                      ))}
                  </div>
             ) : !user ? (
-                 <p className="text-center text-muted-foreground py-8">Veuillez vous connecter pour voir vos commandes.</p>
+                 <p className="text-center text-muted-foreground py-8">{t('dashboard_unauthorized_description')}</p> // Use generic unauthorized message
             ): orders.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">Vous n'avez aucune commande pour le moment.</p>
+                <p className="text-center text-muted-foreground py-8">{t('dashboard_my_orders_no_orders')}</p>
             ) : (
                 <Table>
                     <TableHeader>
                         <TableRow>
-                        <TableHead>Numéro</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        <TableHead className="text-center">Statut</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>{t('dashboard_my_orders_table_number')}</TableHead>
+                        <TableHead>{t('dashboard_my_orders_table_date')}</TableHead>
+                        <TableHead className="text-right">{t('dashboard_my_orders_table_total')}</TableHead>
+                        <TableHead className="text-center">{t('dashboard_my_orders_table_status')}</TableHead>
+                        <TableHead className="text-right">{t('dashboard_my_orders_table_actions')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -134,15 +137,15 @@ export default function UserOrdersPage() {
                         <TableRow key={order.id}>
                             <TableCell className="font-medium font-mono text-xs">{order.orderNumber}</TableCell>
                             <TableCell>{order.createdAt.toLocaleDateString('fr-FR')}</TableCell>
-                            <TableCell className="text-right font-medium">{order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}</TableCell>
+                            <TableCell className="text-right font-medium">{order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
                             <TableCell className="text-center">
                                 {getStatusBadge(order.status)}
                             </TableCell>
                             <TableCell className="text-right">
                                 {/* Placeholder for view details action */}
-                                <Button variant="ghost" size="icon" title="Voir les détails">
+                                <Button variant="ghost" size="icon" title={t('dashboard_my_orders_view_details')}>
                                     <Eye className="h-4 w-4" />
-                                    <span className="sr-only">Voir les détails</span>
+                                    <span className="sr-only">{t('dashboard_my_orders_view_details')}</span>
                                 </Button>
                             </TableCell>
                         </TableRow>

@@ -1,10 +1,9 @@
-
 // src/hooks/useTranslation.ts
 'use client';
 
-import { useLocale, Locale, defaultLocale } from '@/context/LocaleContext';
-import { useState, useEffect, useCallback } from 'react'; // Import useCallback from react
+import { useState, useEffect, useCallback } from 'react';
 import type { TOptions } from 'i18next'; // Use i18next type for interpolation
+import frTranslations from '@/locales/fr.json'; // Import French translations directly
 
 type TranslationData = Record<string, string | object>; // Allow nested objects
 
@@ -37,49 +36,21 @@ const getNestedValue = (obj: TranslationData, key: string): string | undefined =
     return typeof current === 'string' ? current : undefined; // Return only if the final value is a string
 }
 
-
 export const useTranslation = () => {
-  const { locale } = useLocale();
-  const [translations, setTranslations] = useState<TranslationData>({});
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setIsLoading(true);
-    const loadTranslations = async () => {
-      try {
-        const module = await import(`@/locales/${locale}.json`);
-        setTranslations(module.default || module);
-      } catch (error) {
-        console.error(`Failed to load translations for locale: ${locale}`, error);
-        // Fallback to default locale if current one fails
-        try {
-            const defaultModule = await import(`@/locales/${defaultLocale}.json`);
-            setTranslations(defaultModule.default || defaultModule);
-        } catch (fallbackError) {
-             console.error(`Failed to load default locale translations: ${defaultLocale}`, fallbackError);
-             setTranslations({}); // Set empty if default also fails
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadTranslations();
-  }, [locale]); // Reload translations when locale changes
+  // Directly use the imported French translations
+  const translations: TranslationData = frTranslations;
+  const isLoading = false; // No async loading needed anymore
+  const currentLocale = 'fr'; // Hardcode locale to French
 
   // The translation function `t`
    const t = useCallback((key: string, options?: TOptions<string>): string => {
        const value = getNestedValue(translations, key);
        if (value === undefined) {
-           console.warn(`Translation key "${key}" not found for locale "${locale}"`);
+           console.warn(`Translation key "${key}" not found for locale "fr"`);
            return key; // Return the key itself as fallback
        }
        return interpolate(value, options);
-   }, [translations, locale]); // Depend on translations and locale
+   }, [translations]); // Depend only on translations (which is now static)
 
-  return { t, isLoading, currentLocale: locale };
+  return { t, isLoading, currentLocale };
 };
-
-// Remove the re-export as it's now imported directly
-// export { useCallback } from 'react';
-

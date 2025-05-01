@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -107,7 +106,7 @@ export function ProductCard({ product, viewMode }: ProductCardProps) {
               "font-semibold text-primary",
               viewMode === 'grid' ? "text-xl" : "text-lg" // Slightly smaller price in list view
           )}>
-            {product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF' })}
+            {product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
           </span>
           <Button variant="destructive" size="sm" onClick={handleAddToCart}>
              <ShoppingCart className="mr-2 h-4 w-4" /> {t('product_card_add_to_cart')}

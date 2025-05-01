@@ -1,8 +1,6 @@
-
-
 'use client';
 
-import { useState, useCallback } from 'react'; // Import useCallback from react
+import { useState, useCallback, useEffect } from 'react'; // Import useEffect
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -22,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Phone } from 'lucide-react'; // Added Phone
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation'; // Import useSearchParams
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation only
 
@@ -55,48 +53,51 @@ export default function AccountPage() {
   const { toast } = useToast();
   const { login, signup, user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams(); // Get search params
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
+
+  // Redirect URL from query params, default to dashboard/admin
+  const redirectUrl = searchParams.get('redirect') || null;
 
   // Create schemas using the t function
   const loginSchema = createLoginSchema(t);
   const registerSchema = createRegisterSchema(t);
 
   // Redirect if user is already logged in
-  if (user) {
-     if (user.role === 'admin') {
-       router.replace('/admin');
-     } else {
-        router.replace('/dashboard');
-     }
-     return <div className="text-center py-10">{t('account_redirecting')}</div>;
-  }
+  useEffect(() => {
+    if (user) {
+        const targetUrl = redirectUrl || (user.role === 'admin' ? '/admin' : '/dashboard');
+        router.replace(targetUrl);
+    }
+  }, [user, router, redirectUrl]);
 
-  const loginForm = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { emailOrPhone: "", password: "" },
-  });
 
-  const registerForm = useForm<z.infer<typeof registerSchema>>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", phone: "", password: "", confirmPassword: "", role: "customer" },
-  });
-
-  // Use useCallback for event handlers if needed, though not strictly necessary here
+  // Handle Login
   const onLoginSubmit = useCallback(async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
     try {
       const loggedInUser = await login(values.emailOrPhone, values.password); // Use emailOrPhone
+
+      // Check if this is the first login (e.g., based on a flag or last login date - requires backend)
+      const isFirstLogin = false; // Placeholder - determine this from user data if possible
+      let targetUrl: string;
+
+      if (isFirstLogin) {
+         targetUrl = loggedInUser.role === 'admin' ? '/admin' : '/dashboard';
+      } else {
+         // If redirectUrl exists, use it, otherwise fallback to role-based dashboard
+         targetUrl = redirectUrl || (loggedInUser.role === 'admin' ? '/admin' : '/dashboard');
+      }
+
       toast({
         title: t('account_toast_login_success_title'),
         description: t('account_toast_login_success_description', { name: loggedInUser.name }),
         className: "bg-primary text-primary-foreground border-primary"
       });
-      if (loggedInUser.role === 'admin') {
-        router.push('/admin');
-      } else {
-        router.push('/dashboard');
-      }
+
+      router.push(targetUrl); // Use push to allow back button navigation if needed, or replace
+
     } catch (error: any) {
       console.error("Login failed:", error);
       toast({
@@ -107,18 +108,17 @@ export default function AccountPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [login, router, toast, t]); // Include dependencies
+  }, [login, router, toast, t, redirectUrl]); // Include dependencies
 
+  // Handle Registration
   const onRegisterSubmit = useCallback(async (values: z.infer<typeof registerSchema>) => {
     setIsLoading(true);
     try {
+      // Adjust role silently if a non-admin tries to create admin/manager
       if ((values.role === 'admin' || values.role === 'manager') && user?.role !== 'admin') {
           values.role = 'customer';
-          toast({
-              title: t('account_toast_role_adjusted_title'),
-              description: t('account_toast_role_adjusted_description'),
-              variant: "default",
-          });
+           // Optionally inform user their role was adjusted, if desired
+           // toast({ title: t('account_toast_role_adjusted_title'), description: t('account_toast_role_adjusted_description'), variant: "default" });
       }
 
        // Pass phone number to signup function
@@ -128,9 +128,9 @@ export default function AccountPage() {
         description: t('account_toast_register_success_description'),
         className: "bg-primary text-primary-foreground border-primary"
       });
-      setActiveTab("login");
+      setActiveTab("login"); // Switch to login tab after successful registration
       registerForm.reset();
-      loginForm.setValue("emailOrPhone", values.email); // Set email in login form
+      loginForm.setValue("emailOrPhone", values.email); // Pre-fill email in login form
     } catch (error: any) {
         console.error("Signup failed:", error);
         toast({
@@ -142,6 +142,23 @@ export default function AccountPage() {
       setIsLoading(false);
     }
   }, [signup, user, toast, setActiveTab, registerForm, loginForm, t]); // Include dependencies
+
+  const loginForm = useForm<z.infer<typeof loginSchema>>({
+      resolver: zodResolver(loginSchema),
+      defaultValues: { emailOrPhone: "", password: "" },
+    });
+
+    const registerForm = useForm<z.infer<typeof registerSchema>>({
+      resolver: zodResolver(registerSchema),
+      defaultValues: { name: "", email: "", phone: "", password: "", confirmPassword: "", role: "customer" },
+    });
+
+
+   // If user exists but useEffect hasn't redirected yet, show loading
+   if (user) {
+        return <div className="text-center py-10">{t('account_redirecting')}</div>;
+   }
+
 
   return (
     <div className="container mx-auto max-w-lg flex justify-center items-center py-12">
@@ -284,8 +301,9 @@ export default function AccountPage() {
                           <FormControl>
                              <RadioGroup
                                onValueChange={(value) => {
+                                    // Prevent non-admins from selecting admin/manager roles
                                     if ((value === 'admin' || value === 'manager') && user?.role !== 'admin') {
-                                        field.onChange('customer');
+                                        // Do nothing or reset to customer if needed
                                     } else {
                                         field.onChange(value as "admin" | "manager" | "customer");
                                     }
@@ -297,6 +315,7 @@ export default function AccountPage() {
                                  <FormControl><RadioGroupItem value="customer" /></FormControl>
                                  <FormLabel className="font-normal">{t('account_form_role_customer')}</FormLabel>
                                </FormItem>
+                               {/* Only show manager/admin options if the current user is an admin */}
                                {user?.role === 'admin' && (
                                   <>
                                     <FormItem className="flex items-center space-x-3 space-y-0">
@@ -311,11 +330,13 @@ export default function AccountPage() {
                                )}
                              </RadioGroup>
                           </FormControl>
-                           <FormDescription>
-                              {user?.role === 'admin'
-                                ? t('account_form_role_description_admin')
-                                : t('account_form_role_description_customer')}
-                           </FormDescription>
+                          {/* Conditional description based on logged-in user's role */}
+                           {user?.role === 'admin' && (
+                               <FormDescription>
+                                  {t('account_form_role_description_admin')}
+                               </FormDescription>
+                           )}
+                           {/* Removed the description "Vous créez un compte Client" */}
                           <FormMessage />
                         </FormItem>
                       )}
@@ -333,5 +354,3 @@ export default function AccountPage() {
     </div>
   );
 }
-
-

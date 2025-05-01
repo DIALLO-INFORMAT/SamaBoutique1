@@ -1,4 +1,3 @@
-
 // src/app/checkout/page.tsx
 'use client';
 
@@ -353,14 +352,14 @@ export default function CheckoutPage() {
                             <p className="text-muted-foreground text-xs">{t('cart_table_quantity')}: {item.quantity}</p>
                          </div>
                       </div>
-                      <p className="font-medium text-right flex-shrink-0">{(item.price * item.quantity).toLocaleString(currentLocale, { style: 'currency', currency: 'XOF' })}</p>
+                      <p className="font-medium text-right flex-shrink-0">{(item.price * item.quantity).toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
                    </div>
                  ))}
              </div>
             <Separator />
             <div className="flex justify-between font-semibold text-lg">
               <span>{t('checkout_order_summary_total')}</span>
-              <span>{totalPrice.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF' })}</span>
+              <span>{totalPrice.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
             </div>
             {selectedPaymentMethod && (
                 <>

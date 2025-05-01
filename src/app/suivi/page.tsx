@@ -1,4 +1,3 @@
-
 // src/app/suivi/page.tsx
 'use client';
 
@@ -178,12 +177,12 @@ export default function OrderTrackingPage() {
                  <ul className="space-y-1 text-sm list-disc list-inside text-muted-foreground">
                      {order.items.map(item => (
                          <li key={item.id}>
-                             {item.name} (x{item.quantity}) - {(item.price * item.quantity).toLocaleString(currentLocale, { style: 'currency', currency: 'XOF' })}
+                             {item.name} (x{item.quantity}) - {(item.price * item.quantity).toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                          </li>
                      ))}
                  </ul>
                 <p className="mt-2 font-semibold text-right">
-                     {t('track_order_total_label')} : {order.total.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF' })}
+                     {t('track_order_total_label')} : {order.total.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                  </p>
             </div>
           </CardContent>

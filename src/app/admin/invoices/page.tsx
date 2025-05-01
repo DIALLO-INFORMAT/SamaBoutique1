@@ -123,7 +123,7 @@ export default function AdminInvoicesPage() {
                                             {invoice.createdAt.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}
                                         </TableCell>
                                         <TableCell className="text-right px-6 py-3 font-medium">
-                                            {invoice.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF' })}
+                                            {invoice.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                         </TableCell>
                                         <TableCell className="text-right px-6 py-3 space-x-1">
                                             {/* Use the unified handler */}
