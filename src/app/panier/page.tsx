@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { buttonVariants } from "@/components/ui/button"; // Import buttonVariants
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, clearCart, getTotalPrice } = useCart();
@@ -47,18 +48,7 @@ export default function CartPage() {
      }
   };
 
-
-  const handleCheckout = () => {
-    // Simulate checkout process
-    console.log("Proceeding to checkout with items:", cart);
-    toast({
-      title: "Passage à la Caisse",
-      description: "Redirection vers la page de paiement simulée...",
-      className: "bg-primary text-primary-foreground border-primary",
-    });
-    // In a real app, redirect to a checkout page/service
-     clearCart(); // Clear cart after successful "checkout"
-  };
+  // Removed handleCheckout function as it's replaced by link
 
   const totalPrice = getTotalPrice();
 
@@ -200,9 +190,11 @@ export default function CartPage() {
                    </AlertDialogFooter>
                  </AlertDialogContent>
                </AlertDialog>
-               <Button onClick={handleCheckout} variant="destructive">
-                 <CreditCard className="mr-2 h-4 w-4" /> Passer à la caisse
-               </Button>
+               <Link href="/checkout" passHref>
+                 <Button variant="destructive" disabled={cart.length === 0}>
+                   <CreditCard className="mr-2 h-4 w-4" /> Passer à la caisse
+                 </Button>
+               </Link>
              </div>
           </CardFooter>
         </Card>
@@ -210,6 +202,3 @@ export default function CartPage() {
     </div>
   );
 }
-
-// Helper function to get buttonVariants class names (assuming it's exported)
-import { buttonVariants } from "@/components/ui/button";
