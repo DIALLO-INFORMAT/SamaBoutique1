@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Truck, CreditCard, User, Home, Phone, Mail } from 'lucide-react';
+import { useEffect } from 'react';
 
 // Define Zod schema for form validation
 const formSchema = z.object({
@@ -61,6 +62,19 @@ export default function CheckoutPage() {
     },
   });
 
+  // Effect to check cart emptiness on client-side after mount
+    useEffect(() => {
+      if (cart.length === 0) {
+          toast({
+              title: "Panier Vide",
+              description: "Ajoutez des articles à votre panier avant de passer à la caisse.",
+              variant: "destructive",
+          });
+          router.push('/panier');
+      }
+  }, [cart, router, toast]);
+
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     // Simulate order placement
     console.log("Order Submitted:", {
@@ -73,26 +87,27 @@ export default function CheckoutPage() {
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    toast({
-      title: "Commande Passée!",
-      description: "Merci pour votre commande. Nous vous contacterons pour la livraison.",
-      className: "bg-primary text-primary-foreground border-primary",
-    });
+    // Pass order details to confirmation page via query params (or use state management)
+    const orderDetails = {
+        customerName: values.name,
+        total: totalPrice,
+        items: cart.map(item => ({ name: item.name, quantity: item.quantity })) // Example data to pass
+    };
+    // Encode order details to pass in URL (simple example, consider security/size limits)
+    // const query = new URLSearchParams({ order: JSON.stringify(orderDetails) }).toString();
 
     clearCart(); // Clear the cart
-    router.push('/'); // Redirect to homepage after successful order
+    // Redirect to confirmation page instead of homepage
+    router.push(`/order-confirmation`); // Removed query string for simplicity now
   }
 
-  // Redirect to cart if cart is empty
-  if (cart.length === 0 && typeof window !== 'undefined') {
-     toast({
-       title: "Panier Vide",
-       description: "Ajoutez des articles à votre panier avant de passer à la caisse.",
-       variant: "destructive",
-     });
-     router.push('/panier');
-     return null; // Avoid rendering the form while redirecting
+
+  // Initial check (might run on server or before effect)
+  if (cart.length === 0) {
+     // Return null or a loading state until the effect runs and redirects
+     return <div className="text-center py-10">Chargement...</div>;
   }
+
 
   return (
     <div className="space-y-8">
