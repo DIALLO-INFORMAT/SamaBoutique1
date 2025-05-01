@@ -537,6 +537,7 @@
   "admin_users_toast_reset_error_description": "Impossible de réinitialiser le mot de passe.",
   "admin_users_toast_reset_self_error_title": "Action non autorisée",
   "admin_users_toast_reset_self_error_description": "Vous ne pouvez pas réinitialiser votre propre mot de passe.",
+  "admin_users_toast_load_error_description": "Impossible de charger la liste des utilisateurs.",
   "admin_settings_page_title": "Paramètres de la Boutique",
   "admin_settings_description": "Configurez les informations de base et les options de votre boutique.",
   "admin_settings_general_title": "Paramètres Généraux",

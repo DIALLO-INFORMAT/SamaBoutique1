@@ -81,7 +81,12 @@ const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 // Function to generate a short, human-readable order number like SB-XXXXXX
 const generateOrderNumber = (): string => {
     const prefix = "SB";
-    const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase(); // 6 random chars
+    // Generate 6 random alphanumeric characters (excluding confusing ones if desired)
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    let randomPart = '';
+    for (let i = 0; i < 6; i++) {
+        randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
     return `${prefix}-${randomPart}`;
 };
 
@@ -203,7 +208,7 @@ export default function CheckoutPage() {
   return (
     <div className="container mx-auto max-w-6xl px-2 sm:px-4 space-y-8 py-6 md:py-10">
       <h1 className="text-2xl sm:text-3xl font-bold text-center text-primary flex items-center justify-center gap-2">
-         {/* Removed CreditCard icon */} {t('checkout_page_title')}
+         {t('checkout_page_title')}
       </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 md:gap-8 items-start">
@@ -379,7 +384,14 @@ export default function CheckoutPage() {
                  <Separator />
                  <div className="text-sm">
                      <p className="font-medium mb-1">{t('checkout_order_summary_chosen_method')}</p>
-                     <p className="text-muted-foreground">{t(`checkout_payment_${selectedPaymentMethod.toLowerCase().replace(/ /g, '_').replace('à_la_', 'a_la_')}` as any) || selectedPaymentMethod}</p>
+                     <p className="text-muted-foreground">
+                       {/* Corrected mapping */}
+                        {selectedPaymentMethod === 'Paiement à la livraison' ? t('checkout_payment_cod') :
+                         selectedPaymentMethod === 'Wave' ? t('checkout_payment_wave') :
+                         selectedPaymentMethod === 'Orange Money' ? t('checkout_payment_orange_money') :
+                         selectedPaymentMethod === 'Carte Bancaire' ? t('checkout_payment_card') :
+                         selectedPaymentMethod}
+                     </p>
                  </div>
                 </>
             )}

@@ -198,7 +198,12 @@ export function OrderDetailsDialog({
                      <div className="flex justify-between">
                         <span className="text-muted-foreground">{t('checkout_payment_method_title')}:</span>
                         <span className="text-foreground">
-                            {t(`checkout_payment_${order.paymentMethod.toLowerCase().replace(/ /g, '_').replace('à_la_', 'a_la_')}` as any) || order.paymentMethod}
+                            {/* Corrected mapping */}
+                            {order.paymentMethod === 'Paiement à la livraison' ? t('checkout_payment_cod') :
+                             order.paymentMethod === 'Wave' ? t('checkout_payment_wave') :
+                             order.paymentMethod === 'Orange Money' ? t('checkout_payment_orange_money') :
+                             order.paymentMethod === 'Carte Bancaire' ? t('checkout_payment_card') :
+                             order.paymentMethod}
                         </span>
                     </div>
                 </div>
