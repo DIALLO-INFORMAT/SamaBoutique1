@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Loader2, AlertTriangle } from "lucide-react"; // Import icons
+import { Eye, Loader2, AlertTriangle, Trash2, Pencil, AlertCircle } from "lucide-react"; // Import icons, added Pencil, Trash2, AlertCircle
 import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 import { useAuth } from '@/context/AuthContext'; // Import useAuth to fetch user-specific orders
 import type { Order, OrderStatus } from '@/lib/types'; // Import full Order type
@@ -15,6 +15,19 @@ import { HelpCircle, Clock, Truck, PackageCheck, PackageX, RefreshCw, CircleDoll
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 import Link from 'next/link'; // Import Link for unauthorized message
 import { OrderDetailsDialog } from '@/components/OrderDetailsDialog'; // Import the new dialog
+import { useToast } from '@/hooks/use-toast'; // Import useToast
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"; // Import AlertDialog for cancellation
+import { buttonVariants } from '@/components/ui/button'; // For styling AlertDialogAction
 
 const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 
@@ -38,7 +51,7 @@ const statusConfig: Record<OrderStatus, StatusConfig> = {
 };
 
 
-// --- Mock API Function to fetch orders for the current user ---
+// --- Mock API Functions ---
 const fetchMyOrdersFromAPI = async (userId: string): Promise<Order[]> => {
     await new Promise(resolve => setTimeout(resolve, 800)); // Simulate delay
     if (typeof window === 'undefined') return [];
@@ -55,12 +68,43 @@ const fetchMyOrdersFromAPI = async (userId: string): Promise<Order[]> => {
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort newest first
 };
 
+// Mock function to cancel an order
+const cancelOrderAPI = async (orderId: string, userId: string): Promise<void> => {
+    console.log(`User ${userId} cancelling order ${orderId}`);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    if (typeof window === 'undefined') return;
+    const storedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
+    let orders: Order[] = storedOrders ? JSON.parse(storedOrders) : [];
+    const orderIndex = orders.findIndex(o => o.id === orderId && o.userId === userId);
+
+    if (orderIndex === -1) {
+        throw new Error("Commande non trouvée ou non autorisée.");
+    }
+    if (orders[orderIndex].status !== 'En attente de paiement') {
+        throw new Error("Impossible d'annuler une commande qui n'est pas en attente de paiement.");
+    }
+
+    orders[orderIndex] = {
+        ...orders[orderIndex],
+        status: 'Annulé',
+        updatedAt: new Date()
+    };
+
+    localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+
+     // Dispatch update event (optional, if admin/manager need real-time updates)
+     const event = new CustomEvent('order-updated', { detail: { orderId, newStatus: 'Annulé' } });
+     window.dispatchEvent(event);
+};
+
 
 export default function UserOrdersPage() {
     const { user, isLoading: authLoading } = useAuth();
     const { t, currentLocale } = useTranslation(); // Use translation hook
+    const { toast } = useToast(); // For notifications
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isCancelling, setIsCancelling] = useState<string | null>(null); // Track cancelling order ID
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null); // State for the selected order for details
     const [isDialogOpen, setIsDialogOpen] = useState(false); // State to control the dialog
 
@@ -73,17 +117,16 @@ export default function UserOrdersPage() {
                     setOrders(fetchedOrders);
                 } catch (error) {
                     console.error("Failed to fetch user orders:", error);
-                    // Maybe show a toast error
+                     toast({ title: t('general_error'), description: t('dashboard_my_orders_load_error'), variant: "destructive" });
                 } finally {
                     setIsLoading(false);
                 }
             };
             loadOrders();
         } else if (!authLoading) {
-             // If not logged in or auth is still loading, stop the page loading state
              setIsLoading(false);
         }
-    }, [user, authLoading]);
+    }, [user, authLoading, toast, t]); // Added t to dependencies
 
      const getStatusBadge = (status: OrderStatus) => {
         const config = statusConfig[status] || { labelKey: status, icon: HelpCircle, variant: 'outline', colorClass: 'text-muted-foreground' };
@@ -100,6 +143,43 @@ export default function UserOrdersPage() {
         setSelectedOrder(order);
         setIsDialogOpen(true);
     };
+
+    const handleModifyOrder = (orderId: string) => {
+        // Modification logic (e.g., redirect to cart or a specific edit page)
+        // For now, just an alert
+        alert(t('dashboard_my_orders_modify_alert', { orderId: orderId.substring(0,8) }));
+        // Example: router.push(`/modifier-commande?orderId=${orderId}`);
+        setIsDialogOpen(false); // Close dialog after action initiated
+    };
+
+    const handleCancelOrder = async (orderId: string, orderNumber: string) => {
+        if (!user) return;
+        setIsCancelling(orderId);
+        try {
+            await cancelOrderAPI(orderId, user.id);
+            setOrders(prevOrders => prevOrders.map(o => o.id === orderId ? { ...o, status: 'Annulé', updatedAt: new Date() } : o));
+            toast({
+                title: t('dashboard_my_orders_cancel_success_title'),
+                description: t('dashboard_my_orders_cancel_success_description', { orderNumber }),
+                variant: 'destructive'
+            });
+             // Close the details dialog if it's open for the cancelled order
+             if (selectedOrder?.id === orderId) {
+                setSelectedOrder(prev => prev ? { ...prev, status: 'Annulé', updatedAt: new Date() } : null);
+                // No need to setIsDialogOpen(false) here, let AlertDialog handle its own closure
+             }
+        } catch (error: any) {
+            toast({
+                title: t('dashboard_my_orders_cancel_error_title'),
+                description: error.message || t('dashboard_my_orders_cancel_error_description'),
+                variant: 'destructive'
+            });
+        } finally {
+            setIsCancelling(null);
+            // AlertDialog closes itself on action/cancel
+        }
+    };
+
 
     // Render loading state
    if (isLoading || authLoading) {
@@ -161,7 +241,6 @@ export default function UserOrdersPage() {
                     <TableBody>
                         {orders.map((order) => (
                         <TableRow key={order.id}>
-                             {/* Ensure orderNumber is displayed */}
                              <TableCell className="font-medium font-mono text-xs px-4 md:px-6">{order.orderNumber}</TableCell>
                              <TableCell className="px-4 md:px-6">{order.createdAt.toLocaleDateString(currentLocale)}</TableCell>
                              <TableCell className="text-right font-medium px-4 md:px-6">{order.total.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
@@ -192,7 +271,19 @@ export default function UserOrdersPage() {
             order={selectedOrder}
             isOpen={isDialogOpen}
             onClose={() => setIsDialogOpen(false)}
+            showModifyCancelActions={selectedOrder?.status === 'En attente de paiement'}
+            onModify={() => selectedOrder && handleModifyOrder(selectedOrder.id)}
+            onCancel={
+                 // Pass a function that triggers the AlertDialog
+                 () => {
+                     // This button is defined inside the dialog now
+                     // We just ensure the dialog stays open until the Alert confirms/cancels
+                 }
+            }
+             cancelInProgress={isCancelling === selectedOrder?.id}
+             onCancelConfirm={() => selectedOrder && handleCancelOrder(selectedOrder.id, selectedOrder.orderNumber)}
         />
+
     </div>
   );
 }

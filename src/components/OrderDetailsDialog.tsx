@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter, // Import DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -13,13 +14,31 @@ import { useTranslation } from '@/hooks/useTranslation';
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { HelpCircle, Clock, Truck, PackageCheck, PackageX, RefreshCw, CircleDollarSign } from 'lucide-react'; // Status icons
+import { HelpCircle, Clock, Truck, PackageCheck, PackageX, RefreshCw, CircleDollarSign, Pencil, Trash2, Loader2, Download } from 'lucide-react'; // Status icons + Action icons
 import React, { createElement } from "react"; // Import createElement
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"; // Import AlertDialog
+import { buttonVariants } from '@/components/ui/button'; // For styling AlertDialogAction
+
 
 interface OrderDetailsDialogProps {
   order: Order | null;
   isOpen: boolean;
   onClose: () => void;
+  showModifyCancelActions?: boolean; // Optional flag to show actions
+  onModify?: () => void; // Optional callback for modify action
+  onCancel?: () => void; // Optional callback for cancel action (triggers AlertDialog)
+  cancelInProgress?: boolean; // Optional flag for cancellation loading state
+  onCancelConfirm?: () => void; // Optional callback for confirming cancellation
 }
 
 // Reuse status config from orders page
@@ -41,7 +60,42 @@ const statusConfig: Record<Order['status'], StatusConfig> = {
     'Remboursé': { labelKey: 'order_status_refunded', icon: RefreshCw, variant: 'destructive', colorClass: 'text-gray-500' },
 };
 
-export function OrderDetailsDialog({ order, isOpen, onClose }: OrderDetailsDialogProps) {
+// Placeholder for printing/downloading (enhanced alert)
+const handleInvoiceAction = (orderId: string, action: 'view' | 'download') => {
+    const { t } = useTranslation(); // Get t function inside the handler
+    const actionTextMap = {
+        view: t('invoice_action_view'),
+        download: t('invoice_action_download'),
+    };
+    const actionText = actionTextMap[action] || action;
+
+    alert(`${t('invoice_action_placeholder_title', { action: actionText, orderId })}
+
+${t('invoice_action_placeholder_details')}
+
+${t('invoice_action_placeholder_pdf_generation')}
+- ${t('invoice_action_placeholder_shop_info')}
+- ${t('invoice_action_placeholder_customer_info')}
+- ${t('invoice_action_placeholder_invoice_details')}
+- ${t('invoice_action_placeholder_product_details')}
+- ${t('invoice_action_placeholder_totals')}
+- ${t('invoice_action_placeholder_payment_method')}
+- ${t('invoice_action_placeholder_order_status')}
+
+${action === 'download' ? t('invoice_action_placeholder_download_specific') : ''}`);
+};
+
+
+export function OrderDetailsDialog({
+     order,
+     isOpen,
+     onClose,
+     showModifyCancelActions = false,
+     onModify,
+     onCancel, // This prop might just trigger the AlertDialog now
+     cancelInProgress = false,
+     onCancelConfirm
+    }: OrderDetailsDialogProps) {
   const { t, currentLocale } = useTranslation();
 
   if (!order) {
@@ -149,7 +203,62 @@ export function OrderDetailsDialog({ order, isOpen, onClose }: OrderDetailsDialo
                     </div>
                 </div>
            </div>
+             <Separator />
+            {/* Invoice Download Button */}
+            <div className="text-center">
+                <Button
+                    variant="outline"
+                    onClick={() => handleInvoiceAction(order.orderNumber, 'download')}
+                    className="flex items-center gap-1"
+                    disabled={!['Payé', 'Expédié', 'Livraison en cours', 'Livré'].includes(order.status)} // Only enable if invoiceable
+                >
+                    <Download className="h-4 w-4" />
+                    {t('invoice_download_button')}
+                </Button>
+                 {!['Payé', 'Expédié', 'Livraison en cours', 'Livré'].includes(order.status) && (
+                    <p className="text-xs text-muted-foreground mt-1">{t('invoice_download_disabled_tooltip')}</p>
+                 )}
+            </div>
         </div>
+
+         {/* Actions (Modify/Cancel) - Shown conditionally */}
+         {showModifyCancelActions && (
+             <DialogFooter className="pt-4 border-t gap-2">
+                {/* Modify Button */}
+                <Button variant="outline" onClick={onModify} className="flex items-center gap-1">
+                    <Pencil className="h-4 w-4" /> {t('dashboard_my_orders_modify_button')}
+                </Button>
+
+                 {/* Cancel Button with AlertDialog */}
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="flex items-center gap-1" disabled={cancelInProgress}>
+                            {cancelInProgress ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                            {t('dashboard_my_orders_cancel_button')}
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>{t('dashboard_my_orders_cancel_confirm_title')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('dashboard_my_orders_cancel_confirm_description')}
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>{t('general_cancel')}</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={onCancelConfirm} // Call the confirm handler passed from parent
+                                className={buttonVariants({ variant: "destructive" })}
+                                disabled={cancelInProgress}
+                            >
+                                {cancelInProgress ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                {t('general_confirm')} {/* Use a generic confirm text */}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+             </DialogFooter>
+         )}
       </DialogContent>
     </Dialog>
   );

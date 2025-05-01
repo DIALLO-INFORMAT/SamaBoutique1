@@ -6,11 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Printer, Download, Share2 } from "lucide-react"; // Icons for actions - Added Share2
+import { Eye, Printer, Download, Share2 } from "lucide-react"; // Icons for actions - Added Download
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Order, OrderStatus } from '@/lib/types'; // Use Order type as base for invoice data
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
 const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 
@@ -35,11 +36,12 @@ const fetchInvoiceableOrdersFromAPI = async (): Promise<Order[]> => {
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort newest first
 };
 
-// Placeholder function for viewing/printing/sharing invoice (same logic as customer page)
-const handleViewInvoice = (orderId: string) => {
-    alert(`Fonctionnalité d'affichage/impression pour la facture ${orderId} à implémenter.
+// Placeholder function for viewing/printing/sharing/downloading invoice
+const handleInvoiceAction = (orderId: string, action: 'view' | 'download' | 'share') => {
+    const actionText = action === 'view' ? "d'affichage/impression" : action === 'download' ? "de téléchargement" : "de partage";
+    alert(`Fonctionnalité ${actionText} pour la facture ${orderId} à implémenter.
 
-Ici, on pourrait générer une version imprimable/PDF de la facture avec tous les détails :
+Ici, on pourrait générer une version PDF/imprimable de la facture avec tous les détails :
 - Infos boutique (Logo, Nom, Adresse)
 - Infos client (Nom, Adresse)
 - N° Facture, N° Commande, Date
@@ -48,14 +50,16 @@ Ici, on pourrait générer une version imprimable/PDF de la facture avec tous le
 - Méthode de paiement
 - Statut commande
 
-Un bouton "Partager" (WhatsApp, Email) pourrait aussi être ajouté ici.`);
+Pour le téléchargement, on forcerait le téléchargement du PDF généré.
+Pour le partage, on utiliserait les APIs de partage web (WhatsApp, Email).`);
 };
 
 // --- Component ---
 export default function AdminInvoicesPage() {
-    const [invoices, setInvoices] = useState<Order[]>([]); // Using Order type for now
+    const [invoices, setInvoices] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
+    const { t } = useTranslation(); // Use translation hook
 
     useEffect(() => {
         const loadInvoices = async () => {
@@ -65,22 +69,22 @@ export default function AdminInvoicesPage() {
                 setInvoices(fetchedOrders);
             } catch (error) {
                 console.error("Failed to fetch invoices:", error);
-                toast({ title: "Erreur", description: "Impossible de charger les factures.", variant: "destructive" });
+                toast({ title: t('general_error'), description: t('admin_invoices_toast_load_error_description'), variant: "destructive" });
             } finally {
                 setIsLoading(false);
             }
         };
         loadInvoices();
-    }, [toast]);
+    }, [toast, t]); // Added t dependency
 
     return (
         <div className="space-y-8">
-            <h1 className="text-3xl font-bold text-primary">Gestion des Factures</h1>
+            <h1 className="text-3xl font-bold text-primary">{t('admin_invoices_page_title')}</h1>
 
             <Card className="shadow-md border-border">
                 <CardHeader className="border-b border-border px-6 py-4">
-                    <CardTitle>Factures Générées</CardTitle>
-                    <CardDescription>Liste des factures basées sur les commandes complétées ou payées.</CardDescription>
+                    <CardTitle>{t('admin_invoices_table_title')}</CardTitle>
+                    <CardDescription>{t('admin_invoices_description')}</CardDescription>
                     {/* Optional: Add filters/search here */}
                 </CardHeader>
                 <CardContent className="p-0">
@@ -92,21 +96,21 @@ export default function AdminInvoicesPage() {
                                     <Skeleton className="h-4 w-1/4" />
                                     <Skeleton className="h-4 w-1/6 hidden md:block" />
                                     <Skeleton className="h-6 w-20" />
-                                    <Skeleton className="h-8 w-8 ml-auto" />
+                                    <Skeleton className="h-8 w-24 ml-auto" /> {/* Adjusted size for two buttons */}
                                 </div>
                             ))}
                         </div>
                     ) : invoices.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-12">Aucune facture à afficher.</p>
+                        <p className="text-center text-muted-foreground py-12">{t('admin_invoices_no_invoices')}</p>
                     ) : (
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="px-6">N° Facture (Commande)</TableHead>
-                                    <TableHead className="px-6">Client</TableHead>
-                                    <TableHead className="hidden md:table-cell px-6">Date Commande</TableHead>
-                                    <TableHead className="text-right px-6">Total</TableHead>
-                                    <TableHead className="text-right px-6 w-[120px]">Actions</TableHead>
+                                    <TableHead className="px-6">{t('admin_invoices_table_invoice_no')}</TableHead>
+                                    <TableHead className="px-6">{t('admin_invoices_table_customer')}</TableHead>
+                                    <TableHead className="hidden md:table-cell px-6">{t('admin_invoices_table_order_date')}</TableHead>
+                                    <TableHead className="text-right px-6">{t('admin_invoices_table_total')}</TableHead>
+                                    <TableHead className="text-right px-6 w-[180px]">{t('admin_invoices_table_actions')}</TableHead> {/* Adjusted width */}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -126,19 +130,30 @@ export default function AdminInvoicesPage() {
                                             {invoice.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                                         </TableCell>
                                         <TableCell className="text-right px-6 py-3 space-x-1">
-                                            {/* Use the unified handler */}
+                                            {/* View/Print Button */}
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                title="Voir / Imprimer"
-                                                onClick={() => handleViewInvoice(invoice.orderNumber)}
+                                                title={t('admin_invoices_view_print_button')}
+                                                onClick={() => handleInvoiceAction(invoice.orderNumber, 'view')}
                                                 className="flex items-center gap-1"
                                             >
                                                 <Printer className="h-4 w-4" />
-                                                <span className="hidden sm:inline">Voir</span>
+                                                <span className="hidden sm:inline">{t('admin_invoices_view_print_button')}</span>
+                                            </Button>
+                                            {/* Download Button */}
+                                            <Button
+                                                 variant="outline"
+                                                 size="sm"
+                                                 title={t('invoice_download_button')}
+                                                 onClick={() => handleInvoiceAction(invoice.orderNumber, 'download')}
+                                                 className="flex items-center gap-1"
+                                            >
+                                                 <Download className="h-4 w-4" />
+                                                 <span className="hidden sm:inline">{t('invoice_download_button')}</span>
                                             </Button>
                                             {/* Optional Share Button Placeholder */}
-                                            {/* <Button variant="ghost" size="icon" title="Partager (bientôt disponible)">
+                                            {/* <Button variant="ghost" size="icon" title={t('invoice_share_button_soon')} onClick={() => handleInvoiceAction(invoice.orderNumber, 'share')}>
                                                 <Share2 className="h-4 w-4 text-muted-foreground" />
                                             </Button> */}
                                         </TableCell>
