@@ -1,3 +1,4 @@
+
 {
   "site_name": "SamaBoutique",
   "developed_by": "Développé par WKB",
@@ -13,7 +14,7 @@
   "header_logout": "Déconnexion",
   "footer_about_us": "À Propos",
   "footer_useful_links": "Liens Utiles",
-  "footer_popular_products": "Produits Populaires",
+  "footer_popular_products": "Nouveauté",
   "footer_contact_us": "Contactez-nous",
   "footer_my_account": "Mon Compte",
   "footer_track_order": "Suivi de Commande",
@@ -358,7 +359,7 @@
   "dashboard_manage_orders_table_total": "Total",
   "dashboard_manage_orders_table_actions": "Actions",
   "dashboard_manage_orders_no_orders": "Aucune commande trouvée.",
-  "dashboard_manage_orders_action_label": "Actions",
+  "dashboard_manage_orders_action_label": "Actions Commande",
   "dashboard_manage_orders_change_status_label": "Changer Statut",
   "dashboard_manage_orders_new_status_label": "Nouveau Statut",
   "dashboard_manage_orders_toast_status_success_title": "Statut Modifié",

@@ -26,6 +26,7 @@ import {ImageIcon, Loader2, Trash2, PlusCircle} from 'lucide-react'; // Added Tr
 import { useSettings, saveSettings, CarouselImage, PartnerLogo } from '@/hooks/useSettings'; // Import settings hooks and types
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
+import { Label } from "@/components/ui/label"; // Import Label
 
 // Define Zod schema for CORE settings form validation (excluding image lists)
 const createSettingsSchema = (t: Function) => z.object({
@@ -218,7 +219,7 @@ export default function AdminSettingsPage() {
            setCarouselImages(currentSettings.carouselImages || []); // Initialize local state
            setPartnerLogos(currentSettings.partnerLogos || []);     // Initialize local state
       }
-  }, [settingsLoading, currentSettings, form.reset]); // Removed form from deps, added form.reset
+  }, [settingsLoading, currentSettings, form]); // Add form as dependency
 
   // Preview states
    const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | undefined>(undefined);
