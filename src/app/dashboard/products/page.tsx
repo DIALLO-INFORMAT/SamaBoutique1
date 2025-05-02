@@ -32,24 +32,31 @@ export interface ManagerProduct {
   description: string;
   price: number; // Assuming price is correct unit for XOF
   category: string;
-  brand: string;
+  // brand: string; // Removed brand
+  imageUrl?: string; // Added imageUrl
 }
 
 // Mock data fetching/deleting functions (similar to admin page, but potentially scoped)
-const storageKey = 'manager_products'; // Or use the same key as admin if permissions allow
+const storageKey = 'admin_products'; // Use the same key as admin if permissions allow
 
 const fetchManagerProductsFromAPI = async (): Promise<ManagerProduct[]> => {
    await new Promise(resolve => setTimeout(resolve, 1000));
    // In a real app, this might fetch products the manager specifically has rights to edit,
    // or it might be the same endpoint as admin depending on backend logic.
    const storedProducts = localStorage.getItem(storageKey); // Use a separate key or same as admin
-   const demoProducts = [
+   const demoProducts: ManagerProduct[] = [
         // Example data if none exists (ensure prices are in XOF)
-      { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" },
-      { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" },
-      { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A" },
+      { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/1/64/64` },
+      { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", imageUrl: `https://picsum.photos/seed/3/64/64` },
+      { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/5/64/64` },
    ];
-   return storedProducts ? JSON.parse(storedProducts) : demoProducts;
+    // Return stored products if they exist, otherwise return demo products
+    const products = storedProducts ? JSON.parse(storedProducts) : demoProducts;
+    // Ensure imageUrl exists for all products
+    return products.map((p: any) => ({
+        ...p,
+        imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/64/64`
+    }));
 }
 
 const deleteManagerProductFromAPI = async (productId: string): Promise<void> => {
@@ -89,14 +96,14 @@ export default function ManagerProductsPage() {
                 // Simulate adding products if localStorage is empty for demo
                 if (fetchedProducts.length === 0 && !localStorage.getItem(storageKey)) {
                      const demoProducts = [
-                          { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", brand: "Marque A" },
-                          { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", brand: "Marque B" },
-                          { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", brand: "Marque A" },
+                          { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/1/64/64` },
+                          { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", imageUrl: `https://picsum.photos/seed/3/64/64` },
+                          { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/5/64/64` },
                     ];
                     localStorage.setItem(storageKey, JSON.stringify(demoProducts));
                     fetchedProducts = demoProducts; // Use demo products if storage was empty
                 }
-                 setProducts(fetchedProducts);
+                 setProducts(fetchedProducts.map((p: any) => ({...p, imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/64/64`})));
 
             } catch (error) {
                 console.error("Failed to fetch products:", error);
@@ -168,7 +175,7 @@ export default function ManagerProductsPage() {
                   <TableHead className="hidden w-[80px] sm:table-cell px-6">Image</TableHead>
                   <TableHead className="px-6">Nom</TableHead>
                   <TableHead className="px-6">Catégorie</TableHead>
-                   <TableHead className="hidden md:table-cell px-6">Marque</TableHead>
+                   {/* <TableHead className="hidden md:table-cell px-6">Marque</TableHead> Removed Brand Header */}
                   <TableHead className="text-right px-6">Prix</TableHead>
                   <TableHead className="text-right px-6 w-[100px]">Actions</TableHead>
                 </TableRow>
@@ -181,14 +188,14 @@ export default function ManagerProductsPage() {
                          alt={product.name}
                          className="aspect-square rounded-md object-cover border border-border"
                          height="48"
-                         src={`https://picsum.photos/seed/${product.id}/64/64`}
+                         src={product.imageUrl || `https://picsum.photos/seed/${product.id}/64/64`} // Use actual or fallback
                          width="48"
                          data-ai-hint={product.category === 'Services' ? 'service tech icon' : product.name.toLowerCase().split(' ')[0]}
                        />
                     </TableCell>
                     <TableCell className="font-medium px-6 py-3">{product.name}</TableCell>
                     <TableCell className="px-6 py-3">{product.category}</TableCell>
-                     <TableCell className="hidden md:table-cell px-6 py-3">{product.brand}</TableCell>
+                     {/* <TableCell className="hidden md:table-cell px-6 py-3">{product.brand}</TableCell> Removed Brand Cell */}
                     <TableCell className="text-right px-6 py-3">{product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
                     <TableCell className="text-right px-6 py-3">
                       <AlertDialog>

@@ -34,7 +34,7 @@ const createProductSchema = (t: Function) => z.object({
   description: z.string().min(10, { message: t('admin_add_product_form_description') + " " + t('validation_min_chars', { count: 10 }) }).max(500, { message: t('admin_add_product_form_description') + " " + t('validation_max_chars', { count: 500 }) }),
   price: z.coerce.number().positive({ message: t('admin_add_product_form_price') + " " + t('validation_positive_number') }),
   category: z.string().min(1, { message: t('validation_required_field', { field: t('admin_add_product_form_category') }) }), // Required category ID/name
-  brand: z.string().min(2, { message: t('admin_add_product_form_brand') + " " + t('validation_min_chars', { count: 2 }) }),
+  // brand: z.string().min(2, { message: t('admin_add_product_form_brand') + " " + t('validation_min_chars', { count: 2 }) }), // Removed brand
   tags: z.array(z.string()).optional(), // Array of tag IDs/names
   image: z.instanceof(File).optional().nullable(),
 });
@@ -60,6 +60,7 @@ const addProductAPI = async (values: z.infer<ReturnType<typeof createProductSche
              imageUrl: imageUrl,
              price: Number(productDataToSave.price),
              tags: values.tags || [], // Ensure tags array exists
+             // brand removed
          };
          const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
          const products = storedProducts ? JSON.parse(storedProducts) : [];
@@ -96,7 +97,7 @@ export default function AddProductPage() {
   const form = useForm<z.infer<ReturnType<typeof createProductSchema>>>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: "", description: "", price: 0, category: "", brand: "",
+      name: "", description: "", price: 0, category: "",
       tags: [], image: null,
     },
   });
@@ -167,7 +168,7 @@ export default function AddProductPage() {
           {/* Pricing, Categorization, Tags Card */}
           <Card className="shadow-md border-border overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><CardTitle>{t('admin_add_product_pricing_category_title')}</CardTitle></CardHeader>
-            <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-start"> {/* Changed to md:grid-cols-2 */}
                  <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>{t('admin_add_product_form_price')}</FormLabel><FormControl><Input type="number" step="1" placeholder="0" {...field} /></FormControl><FormMessage /></FormItem> )}/>
                  {/* Category Select */}
                  <FormField control={form.control} name="category" render={({ field }) => (
@@ -188,11 +189,10 @@ export default function AddProductPage() {
                         <FormMessage />
                     </FormItem>
                  )}/>
-                 {/* Brand Input */}
-                 <FormField control={form.control} name="brand" render={({ field }) => ( <FormItem><FormLabel>{t('admin_add_product_form_brand')}</FormLabel><FormControl><Input placeholder="Ex: Marque A, SamaServices" {...field} /></FormControl><FormMessage /></FormItem> )}/>
-                 {/* Tags MultiSelect */}
+                 {/* Brand Input Removed */}
+                 {/* Tags MultiSelect - spans full width */}
                  <FormField control={form.control} name="tags" render={({ field }) => (
-                     <FormItem className="md:col-span-3">
+                     <FormItem className="md:col-span-2"> {/* Make tags span 2 cols */}
                          <FormLabel>{t('admin_add_product_form_tags')}</FormLabel>
                          <FormControl>
                              <MultiSelect

@@ -16,10 +16,10 @@ import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslatio
 
 interface BoutiqueSidebarProps {
   categories: string[];
-  brands: string[];
+  // brands: string[]; // Removed brands prop
 }
 
-export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
+export function BoutiqueSidebar({ categories }: BoutiqueSidebarProps) { // Removed brands from destructuring
   const { t } = useTranslation(); // Use translation hook
   const router = useRouter();
   const pathname = usePathname();
@@ -27,7 +27,7 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
 
   // State to hold current filter values, initialized from URL params
   const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get('category') || 'all');
-  const [selectedBrands, setSelectedBrands] = useState<string[]>(searchParams.getAll('brand') || []);
+  // const [selectedBrands, setSelectedBrands] = useState<string[]>(searchParams.getAll('brand') || []); // Removed brand state
   const [minPrice, setMinPrice] = useState<string>(searchParams.get('minPrice') || '');
   const [maxPrice, setMaxPrice] = useState<string>(searchParams.get('maxPrice') || '');
   const [searchTerm, setSearchTerm] = useState<string>(searchParams.get('search') || '');
@@ -35,7 +35,7 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
   // Sync state with URL parameters when they change (e.g., back/forward navigation)
   useEffect(() => {
     setSelectedCategory(searchParams.get('category') || 'all');
-    setSelectedBrands(searchParams.getAll('brand') || []);
+    // setSelectedBrands(searchParams.getAll('brand') || []); // Removed brand sync
     setMinPrice(searchParams.get('minPrice') || '');
     setMaxPrice(searchParams.get('maxPrice') || '');
     setSearchTerm(searchParams.get('search') || '');
@@ -52,9 +52,9 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
            params.delete('category');
        }
 
-       // Update brands (handle multiple values)
-       params.delete('brand'); // Clear existing brand params first
-       selectedBrands.forEach(brand => params.append('brand', brand));
+       // Update brands (handle multiple values) - Removed brand logic
+       // params.delete('brand'); // Clear existing brand params first
+       // selectedBrands.forEach(brand => params.append('brand', brand));
 
        // Update price range
        if (minPrice) params.set('minPrice', minPrice);
@@ -68,7 +68,7 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
 
        // Push the new URL, preserving existing sort order if any
        router.push(`${pathname}?${params.toString()}`, { scroll: false });
-   }, [selectedCategory, selectedBrands, minPrice, maxPrice, searchTerm, pathname, router, searchParams]);
+   }, [selectedCategory, minPrice, maxPrice, searchTerm, pathname, router, searchParams]); // Removed selectedBrands from dependencies
 
    // Handlers for filter changes
    const handleCategoryChange = (value: string) => {
@@ -76,12 +76,7 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
        // Apply immediately or wait for Apply button? Wait for Apply button.
    };
 
-   const handleBrandChange = (brand: string, checked: boolean | string) => {
-       setSelectedBrands(prev =>
-           checked ? [...prev, brand] : prev.filter(b => b !== brand)
-       );
-        // Apply immediately or wait for Apply button? Wait for Apply button.
-   };
+   // Removed handleBrandChange
 
     const handlePriceChange = (type: 'min' | 'max', value: string) => {
         // Allow only numbers
@@ -114,7 +109,7 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
      // Clear all filters and update URL
      const clearFilters = () => {
          setSelectedCategory('all');
-         setSelectedBrands([]);
+         // setSelectedBrands([]); // Removed brand state reset
          setMinPrice('');
          setMaxPrice('');
          setSearchTerm('');
@@ -173,9 +168,8 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
           </RadioGroup>
         </div>
 
-        <Separator />
-
-        {/* Brand Filter */}
+        {/* Brand Filter Removed */}
+        {/* <Separator />
         <div className="space-y-2">
           <Label className="font-medium">{t('shop_brand')}</Label>
           {brands.map(brand => (
@@ -185,10 +179,10 @@ export function BoutiqueSidebar({ categories, brands }: BoutiqueSidebarProps) {
                 checked={selectedBrands.includes(brand)} // Check against original brand name
                 onCheckedChange={(checked) => handleBrandChange(brand, checked)} // Pass original brand name
               />
-              <Label htmlFor={`brand-${brand.toLowerCase()}`} className="font-normal cursor-pointer">{brand}</Label> {/* Brand names usually not translated */}
+              <Label htmlFor={`brand-${brand.toLowerCase()}`} className="font-normal cursor-pointer">{brand}</Label>
             </div>
           ))}
-        </div>
+        </div> */}
 
         <Separator />
 

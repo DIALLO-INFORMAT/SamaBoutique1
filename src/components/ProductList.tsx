@@ -30,7 +30,7 @@ export function ProductList({ initialProducts, viewMode, getProductHref }: Produ
     setIsLoading(true); // Start loading when filters change
 
     const categoryFilter = searchParams.get('category') || 'all'; // Use original case from URL
-    const brandFilters = searchParams.getAll('brand'); // Use original case from URL
+    // const brandFilters = searchParams.getAll('brand'); // Removed brand filter
     const minPriceFilter = searchParams.get('minPrice');
     const maxPriceFilter = searchParams.get('maxPrice');
     const searchTermFilter = searchParams.get('search')?.toLowerCase() || '';
@@ -43,7 +43,7 @@ export function ProductList({ initialProducts, viewMode, getProductHref }: Produ
         result = result.filter(p =>
             p.name.toLowerCase().includes(searchTermFilter) ||
             p.description.toLowerCase().includes(searchTermFilter) ||
-            p.brand.toLowerCase().includes(searchTermFilter) ||
+            // p.brand.toLowerCase().includes(searchTermFilter) || // Removed brand from search
             p.category.toLowerCase().includes(searchTermFilter)
         );
     }
@@ -53,10 +53,10 @@ export function ProductList({ initialProducts, viewMode, getProductHref }: Produ
       result = result.filter(p => p.category === categoryFilter); // Match original case
     }
 
-    // Brand Filter
-    if (brandFilters.length > 0) {
-      result = result.filter(p => brandFilters.includes(p.brand)); // Match original case
-    }
+    // Brand Filter Removed
+    // if (brandFilters.length > 0) {
+    //   result = result.filter(p => brandFilters.includes(p.brand)); // Match original case
+    // }
 
     // Price Filter
     const minPriceNum = minPriceFilter ? parseFloat(minPriceFilter) : null;
@@ -77,8 +77,8 @@ export function ProductList({ initialProducts, viewMode, getProductHref }: Produ
       case 'name_asc': default: result.sort((a, b) => a.name.localeCompare(a.name)); break;
     }
 
-    // Reset to page 1 whenever filters change significantly (search, category, brand, price)
-     const currentFilterKey = `${categoryFilter}-${brandFilters.join(',')}-${minPriceFilter}-${maxPriceFilter}-${searchTermFilter}`;
+    // Reset to page 1 whenever filters change significantly (search, category, price)
+     const currentFilterKey = `${categoryFilter}-${minPriceFilter}-${maxPriceFilter}-${searchTermFilter}`;
      // Use a ref or state to store the previous key if needed, but for simplicity,
      // we'll just reset to page 1 on every filter evaluation.
      setCurrentPage(1);
@@ -212,4 +212,3 @@ export function ProductList({ initialProducts, viewMode, getProductHref }: Produ
     </div>
   );
 }
-
