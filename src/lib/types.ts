@@ -46,6 +46,7 @@ export interface AdminProduct {
   category: string; // Now references Category.id or name
   imageUrl?: string; // Optional image URL
   tags?: string[]; // Array of Tag IDs or names
+  isOnSale?: boolean; // Flag to indicate if the product is on promotion
 }
 
 // Interface for Categories

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2 } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2, Percent } from "lucide-react"; // Added Percent
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -24,6 +24,9 @@ import { buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/AuthContext'; // To verify role
+import { Badge } from '@/components/ui/badge'; // Import Badge
+import { cn } from '@/lib/utils'; // Import cn
+import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 
 // Reusing Product type from boutique or define here
 export interface ManagerProduct {
@@ -33,6 +36,7 @@ export interface ManagerProduct {
   price: number; // Assuming price is correct unit for XOF
   category: string;
   imageUrl?: string; // Added imageUrl
+  isOnSale?: boolean; // Added isOnSale flag
 }
 
 // Mock data fetching/deleting functions (similar to admin page, but potentially scoped)
@@ -46,10 +50,11 @@ const fetchManagerProductsFromAPI = async (): Promise<ManagerProduct[]> => {
    const demoProducts: ManagerProduct[] = []; // Empty array - start fresh
     // Return stored products if they exist, otherwise return demo products
     const products = storedProducts ? JSON.parse(storedProducts) : demoProducts;
-    // Ensure imageUrl exists for all products
+    // Ensure imageUrl exists for all products and isOnSale
     return products.map((p: any) => ({
         ...p,
-        imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/64/64`
+        imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/64/64`,
+        isOnSale: p.isOnSale || false, // Ensure isOnSale defaults to false
     }));
 }
 
@@ -69,15 +74,16 @@ export default function ManagerProductsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const { toast } = useToast();
+  const { t, currentLocale } = useTranslation(); // Get translation function and locale
 
   // Redirect or show error if not a manager
   useEffect(() => {
     if (!authLoading && user?.role !== 'manager') {
        // Redirect to dashboard or show an error message
        // router.replace('/dashboard'); // Assuming useRouter is imported
-        toast({ title: "Accès non autorisé", description: "Seuls les gestionnaires peuvent accéder à cette page.", variant: "destructive" });
+        toast({ title: t('dashboard_manager_unauthorized_access_toast_title'), description: "Seuls les gestionnaires peuvent accéder à cette page.", variant: "destructive" });
     }
-  }, [user, authLoading, toast]);
+  }, [user, authLoading, toast, t]);
 
 
   // Fetch products on component mount (if user is manager)
@@ -87,12 +93,11 @@ export default function ManagerProductsPage() {
             setIsLoading(true);
             try {
                 let fetchedProducts = await fetchManagerProductsFromAPI();
-                // Simulate adding products if localStorage is empty for demo - REMOVED
-                 setProducts(fetchedProducts.map((p: any) => ({...p, imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/64/64`})));
+                 setProducts(fetchedProducts.map((p: any) => ({...p, imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/64/64`, isOnSale: p.isOnSale || false })));
 
             } catch (error) {
                 console.error("Failed to fetch products:", error);
-                toast({ title: "Erreur", description: "Impossible de charger les produits.", variant: "destructive" });
+                toast({ title: t('general_error'), description: "Impossible de charger les produits.", variant: "destructive" });
             } finally {
                 setIsLoading(false);
             }
@@ -101,7 +106,7 @@ export default function ManagerProductsPage() {
     } else {
         setIsLoading(false); // Stop loading if not manager
     }
-  }, [user, toast]);
+  }, [user, toast, t]);
 
 
   const handleDeleteProduct = async (productId: string, productName: string) => {
@@ -110,13 +115,13 @@ export default function ManagerProductsPage() {
         await deleteManagerProductFromAPI(productId);
         setProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
         toast({
-          title: "Produit Supprimé",
-          description: `Le produit "${productName}" a été supprimé.`,
+          title: t('dashboard_manage_products_toast_delete_success_title'),
+          description: t('dashboard_manage_products_toast_delete_success_description', { productName }),
            className: "bg-primary text-primary-foreground border-primary",
         });
     } catch (error) {
          console.error("Failed to delete product:", error);
-         toast({ title: "Erreur", description: `Impossible de supprimer "${productName}".`, variant: "destructive" });
+         toast({ title: t('general_error'), description: `Impossible de supprimer "${productName}".`, variant: "destructive" });
     } finally {
         setIsDeleting(null);
     }
@@ -136,32 +141,33 @@ export default function ManagerProductsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-            <h1 className="text-3xl font-bold text-primary">Gestion des Produits (Gestionnaire)</h1>
-            <p className="text-muted-foreground">Ajoutez ou modifiez les produits.</p>
+            <h1 className="text-3xl font-bold text-primary">{t('dashboard_manage_products_page_title')}</h1>
+            <p className="text-muted-foreground">{t('dashboard_manage_products_description')}</p>
         </div>
         <Link href="/dashboard/products/new" > {/* Link to manager's add page */}
           <Button variant="destructive" size="sm">
-            <PlusCircle className="mr-2 h-4 w-4" /> Ajouter Produit
+            <PlusCircle className="mr-2 h-4 w-4" /> {t('dashboard_manage_products_add_button')}
           </Button>
         </Link>
       </div>
 
       <Card className="shadow-md border-border">
         <CardHeader className="border-b border-border px-6 py-4">
-          <CardTitle>Vos Produits</CardTitle>
+          <CardTitle>{t('dashboard_manage_products_table_title')}</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           {products.length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">Aucun produit à gérer pour le moment.</p>
+            <p className="text-center text-muted-foreground py-12">{t('dashboard_manage_products_no_products')}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="hidden w-[80px] sm:table-cell px-6">Image</TableHead>
-                  <TableHead className="px-6">Nom</TableHead>
-                  <TableHead className="px-6">Catégorie</TableHead>
-                  <TableHead className="text-right px-6">Prix</TableHead>
-                  <TableHead className="text-right px-6 w-[100px]">Actions</TableHead>
+                  <TableHead className="hidden w-[64px] sm:table-cell px-6">Image</TableHead>
+                  <TableHead className="px-6">{t('dashboard_manage_products_table_name')}</TableHead>
+                  <TableHead className="px-6">{t('dashboard_manage_products_table_category')}</TableHead>
+                  <TableHead className="text-center px-6 hidden lg:table-cell">Promo</TableHead> {/* Added Promo column */}
+                  <TableHead className="text-right px-6">{t('dashboard_manage_products_table_price')}</TableHead>
+                  <TableHead className="text-right px-6 w-[100px]">{t('dashboard_manage_products_table_actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -179,7 +185,17 @@ export default function ManagerProductsPage() {
                     </TableCell>
                     <TableCell className="font-medium px-6 py-3">{product.name}</TableCell>
                     <TableCell className="px-6 py-3">{product.category}</TableCell>
-                    <TableCell className="text-right px-6 py-3">{product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
+                     {/* Promo Status Cell */}
+                    <TableCell className="text-center px-6 py-3 hidden lg:table-cell">
+                       {product.isOnSale ? (
+                         <Badge variant="destructive" className="bg-orange-500 text-white border-orange-600">
+                           <Percent className="mr-1 h-3 w-3" /> Promo
+                         </Badge>
+                       ) : (
+                         <span className="text-muted-foreground">-</span>
+                       )}
+                    </TableCell>
+                    <TableCell className="text-right px-6 py-3">{product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
                     <TableCell className="text-right px-6 py-3">
                       <AlertDialog>
                            <DropdownMenu>
@@ -190,18 +206,18 @@ export default function ManagerProductsPage() {
                                    </Button>
                                </DropdownMenuTrigger>
                                <DropdownMenuContent align="end">
-                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                   <DropdownMenuLabel>{t('dashboard_manage_products_table_actions')}</DropdownMenuLabel>
                                    <DropdownMenuItem asChild>
                                         {/* Link to manager's edit page */}
                                         <Link href={`/dashboard/products/edit/${product.id}`} className="flex items-center cursor-pointer w-full">
-                                            <Edit className="mr-2 h-4 w-4"/>Modifier
+                                            <Edit className="mr-2 h-4 w-4"/>{t('dashboard_manage_products_edit_action')}
                                         </Link>
                                    </DropdownMenuItem>
                                    {/* Manager might not have delete permission, or only for products they added */}
                                     <DropdownMenuSeparator />
                                    <AlertDialogTrigger asChild>
                                       <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                                         <Trash2 className="mr-2 h-4 w-4"/>Supprimer
+                                         <Trash2 className="mr-2 h-4 w-4"/>{t('dashboard_manage_products_delete_action')}
                                       </Button>
                                    </AlertDialogTrigger>
                                </DropdownMenuContent>
@@ -210,13 +226,13 @@ export default function ManagerProductsPage() {
                            {/* Delete Confirmation (If managers can delete) */}
                             <AlertDialogContent>
                                 <AlertDialogHeader>
-                                      <AlertDialogTitle>Supprimer "{product.name}"?</AlertDialogTitle>
-                                      <AlertDialogDescription>Action irréversible.</AlertDialogDescription>
+                                      <AlertDialogTitle>{t('dashboard_manage_products_delete_confirm_title', { productName: product.name })}</AlertDialogTitle>
+                                      <AlertDialogDescription>{t('dashboard_manage_products_delete_confirm_description')}</AlertDialogDescription>
                                  </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                     <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                     <AlertDialogCancel>{t('general_cancel')}</AlertDialogCancel>
                                      <AlertDialogAction onClick={() => handleDeleteProduct(product.id, product.name)} className={buttonVariants({ variant: "destructive" })} disabled={isDeleting === product.id}>
-                                        {isDeleting === product.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Supprimer
+                                        {isDeleting === product.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {t('general_delete')}
                                      </AlertDialogAction>
                                  </AlertDialogFooter>
                            </AlertDialogContent>

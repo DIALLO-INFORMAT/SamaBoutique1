@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Loader2, Image as ImageIcon, LinkIcon } from "lucide-react";
+import { ArrowLeft, Loader2, Image as ImageIcon, LinkIcon, Percent } from "lucide-react"; // Added Percent icon
 import Link from "next/link";
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
@@ -29,6 +29,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AdminProduct, Category, Tag } from '@/lib/types'; // Import types
 import { MultiSelect } from '@/components/ui/multi-select'; // Import MultiSelect
+import { Switch } from '@/components/ui/switch'; // Import Switch
 
 // Storage keys (assuming they are the same for now)
 const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products';
@@ -44,6 +45,7 @@ const createProductSchema = (t: Function) => z.object({
   tags: z.array(z.string()).optional(), // Array of tag IDs/names
   imageUrl: z.string().url({ message: t('admin_add_product_form_image_url_invalid') }).or(z.literal('')).optional(),
   imageFile: z.instanceof(File).optional().nullable(),
+  isOnSale: z.boolean().default(false), // Add isOnSale field
 }).superRefine((data, ctx) => {
   if (data.imageUrl && data.imageFile) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: t('admin_add_product_form_image_source_error'), path: ["imageUrl"] });
@@ -106,6 +108,7 @@ const updateProductAPI = async (productId: string, values: z.infer<ReturnType<ty
                 price: Number(productDataToSave.price),
                 imageUrl: finalImageUrl,
                 tags: values.tags || [], // Ensure tags array exists
+                isOnSale: values.isOnSale, // Save promotion status
             };
             localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(products));
         }
@@ -134,7 +137,7 @@ export default function EditProductPage() {
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: "", description: "", price: 0, category: "",
-      tags: [], imageUrl: "", imageFile: null,
+      tags: [], imageUrl: "", imageFile: null, isOnSale: false, // Default isOnSale
     },
   });
 
@@ -174,6 +177,7 @@ export default function EditProductPage() {
             category: foundProduct.category, // Use category name/ID directly
             tags: foundProduct.tags || [], // Initialize tags
             imageUrl: foundProduct.imageUrl || '', imageFile: null,
+            isOnSale: foundProduct.isOnSale || false, // Initialize isOnSale
           });
            setImagePreview(foundProduct.imageUrl || null);
            setImageSourceType(foundProduct.imageUrl ? 'url' : 'file');
@@ -240,7 +244,7 @@ export default function EditProductPage() {
                   <Skeleton className="h-10 w-10 rounded" /><div className="space-y-2"><Skeleton className="h-8 w-64" /><Skeleton className="h-4 w-80" /></div>
               </div>
               <Card className="shadow-md border-border overflow-hidden"><CardHeader className="bg-muted/30 border-b px-6 py-4"><Skeleton className="h-6 w-1/4" /></CardHeader><CardContent className="p-6 space-y-6"><div className="space-y-2"><Skeleton className="h-4 w-1/6"/><Skeleton className="h-10 w-full"/></div><div className="space-y-2"><Skeleton className="h-4 w-1/6"/><Skeleton className="h-20 w-full"/></div></CardContent></Card>
-              <Card className="shadow-md border-border overflow-hidden"><CardHeader className="bg-muted/30 border-b px-6 py-4"><Skeleton className="h-6 w-1/3" /></CardHeader><CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-start"><div className="space-y-2"><Skeleton className="h-4 w-1/3"/><Skeleton className="h-10 w-full"/></div><div className="space-y-2"><Skeleton className="h-4 w-1/3"/><Skeleton className="h-10 w-full"/></div><div className="space-y-2 col-span-1 md:col-span-2"><Skeleton className="h-4 w-1/6"/><Skeleton className="h-10 w-full"/></div></CardContent></Card> {/* Adjusted grid cols */}
+              <Card className="shadow-md border-border overflow-hidden"><CardHeader className="bg-muted/30 border-b px-6 py-4"><Skeleton className="h-6 w-1/3" /></CardHeader><CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-start"><div className="space-y-2"><Skeleton className="h-4 w-1/3"/><Skeleton className="h-10 w-full"/></div><div className="space-y-2"><Skeleton className="h-4 w-1/3"/><Skeleton className="h-10 w-full"/></div><div className="space-y-2 col-span-1 md:col-span-2"><Skeleton className="h-4 w-1/6"/><Skeleton className="h-10 w-full"/></div></CardContent></Card>
               <Card className="shadow-md border-border overflow-hidden"><CardHeader className="bg-muted/30 border-b px-6 py-4"><Skeleton className="h-6 w-1/5" /></CardHeader><CardContent className="p-6 space-y-4"><Skeleton className="h-32 w-40 rounded-md border"/><Skeleton className="h-10 w-1/2"/><Skeleton className="h-10 w-full"/></CardContent></Card>
               <div className="flex justify-end pt-4"><Skeleton className="h-11 w-48 rounded-md"/></div>
          </div>
@@ -269,10 +273,10 @@ export default function EditProductPage() {
                  </CardContent>
              </Card>
 
-            {/* Pricing, Categorization, Tags Card */}
+            {/* Pricing, Categorization, Tags, Promotion Card */}
              <Card className="shadow-md border-border overflow-hidden">
                  <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><CardTitle>{t('admin_add_product_pricing_category_title')}</CardTitle></CardHeader>
-                 <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-start"> {/* Changed to md:grid-cols-2 */}
+                 <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                      <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>{t('admin_add_product_form_price')}</FormLabel><FormControl><Input type="number" step="1" {...field} /></FormControl><FormMessage /></FormItem> )}/>
                      {/* Category Select */}
                      <FormField control={form.control} name="category" render={({ field }) => (
@@ -293,9 +297,9 @@ export default function EditProductPage() {
                              <FormMessage />
                          </FormItem>
                      )}/>
-                     {/* Tags MultiSelect - spans full width */}
+                     {/* Tags MultiSelect */}
                      <FormField control={form.control} name="tags" render={({ field }) => (
-                         <FormItem className="md:col-span-2"> {/* Make tags span 2 cols */}
+                         <FormItem className="md:col-span-2">
                              <FormLabel>{t('admin_add_product_form_tags')}</FormLabel>
                              <FormControl>
                                  <MultiSelect
@@ -311,6 +315,20 @@ export default function EditProductPage() {
                              <FormMessage />
                          </FormItem>
                      )}/>
+                      {/* Promotion Switch */}
+                     <FormField
+                         control={form.control}
+                         name="isOnSale"
+                         render={({ field }) => (
+                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 md:col-span-2">
+                             <div className="space-y-0.5">
+                                 <FormLabel className="text-base flex items-center gap-2"><Percent className="h-4 w-4"/> Mettre en Promotion</FormLabel>
+                                 <FormDescription>Activer pour afficher une étiquette "Promo" sur le produit.</FormDescription>
+                             </div>
+                             <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                         </FormItem>
+                         )}
+                     />
                  </CardContent>
             </Card>
 

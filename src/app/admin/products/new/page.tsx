@@ -21,12 +21,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Loader2, Image as ImageIcon, Percent } from "lucide-react"; // Added Percent icon
 import Link from "next/link";
 import { useTranslation } from '@/hooks/useTranslation';
 import Image from 'next/image';
 import type { AdminProduct, Category, Tag } from '@/lib/types'; // Import types
 import { MultiSelect } from '@/components/ui/multi-select'; // Import MultiSelect
+import { Switch } from '@/components/ui/switch'; // Import Switch
 
 // --- Zod Schema Update ---
 const createProductSchema = (t: Function) => z.object({
@@ -36,6 +37,7 @@ const createProductSchema = (t: Function) => z.object({
   category: z.string().min(1, { message: t('validation_required_field', { field: t('admin_add_product_form_category') }) }), // Required category ID/name
   tags: z.array(z.string()).optional(), // Array of tag IDs/names
   image: z.instanceof(File).optional().nullable(),
+  isOnSale: z.boolean().default(false), // Add isOnSale field
 });
 
 // Storage keys
@@ -59,6 +61,7 @@ const addProductAPI = async (values: z.infer<ReturnType<typeof createProductSche
              imageUrl: imageUrl,
              price: Number(productDataToSave.price),
              tags: values.tags || [], // Ensure tags array exists
+             isOnSale: values.isOnSale, // Save promotion status
          };
          const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
          const products = storedProducts ? JSON.parse(storedProducts) : [];
@@ -96,7 +99,7 @@ export default function AddProductPage() {
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: "", description: "", price: 0, category: "",
-      tags: [], image: null,
+      tags: [], image: null, isOnSale: false, // Default isOnSale to false
     },
   });
 
@@ -163,10 +166,10 @@ export default function AddProductPage() {
             </CardContent>
           </Card>
 
-          {/* Pricing, Categorization, Tags Card */}
+          {/* Pricing, Categorization, Tags, Promotion Card */}
           <Card className="shadow-md border-border overflow-hidden">
             <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><CardTitle>{t('admin_add_product_pricing_category_title')}</CardTitle></CardHeader>
-            <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-start"> {/* Changed to md:grid-cols-2 */}
+            <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                  <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>{t('admin_add_product_form_price')}</FormLabel><FormControl><Input type="number" step="1" placeholder="0" {...field} /></FormControl><FormMessage /></FormItem> )}/>
                  {/* Category Select */}
                  <FormField control={form.control} name="category" render={({ field }) => (
@@ -187,9 +190,9 @@ export default function AddProductPage() {
                         <FormMessage />
                     </FormItem>
                  )}/>
-                 {/* Tags MultiSelect - spans full width */}
+                 {/* Tags MultiSelect */}
                  <FormField control={form.control} name="tags" render={({ field }) => (
-                     <FormItem className="md:col-span-2"> {/* Make tags span 2 cols */}
+                     <FormItem className="md:col-span-2">
                          <FormLabel>{t('admin_add_product_form_tags')}</FormLabel>
                          <FormControl>
                              <MultiSelect
@@ -205,6 +208,20 @@ export default function AddProductPage() {
                          <FormMessage />
                      </FormItem>
                  )}/>
+                  {/* Promotion Switch */}
+                 <FormField
+                     control={form.control}
+                     name="isOnSale"
+                     render={({ field }) => (
+                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 md:col-span-2">
+                         <div className="space-y-0.5">
+                             <FormLabel className="text-base flex items-center gap-2"><Percent className="h-4 w-4"/> Mettre en Promotion</FormLabel>
+                             <FormDescription>Activer pour afficher une étiquette "Promo" sur le produit.</FormDescription>
+                         </div>
+                         <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                     </FormItem>
+                     )}
+                 />
             </CardContent>
           </Card>
 

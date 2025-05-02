@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2 } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Edit, Trash2, Loader2, Percent } from "lucide-react"; // Added Percent icon
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -24,6 +24,8 @@ import { buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import { Badge } from '@/components/ui/badge'; // Import Badge
+import { cn } from '@/lib/utils'; // Import cn
 
 // Reusing Product type - assuming it's globally available or define here
 // Define if not imported globally
@@ -34,6 +36,7 @@ export interface AdminProduct {
   price: number; // Assuming price is in the smallest unit or correctly formatted number for XOF
   category: string;
   imageUrl?: string; // Optional image URL
+  isOnSale?: boolean; // Add isOnSale flag
   // Add other fields like stock, etc. if needed
 }
 
@@ -52,7 +55,8 @@ const fetchProductsFromAPI = async (): Promise<AdminProduct[]> => {
                 // Ensure imageUrl exists for fallback
                 return products.map(p => ({
                     ...p,
-                    imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/64/64`
+                    imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/64/64`,
+                    isOnSale: p.isOnSale || false, // Ensure isOnSale has a default value
                 }));
             } catch (error) {
                  console.error("Error parsing products from localStorage:", error);
@@ -61,13 +65,12 @@ const fetchProductsFromAPI = async (): Promise<AdminProduct[]> => {
             }
        }
    }
-   // Fallback mock data if localStorage is empty or SSR
-   const mockProducts: AdminProduct[] = []; // Empty array - products should be added via admin
-   // Initialize localStorage if empty
+   // Fallback: Initialize localStorage if empty
+   const initialProducts: AdminProduct[] = []; // Empty array initially
    if (typeof window !== 'undefined' && !localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY)) {
-       localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(mockProducts));
+       localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(initialProducts));
    }
-   return mockProducts;
+   return initialProducts;
 }
 
 
@@ -168,6 +171,7 @@ export default function AdminProductsPage() {
                              <Skeleton className="h-4 w-2/5 bg-muted" />
                          </div>
                          <Skeleton className="h-6 w-16 hidden md:block bg-muted" />
+                         <Skeleton className="h-6 w-16 hidden lg:block bg-muted" /> {/* Status column */}
                          <Skeleton className="h-6 w-20 text-right bg-muted" />
                          <Skeleton className="h-8 w-8 bg-muted" />
                      </div>
@@ -179,9 +183,10 @@ export default function AdminProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="hidden w-[80px] sm:table-cell px-6">{t('admin_products_table_image')}</TableHead>
+                  <TableHead className="hidden w-[64px] sm:table-cell px-6">Image</TableHead>
                   <TableHead className="px-6">{t('admin_products_table_name')}</TableHead>
                   <TableHead className="px-6">{t('admin_products_table_category')}</TableHead>
+                   <TableHead className="text-center px-6 hidden lg:table-cell">Promo</TableHead> {/* Added Promo column */}
                   <TableHead className="text-right px-6">{t('admin_products_table_price')}</TableHead>
                   <TableHead className="text-right px-6 w-[100px]">{t('admin_products_table_actions')}</TableHead>
                 </TableRow>
@@ -201,6 +206,16 @@ export default function AdminProductsPage() {
                     </TableCell>
                     <TableCell className="font-medium px-6 py-3">{product.name}</TableCell>
                     <TableCell className="px-6 py-3">{product.category}</TableCell>
+                    {/* Promo Status Cell */}
+                    <TableCell className="text-center px-6 py-3 hidden lg:table-cell">
+                       {product.isOnSale ? (
+                         <Badge variant="destructive" className="bg-orange-500 text-white border-orange-600">
+                           <Percent className="mr-1 h-3 w-3" /> Promo
+                         </Badge>
+                       ) : (
+                         <span className="text-muted-foreground">-</span>
+                       )}
+                    </TableCell>
                     <TableCell className="text-right px-6 py-3">{product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
                     <TableCell className="text-right px-6 py-3">
                       <AlertDialog>
@@ -261,4 +276,3 @@ export default function AdminProductsPage() {
     </div>
   );
 }
-

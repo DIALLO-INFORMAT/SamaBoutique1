@@ -3,7 +3,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link'; // Import Link
-// Assuming Product interface now includes optional imageUrl
+import { Badge } from '@/components/ui/badge'; // Import Badge
+// Assuming Product interface now includes optional imageUrl and isOnSale
 export interface Product {
   id: string;
   name: string;
@@ -11,10 +12,11 @@ export interface Product {
   price: number;
   category: string;
   imageUrl?: string; // Make imageUrl optional
+  isOnSale?: boolean; // Add isOnSale flag
 }
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Tag, ShoppingCart, Building } from 'lucide-react';
+import { Tag, ShoppingCart, Building, Percent } from 'lucide-react'; // Added Percent icon
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -73,17 +75,32 @@ export function ProductCard({ product, viewMode, href }: ProductCardProps) {
           }}
         />
          {viewMode === 'grid' && ( // Show category tag only in grid view
-             <div className="absolute top-2 right-2 bg-secondary px-2 py-1 rounded-full text-xs font-medium text-secondary-foreground flex items-center gap-1 shadow">
-               <Tag className="h-3 w-3"/>
-               {product.category}
+             <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
+                 {/* Promotion Badge */}
+                {product.isOnSale && (
+                    <Badge variant="destructive" className="px-2 py-0.5 text-xs font-semibold flex items-center gap-1 shadow-md bg-orange-500 text-white border-orange-600">
+                        <Percent className="h-3 w-3" /> Promo
+                    </Badge>
+                )}
+                {/* Category Badge */}
+                <Badge variant="secondary" className="px-2 py-0.5 text-xs font-medium flex items-center gap-1 shadow">
+                  <Tag className="h-3 w-3"/>
+                  {product.category}
+                </Badge>
              </div>
           )}
+           {/* Promotion Badge for List View */}
+           {viewMode === 'list' && product.isOnSale && (
+                <Badge variant="destructive" className="absolute top-1 left-1 px-1.5 py-0.5 text-[10px] font-semibold flex items-center gap-0.5 shadow-md bg-orange-500 text-white border-orange-600">
+                    <Percent className="h-2.5 w-2.5" /> Promo
+                </Badge>
+            )}
       </div>
 
        {/* Content Section */}
       <div className={cn(
           "flex flex-col flex-grow",
-          viewMode === 'grid' ? "" : "p-4" // Add padding for list view
+          viewMode === 'list' && "p-4" // Add padding for list view
       )}>
         <CardContent className={cn(
             "p-4 flex-grow space-y-2",
