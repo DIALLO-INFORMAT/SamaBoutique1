@@ -6,17 +6,51 @@ import Image from 'next/image';
 import { ShoppingBag } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import { useEffect, useState } from 'react'; // Import useEffect and useState
 
-// Mock product data (replace with actual data later)
-const featuredFooterProducts = [
-  { id: '1', name: 'T-Shirt Classique', price: 10000 },
-  { id: '3', name: 'Casquette Logo', price: 15000 },
-  { id: '6', name: 'Mug Personnalisé', price: 8000 },
-];
+// Define Product type (ensure consistency with other files)
+interface FooterProduct {
+  id: string;
+  name: string;
+  price: number;
+  imageUrl?: string;
+  category?: string; // Added category for data-ai-hint
+}
+
+const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products';
+
+// Fetch products from storage (same logic as homepage)
+const fetchAllProductsFromStorage = (): FooterProduct[] => {
+    if (typeof window === 'undefined') {
+        return [];
+    }
+    const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
+    if (storedProducts) {
+        try {
+            const products: FooterProduct[] = JSON.parse(storedProducts);
+            return products.map(p => ({
+                ...p,
+                imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/40/40`, // Smaller fallback for footer
+            })).reverse(); // Assuming latest added are newest
+        } catch (error) {
+            console.error("Error parsing stored products for footer:", error);
+            localStorage.removeItem(ADMIN_PRODUCTS_STORAGE_KEY);
+        }
+    }
+    return [];
+};
+
 
 export function Footer() {
   const { storeDescription } = useSettings();
   const { t, currentLocale } = useTranslation(); // Use the translation hook
+  const [footerProducts, setFooterProducts] = useState<FooterProduct[]>([]);
+
+  useEffect(() => {
+      const products = fetchAllProductsFromStorage();
+      setFooterProducts(products.slice(0, 3)); // Get the first 3 products
+  }, []); // Fetch on mount
+
 
   // Determine text direction based on locale (always LTR now)
   const textDir = 'ltr'; // Hardcoded to Left-to-Right
@@ -69,29 +103,37 @@ export function Footer() {
           {/* Section 3: Featured Products */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-primary">{t('footer_popular_products')}</h3>
-            <ul className="space-y-3">
-              {featuredFooterProducts.map(product => (
-                <li key={product.id} className="flex items-center gap-3">
-                  <Image
-                    src={`https://picsum.photos/seed/${product.id}/40/40`}
-                    alt={product.name} // Use actual name for alt, translation might not be needed here
-                    width={40}
-                    height={40}
-                    className="rounded-md object-cover border border-border"
-                    data-ai-hint={product.name.toLowerCase().split(' ')[0]}
-                  />
-                  <div>
-                    {/* Product names are usually not translated in this context, link to shop */}
-                    <Link href="/boutique" className="text-sm hover:text-primary transition-colors">
-                      {product.name}
-                    </Link>
-                    <p className="text-xs text-muted-foreground">
-                      {product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+             {footerProducts.length > 0 ? (
+                 <ul className="space-y-3">
+                   {footerProducts.map(product => (
+                     <li key={product.id} className="flex items-center gap-3">
+                       <Image
+                         src={product.imageUrl || `https://picsum.photos/seed/${product.id}/40/40`}
+                         alt={product.name} // Use actual name for alt
+                         width={40}
+                         height={40}
+                         className="rounded-md object-cover border border-border"
+                         data-ai-hint={product.category === 'Services' ? 'service tech icon' : product.name.toLowerCase().split(' ')[0]}
+                          onError={(e) => {
+                             (e.target as HTMLImageElement).srcset = `https://picsum.photos/seed/${product.id}/40/40`;
+                             (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${product.id}/40/40`;
+                          }}
+                       />
+                       <div>
+                         {/* Link to the specific product page or a filtered shop page */}
+                         <Link href={`/boutique?search=${encodeURIComponent(product.name)}`} className="text-sm hover:text-primary transition-colors">
+                           {product.name}
+                         </Link>
+                         <p className="text-xs text-muted-foreground">
+                           {product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                         </p>
+                       </div>
+                     </li>
+                   ))}
+                 </ul>
+             ) : (
+                 <p className="text-sm text-muted-foreground">{t('shop_no_products_found')}</p> // Show message if no products
+             )}
           </div>
         </div>
       </div>

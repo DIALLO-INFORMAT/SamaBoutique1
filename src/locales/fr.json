@@ -595,7 +595,7 @@
   "admin_settings_form_primary_color_desc": "Couleur principale du thème. Format: hsl(H, S%, L%)",
   "admin_settings_form_maintenance_mode": "Mode Maintenance",
   "admin_settings_form_maintenance_mode_desc": "Activer pour afficher une page de maintenance aux visiteurs.",
-  "admin_settings_form_save_button": "Enregistrer les Paramètres",
+  "admin_settings_form_save_button": "Enregistrer",
   "admin_settings_form_saving_button": "Enregistrement...",
   "admin_settings_toast_save_success_title": "Paramètres Enregistrés!",
   "admin_settings_toast_save_success_description": "Les paramètres généraux ont été mis à jour.",

@@ -23,10 +23,10 @@ import {Textarea} from '@/components/ui/textarea';
 import {useEffect, useState, useCallback} from 'react';
 import Image from 'next/image';
 import {Loader2 } from 'lucide-react'; // Removed image related icons
-import { useSettings, saveSettings, CarouselImage, PartnerLogo, Settings } from '@/hooks/useSettings';
+import { useSettings, saveSettings, Settings } from '@/hooks/useSettings'; // Removed unused CarouselImage, PartnerLogo
 import { useTranslation } from '@/hooks/useTranslation';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ImageManagementCard } from '@/components/ui/image-management-card'; // Import the reusable component
+// Removed import for ImageManagementCard as it's no longer used here
 
 // Define Zod schema for CORE settings form validation (excluding image lists)
 const createSettingsSchema = (t: Function) => z.object({
@@ -51,9 +51,7 @@ export default function AdminSettingsPage() {
   const {isLoading: settingsLoading, ...currentSettings } = useSettings(); // Destructure isLoading separately
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Local state for image lists, initialized from global settings
-  const [carouselImages, setCarouselImages] = useState<CarouselImage[]>([]);
-  const [partnerLogos, setPartnerLogos] = useState<PartnerLogo[]>([]);
+  // Removed local state for image lists
 
   const settingsSchema = createSettingsSchema(t);
 
@@ -65,7 +63,7 @@ export default function AdminSettingsPage() {
     },
   });
 
-  // Initialize form and local image states when settings load
+  // Initialize form when settings load
   useEffect(() => {
       if (!settingsLoading) {
           const settingsToApply = {
@@ -78,8 +76,7 @@ export default function AdminSettingsPage() {
                 faviconUrl: currentSettings.faviconUrl || '',
             };
            form.reset(settingsToApply);
-           setCarouselImages(currentSettings.carouselImages || []); // Initialize local state
-           setPartnerLogos(currentSettings.partnerLogos || []);     // Initialize local state
+           // Removed initialization for local image states
       }
   }, [settingsLoading, currentSettings, form]); // Add form as dependency
 
@@ -97,7 +94,7 @@ export default function AdminSettingsPage() {
    }, [form]);
 
 
-  const handleSaveAllSettings = useCallback(async () => {
+  const handleSaveCoreSettings = useCallback(async () => {
     setIsSubmitting(true);
     // Validate core settings form
     const coreValuesValid = await form.trigger();
@@ -109,14 +106,13 @@ export default function AdminSettingsPage() {
     const coreValues = form.getValues();
 
     try {
-        // Combine core settings with the current state of image lists
-        const allSettingsToSave: Partial<Settings> = {
+        // Only save core settings here
+        const coreSettingsToSave: Partial<Settings> = {
             ...coreValues,
-            carouselImages: carouselImages, // Use local state
-            partnerLogos: partnerLogos,     // Use local state
+            // Exclude image lists from this save operation
         };
 
-        saveSettings(allSettingsToSave);
+        saveSettings(coreSettingsToSave);
         await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
 
         toast({
@@ -125,7 +121,7 @@ export default function AdminSettingsPage() {
             className: 'bg-primary text-primary-foreground border-primary',
         });
     } catch (error) {
-        console.error("Failed to save settings:", error);
+        console.error("Failed to save core settings:", error);
          toast({
              title: t('admin_settings_toast_save_error_title'),
              description: t('admin_settings_toast_save_error_description'),
@@ -134,7 +130,7 @@ export default function AdminSettingsPage() {
     } finally {
         setIsSubmitting(false);
     }
-  }, [form, carouselImages, partnerLogos, t, toast]);
+  }, [form, t, toast]); // Removed image list states from dependencies
 
 
    // Show loading skeleton if settings are loading
@@ -142,22 +138,21 @@ export default function AdminSettingsPage() {
         return (
              <div className="space-y-8">
                  <h1 className="text-3xl font-bold text-primary">{t('admin_settings_page_title')}</h1>
-                 {[...Array(3)].map((_, i) => ( // Skeleton for 3 cards
-                     <Card key={i} className="max-w-3xl">
-                         <CardHeader>
-                             <Skeleton className="h-6 w-2/5 bg-muted" />
-                             <Skeleton className="h-4 w-4/5 bg-muted mt-1" />
-                         </CardHeader>
-                         <CardContent className="space-y-6">
-                             {[...Array(i === 0 ? 7 : 4)].map((_, j) => ( // More skeletons for first card
-                                 <div key={j} className="space-y-2">
-                                     <Skeleton className="h-4 w-1/4 bg-muted" />
-                                     <Skeleton className="h-10 w-full bg-muted" />
-                                 </div>
-                             ))}
-                         </CardContent>
-                     </Card>
-                 ))}
+                 {/* Skeleton for the core settings card */}
+                 <Card className="max-w-3xl">
+                     <CardHeader>
+                         <Skeleton className="h-6 w-2/5 bg-muted" />
+                         <Skeleton className="h-4 w-4/5 bg-muted mt-1" />
+                     </CardHeader>
+                     <CardContent className="space-y-6">
+                         {[...Array(7)].map((_, j) => ( // Adjust skeleton count for core fields
+                             <div key={j} className="space-y-2">
+                                 <Skeleton className="h-4 w-1/4 bg-muted" />
+                                 <Skeleton className="h-10 w-full bg-muted" />
+                             </div>
+                         ))}
+                     </CardContent>
+                 </Card>
                   <Skeleton className="h-10 w-40 bg-muted rounded ml-auto" /> {/* Save button skeleton */}
              </div>
         );
@@ -262,28 +257,13 @@ export default function AdminSettingsPage() {
         </CardContent>
       </Card>
 
-       {/* Use the reusable ImageManagementCard for Carousel Images */}
-       <ImageManagementCard<CarouselImage>
-          title={t('admin_settings_carousel_title')}
-          description={t('admin_settings_carousel_description')}
-          images={carouselImages}
-          onImagesChange={setCarouselImages}
-          itemType="carousel"
-       />
+       {/* Image Management Cards Removed */}
 
-        {/* Use the reusable ImageManagementCard for Partner Logos */}
-        <ImageManagementCard<PartnerLogo>
-           title={t('admin_settings_partners_title')}
-           description={t('admin_settings_partners_description')}
-           images={partnerLogos}
-           onImagesChange={setPartnerLogos}
-           itemType="partner"
-        />
 
       {/* Global Save Button */}
       <div className="flex justify-end max-w-3xl">
          <Button
-             onClick={handleSaveAllSettings}
+             onClick={handleSaveCoreSettings} // Changed to save only core settings
              variant="destructive"
              disabled={isSubmitting || settingsLoading}
              className="min-w-[200px]"
