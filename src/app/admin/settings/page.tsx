@@ -22,11 +22,11 @@ import {Separator} from '@/components/ui/separator';
 import {Textarea} from '@/components/ui/textarea';
 import {useEffect, useState, useCallback} from 'react';
 import Image from 'next/image';
-import {Loader2 } from 'lucide-react'; // Removed image related icons
-import { useSettings, saveSettings, Settings } from '@/hooks/useSettings'; // Removed unused CarouselImage, PartnerLogo
+import {Loader2 } from 'lucide-react';
+import { useSettings, saveSettings, Settings } from '@/hooks/useSettings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Skeleton } from '@/components/ui/skeleton';
-// Removed import for ImageManagementCard as it's no longer used here
+
 
 // Define Zod schema for CORE settings form validation (excluding image lists)
 const createSettingsSchema = (t: Function) => z.object({
@@ -51,8 +51,6 @@ export default function AdminSettingsPage() {
   const {isLoading: settingsLoading, ...currentSettings } = useSettings(); // Destructure isLoading separately
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Removed local state for image lists
-
   const settingsSchema = createSettingsSchema(t);
 
   const form = useForm<z.infer<typeof settingsSchema>>({
@@ -76,9 +74,8 @@ export default function AdminSettingsPage() {
                 faviconUrl: currentSettings.faviconUrl || '',
             };
            form.reset(settingsToApply);
-           // Removed initialization for local image states
       }
-  }, [settingsLoading, currentSettings, form]); // Add form as dependency
+  }, [settingsLoading, currentSettings, form.reset]); // Use form.reset instead of form
 
   // Preview states
    const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | undefined>(undefined);
@@ -130,7 +127,7 @@ export default function AdminSettingsPage() {
     } finally {
         setIsSubmitting(false);
     }
-  }, [form, t, toast]); // Removed image list states from dependencies
+  }, [form, t, toast]); // Keep form as dependency for trigger and getValues
 
 
    // Show loading skeleton if settings are loading
@@ -251,13 +248,10 @@ export default function AdminSettingsPage() {
                   </FormItem>
               )}/>
 
-              {/* Removed Save Button from here */}
             </form>
           </Form>
         </CardContent>
       </Card>
-
-       {/* Image Management Cards Removed */}
 
 
       {/* Global Save Button */}

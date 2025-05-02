@@ -57,7 +57,7 @@ const TableRow = React.forwardRef<
 >(({ className, children, ...props }, ref) => {
   // Filter out pure whitespace text nodes to prevent hydration errors.
   const validChildren = React.Children.toArray(children).filter(child =>
-    React.isValidElement(child) || (typeof child === 'string' && child.trim() !== '')
+    React.isValidElement(child) || (typeof child === 'string' && child.trim() !== '') || typeof child === 'number'
   );
 
   return (

@@ -2,7 +2,7 @@
 // src/app/admin/invoices/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // Import useCallback
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -49,10 +49,8 @@ export default function AdminInvoicesPage() {
     const { toast } = useToast();
     const { t } = useTranslation(); // Use translation hook here
 
-    // Function for viewing/sharing invoice - Moved outside to use the hook correctly
-    const handleInvoiceAction = async (order: Order, action: 'view' | 'share') => {
-        // 't' is already available from the outer scope
-
+    // Wrap handleInvoiceAction in useCallback and include `t` in dependency array
+    const handleInvoiceAction = useCallback(async (order: Order, action: 'view' | 'share') => {
         if (action === 'view') {
             try {
                 // Generate the PDF blob
@@ -68,7 +66,7 @@ export default function AdminInvoicesPage() {
 
             } catch (error) {
                 console.error("Error generating or handling PDF:", error);
-                alert(t('invoice_generate_error')); // Show a user-friendly error
+                toast({ title: t('general_error'), description: t('invoice_generate_error'), variant: 'destructive'});
             }
         } else if (action === 'share') {
             // Basic share functionality (can be expanded)
@@ -81,12 +79,13 @@ export default function AdminInvoicesPage() {
                     });
                 } catch (error) {
                     console.error('Share failed:', error);
+                    toast({ title: t('general_error'), description: t('invoice_share_not_supported'), variant: 'destructive'});
                 }
             } else {
-                alert(t('invoice_share_not_supported'));
+                toast({ title: t('general_error'), description: t('invoice_share_not_supported'), variant: 'destructive'});
             }
         }
-    };
+    }, [t, toast]); // Add t and toast as dependencies
 
 
     useEffect(() => {
