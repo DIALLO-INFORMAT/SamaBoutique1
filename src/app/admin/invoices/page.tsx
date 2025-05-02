@@ -49,11 +49,11 @@ export default function AdminInvoicesPage() {
     const { toast } = useToast();
     const { t } = useTranslation(); // Use translation hook here
 
-    // Wrap handleInvoiceAction in useCallback and include `t` in dependency array
     const handleInvoiceAction = useCallback(async (order: Order, action: 'view' | 'share') => {
+        // `t` function is accessible here because it's part of the component's scope
         if (action === 'view') {
             try {
-                // Generate the PDF blob
+                // Generate the PDF blob using the `t` function from the hook
                 const pdfBlob = await generateInvoicePDF(order, t);
 
                 // Create a URL for the blob
@@ -85,7 +85,7 @@ export default function AdminInvoicesPage() {
                 toast({ title: t('general_error'), description: t('invoice_share_not_supported'), variant: 'destructive'});
             }
         }
-    }, [t, toast]); // Add t and toast as dependencies
+    }, [t, toast]); // Ensure t and toast are dependencies
 
 
     useEffect(() => {

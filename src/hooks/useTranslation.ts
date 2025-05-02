@@ -1,7 +1,7 @@
 // src/hooks/useTranslation.ts
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react'; // Keep useState and useEffect if needed for async loading later
 import type { TOptions } from 'i18next'; // Use i18next type for interpolation
 import frTranslations from '@/locales/fr.json'; // Import French translations directly
 
@@ -42,15 +42,15 @@ export const useTranslation = () => {
   const isLoading = false; // No async loading needed anymore
   const currentLocale = 'fr'; // Hardcode locale to French
 
-  // The translation function `t` - Remove useCallback here
+  // The translation function `t`
    const t = (key: string, options?: TOptions<string>): string => {
        const value = getNestedValue(translations, key);
        if (value === undefined) {
-           console.warn(`Translation key "${key}" not found for locale "fr"`);
+           console.warn(`Translation key "${key}" not found for locale "${currentLocale}"`);
            return key; // Return the key itself as fallback
        }
        return interpolate(value, options);
-   }; // Removed useCallback wrapper
+   };
 
   return { t, isLoading, currentLocale };
 };
