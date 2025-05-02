@@ -1,6 +1,7 @@
 // src/app/page.tsx
 'use client'; // Needs to be a client component to use the hook
 
+import { useState, useEffect } from 'react'; // Import useState and useEffect
 import { ProductList } from "@/components/ProductList";
 import { HomeCarousel } from "@/components/HomeCarousel";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { useTranslation } from '@/hooks/useTranslation'; // Import the hook
 import { useSettings } from '@/hooks/useSettings'; // Import useSettings
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 
 // Mock product data (replace with actual data fetching later)
 // Ensure Product interface includes imageUrl
@@ -20,22 +22,55 @@ export interface Product {
   price: number;
   category: string;
   imageUrl?: string; // Add optional imageUrl
+  // Assuming products are added with a timestamp or identifiable order
+  // createdAt?: Date; // Optional: Add if available for sorting
 }
 
-const allProducts: Product[] = []; // Empty array - products managed via admin
+const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products'; // Key where products are stored
 
+// Simulate fetching ALL products and then filtering/sorting
+const fetchAllProductsFromStorage = (): Product[] => {
+    if (typeof window === 'undefined') {
+        return [];
+    }
+    const storedProducts = localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY);
+    if (storedProducts) {
+        try {
+            const products: Product[] = JSON.parse(storedProducts);
+            // Ensure imageUrl exists for fallback and sort by assumed add order (reverse)
+             return products.map(p => ({
+                ...p,
+                imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/400/300`,
+                // If createdAt exists, parse it:
+                // createdAt: p.createdAt ? new Date(p.createdAt) : new Date(0) // Fallback date
+            })).reverse(); // Reverse to get latest added first (simple approach)
+            // If using createdAt: .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        } catch (error) {
+            console.error("Error parsing stored products:", error);
+            localStorage.removeItem(ADMIN_PRODUCTS_STORAGE_KEY); // Clear corrupted data
+        }
+    }
+    return []; // Return empty if no data or error
+};
 
-// Simulate fetching the 6 "most purchased" products
-// In a real app, this would involve fetching data based on sales metrics
-// For now, we'll just take the first 6 if available, or fewer.
-const featuredProducts = allProducts.slice(0, 6);
-
-
-// Partner logos are now fetched from settings
 
 export default function Home() {
   const { t } = useTranslation(); // Use the translation hook
   const { carouselImages, partnerLogos, isLoading: settingsLoading } = useSettings(); // Get images from settings
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+
+  // Fetch products on mount
+  useEffect(() => {
+     setIsLoadingProducts(true);
+     const products = fetchAllProductsFromStorage();
+     setAllProducts(products);
+     setIsLoadingProducts(false);
+  }, []);
+
+
+  // Get the last 6 added products
+  const featuredProducts = allProducts.slice(0, 6);
 
   // Function to generate the link for a product
   const getProductLink = (product: Product): string => {
@@ -46,8 +81,53 @@ export default function Home() {
   };
 
   // Handle loading state for settings if needed
-  if (settingsLoading) {
-      return <div>{t('loading')}</div>; // Or a skeleton loader
+  if (settingsLoading || isLoadingProducts) { // Check both loading states
+      // Render skeleton loaders
+      return (
+          <div className="space-y-10 md:space-y-16">
+               {/* Hero Skeleton */}
+              <Skeleton className="w-full aspect-[12/5] bg-muted" />
+
+               {/* Featured Products Skeleton */}
+               <section className="container mx-auto px-4">
+                  <Skeleton className="h-8 w-1/3 mx-auto mb-6 bg-muted" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                       {[...Array(6)].map((_, i) => (
+                           <div key={i} className="flex flex-col space-y-3 border border-border rounded-lg overflow-hidden shadow-sm bg-card">
+                               <Skeleton className="h-[200px] w-full bg-muted" />
+                               <div className="space-y-3 p-4">
+                                   <Skeleton className="h-5 w-3/4 bg-muted" />
+                                   <Skeleton className="h-4 w-full bg-muted" />
+                                   <Skeleton className="h-4 w-1/2 bg-muted" />
+                                   <div className="flex justify-between items-center pt-3">
+                                       <Skeleton className="h-6 w-1/4 bg-muted" />
+                                       <Skeleton className="h-10 w-1/3 rounded-md bg-muted" />
+                                   </div>
+                               </div>
+                           </div>
+                       ))}
+                  </div>
+                  <div className="text-center mt-6 md:mt-8">
+                     <Skeleton className="h-11 w-48 mx-auto rounded-md bg-muted" />
+                 </div>
+              </section>
+
+              {/* CTA Skeleton */}
+              <section className="container mx-auto px-4">
+                  <Skeleton className="h-40 w-full rounded-lg bg-muted" />
+              </section>
+
+               {/* Partner Logos Skeleton */}
+              <section className="container mx-auto px-4 py-6 md:py-8">
+                  <Skeleton className="h-6 w-1/4 mx-auto mb-4 bg-muted" />
+                   <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6">
+                       {[...Array(6)].map((_, i) => (
+                           <Skeleton key={i} className="h-16 w-32 sm:h-20 sm:w-40 rounded-md bg-muted"/>
+                       ))}
+                   </div>
+              </section>
+          </div>
+      );
   }
 
   return (
@@ -60,8 +140,8 @@ export default function Home() {
       {/* Featured Products Section */}
       <section className="container mx-auto px-4">
         {/* Updated title */}
-        <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-primary">{t('footer_popular_products')}</h2>
-        {/* Pass featuredProducts (now 6 items), viewMode, and the link generator function */}
+        <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-primary">{t('home_featured_products')}</h2>
+        {/* Pass featuredProducts (last 6 added), viewMode, and the link generator function */}
         <ProductList
             initialProducts={featuredProducts}
             viewMode="grid"
