@@ -57,95 +57,114 @@ const DEFAULT_SETTINGS: Settings = {
 
 const SETTINGS_STORAGE_KEY = 'sama_boutique_settings';
 
-// Memoized settings state outside the hook to share across components
-let memoizedSettings: Settings = DEFAULT_SETTINGS;
-let hasInitialized = false;
+// Global listeners Set to notify components of changes
 const listeners = new Set<(settings: Settings) => void>();
+let currentSettings: Settings | null = null; // Store current settings globally
+let isInitialized = false;
 
-// Function to update memoized settings and notify listeners
-const updateMemoizedSettings = (newSettings: Settings) => {
-  memoizedSettings = newSettings;
+// Function to update global settings and notify listeners
+const updateGlobalSettings = (newSettings: Settings) => {
+  currentSettings = newSettings;
   listeners.forEach(listener => listener(newSettings));
 };
 
-// Load initial settings from localStorage (client-side only)
-const loadInitialSettings = () => {
-    if (typeof window !== 'undefined' && !hasInitialized) {
-      const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
-      if (storedSettings) {
-        try {
-          memoizedSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(storedSettings) };
-        } catch (error) {
-          console.error('Failed to parse settings from localStorage on init:', error);
-          localStorage.removeItem(SETTINGS_STORAGE_KEY); // Clear corrupted data
-          memoizedSettings = DEFAULT_SETTINGS;
-        }
-      } else {
-         // If no settings stored, store the defaults
-         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
-         memoizedSettings = DEFAULT_SETTINGS;
-      }
-      hasInitialized = true;
-
-      // Listen for storage events after initialization
-       window.addEventListener('storage', (event: StorageEvent) => {
-           if (event.key === SETTINGS_STORAGE_KEY && event.newValue) {
-               try {
-                   const updatedSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(event.newValue) };
-                   updateMemoizedSettings(updatedSettings);
-               } catch (error) {
-                    console.error('Failed to parse settings from storage event:', error);
-               }
-           } else if (event.key === SETTINGS_STORAGE_KEY && !event.newValue) {
-                // Settings were cleared in another tab
-                updateMemoizedSettings(DEFAULT_SETTINGS);
-           }
-       });
-    }
-};
-
-loadInitialSettings(); // Load immediately on client
-
-
+// --- Hook Definition ---
 export const useSettings = (): Settings & { isLoading: boolean } => {
-  const [settings, setSettings] = useState<Settings>(memoizedSettings);
-  // isLoading is true only during the very initial render before useEffect runs
-  const [isLoading, setIsLoading] = useState(!hasInitialized);
+  // State for the component, initialized to null or default initially
+  const [settings, setSettings] = useState<Settings | null>(currentSettings);
+  // Loading is true until settings are loaded from localStorage
+  const [isLoading, setIsLoading] = useState(!isInitialized);
 
   useEffect(() => {
-    // Update state if initial load finished after component mount
-    if (hasInitialized && isLoading) {
-        setSettings(memoizedSettings);
-        setIsLoading(false);
-    }
+      // --- Initialization Logic (runs once per app load) ---
+      if (!isInitialized && typeof window !== 'undefined') {
+          let initialSettings = DEFAULT_SETTINGS;
+          const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
+          if (storedSettings) {
+              try {
+                  // Merge stored settings with defaults to ensure all keys exist
+                  initialSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(storedSettings) };
+              } catch (error) {
+                  console.error('Failed to parse settings from localStorage on init:', error);
+                  localStorage.removeItem(SETTINGS_STORAGE_KEY); // Clear corrupted data
+                  localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS)); // Save defaults back
+              }
+          } else {
+               // If no settings stored, store the defaults
+               localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
+          }
+          updateGlobalSettings(initialSettings); // Set the global state
+          isInitialized = true; // Mark as initialized
+          setIsLoading(false); // Stop loading state
+          setSettings(initialSettings); // Update local state for the hook instance
 
-    // Subscribe to changes
-    const listener = (updatedSettings: Settings) => {
-        setSettings(updatedSettings);
-         // Ensure loading is false after first update
-        if(isLoading) setIsLoading(false);
-    };
-    listeners.add(listener);
 
-    // Cleanup subscription
-    return () => {
-        listeners.delete(listener);
-    };
-  }, [isLoading]); // Rerun if isLoading state changes
+          // --- Storage Event Listener ---
+          const handleStorageChange = (event: StorageEvent) => {
+              if (event.key === SETTINGS_STORAGE_KEY) {
+                   let updatedSettings = DEFAULT_SETTINGS;
+                   if (event.newValue) {
+                       try {
+                           updatedSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(event.newValue) };
+                       } catch (error) {
+                           console.error('Failed to parse settings from storage event:', error);
+                           // Optionally reset to defaults if parsing fails
+                           // localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(DEFAULT_SETTINGS));
+                       }
+                   }
+                   updateGlobalSettings(updatedSettings); // Update global state
+              }
+          };
+          window.addEventListener('storage', handleStorageChange);
+           // Cleanup storage listener on unmount
+           return () => window.removeEventListener('storage', handleStorageChange);
+      }
+      // --- End of Initialization Logic ---
 
+
+      // --- Listener Subscription ---
+      const listener = (updatedSettings: Settings) => {
+          setSettings(updatedSettings); // Update local state when global state changes
+          if (isLoading) setIsLoading(false); // Ensure loading is false after first update
+      };
+      listeners.add(listener);
+
+      // If already initialized, set the current settings immediately
+      if (isInitialized && settings === null) {
+           setSettings(currentSettings);
+           setIsLoading(false);
+      }
+
+      // Cleanup listener on component unmount
+      return () => {
+          listeners.delete(listener);
+      };
+  }, [isLoading]); // Depend on isLoading to set initial state after initialization
+
+  // Return default settings while loading or if settings are null
   return {
-    ...settings,
+    ...(settings || DEFAULT_SETTINGS),
     isLoading,
   };
 };
 
-// Function to save settings
+// --- Function to Save Settings ---
 export const saveSettings = (newSettings: Partial<Settings>) => {
-     if (typeof window !== 'undefined') {
-         // Merge with current memoized settings to ensure defaults are kept
-         const updatedSettings = { ...memoizedSettings, ...newSettings };
+     if (typeof window !== 'undefined' && currentSettings) {
+         // Merge with current global settings
+         const updatedSettings = { ...currentSettings, ...newSettings };
          localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updatedSettings));
-         // Update the memoized state and notify listeners
-         updateMemoizedSettings(updatedSettings);
+         // Update the global state and notify listeners
+         updateGlobalSettings(updatedSettings);
+     } else if (typeof window !== 'undefined') {
+          // Handle case where currentSettings might be null initially
+           const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
+           let baseSettings = DEFAULT_SETTINGS;
+           if (storedSettings) {
+               try { baseSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(storedSettings) }; } catch {}
+           }
+           const updatedSettings = { ...baseSettings, ...newSettings };
+           localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updatedSettings));
+           updateGlobalSettings(updatedSettings); // Initialize global state if not already set
      }
 };

@@ -63,32 +63,37 @@ export default function AdminSettingsPage() {
 
   // Initialize form when settings load
   useEffect(() => {
-      if (!settingsLoading) {
+      if (!settingsLoading && currentSettings) {
           const settingsToApply = {
-                storeName: currentSettings.storeName,
-                supportEmail: currentSettings.supportEmail,
-                enableMaintenance: currentSettings.enableMaintenance,
-                storeDescription: currentSettings.storeDescription,
-                primaryColor: currentSettings.primaryColor,
-                logoUrl: currentSettings.logoUrl || '',
-                faviconUrl: currentSettings.faviconUrl || '',
+                storeName: currentSettings.storeName || DEFAULT_SETTINGS.storeName,
+                supportEmail: currentSettings.supportEmail || DEFAULT_SETTINGS.supportEmail,
+                enableMaintenance: currentSettings.enableMaintenance || DEFAULT_SETTINGS.enableMaintenance,
+                storeDescription: currentSettings.storeDescription || DEFAULT_SETTINGS.storeDescription,
+                primaryColor: currentSettings.primaryColor || DEFAULT_SETTINGS.primaryColor,
+                logoUrl: currentSettings.logoUrl || DEFAULT_SETTINGS.logoUrl,
+                faviconUrl: currentSettings.faviconUrl || DEFAULT_SETTINGS.faviconUrl,
             };
            form.reset(settingsToApply);
+           setLogoPreviewUrl(settingsToApply.logoUrl || undefined);
+           setFaviconPreviewUrl(settingsToApply.faviconUrl || undefined);
       }
-  }, [settingsLoading, currentSettings, form.reset]); // Use form.reset instead of form
+  }, [settingsLoading, currentSettings, form]); // form should be stable, but added form.reset dependency was causing issues
 
   // Preview states
    const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | undefined>(undefined);
    const [faviconPreviewUrl, setFaviconPreviewUrl] = useState<string | undefined>(undefined);
 
-   // Update previews based on form values
+   // Update previews based on form values - Use useEffect with watched values
+   const watchedLogoUrl = form.watch('logoUrl');
+   const watchedFaviconUrl = form.watch('faviconUrl');
+
    useEffect(() => {
-     const subscription = form.watch((value, { name }) => {
-       if (name === 'logoUrl') setLogoPreviewUrl(value.logoUrl || undefined);
-       if (name === 'faviconUrl') setFaviconPreviewUrl(value.faviconUrl || undefined);
-     });
-     return () => subscription.unsubscribe();
-   }, [form]);
+       setLogoPreviewUrl(watchedLogoUrl || undefined);
+   }, [watchedLogoUrl]);
+
+    useEffect(() => {
+       setFaviconPreviewUrl(watchedFaviconUrl || undefined);
+    }, [watchedFaviconUrl]);
 
 
   const handleSaveCoreSettings = useCallback(async () => {
@@ -106,7 +111,9 @@ export default function AdminSettingsPage() {
         // Only save core settings here
         const coreSettingsToSave: Partial<Settings> = {
             ...coreValues,
-            // Exclude image lists from this save operation
+            // Ensure we don't accidentally overwrite image lists if they were somehow included
+            carouselImages: undefined,
+            partnerLogos: undefined,
         };
 
         saveSettings(coreSettingsToSave);
@@ -127,7 +134,7 @@ export default function AdminSettingsPage() {
     } finally {
         setIsSubmitting(false);
     }
-  }, [form, t, toast]); // Keep form as dependency for trigger and getValues
+  }, [form, t, toast]);
 
 
    // Show loading skeleton if settings are loading
@@ -169,7 +176,8 @@ export default function AdminSettingsPage() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form id="core-settings-form" className="space-y-8"> {/* No onSubmit here */}
+            {/* Use a separate onSubmit handler for the form */}
+            <form onSubmit={form.handleSubmit(handleSaveCoreSettings)} id="core-settings-form" className="space-y-8">
               {/* Store Name */}
               <FormField control={form.control} name="storeName" render={({ field }) => ( <FormItem> <FormLabel>{t('admin_settings_form_store_name')}</FormLabel> <FormControl><Input {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
               {/* Support Email */}
@@ -223,7 +231,7 @@ export default function AdminSettingsPage() {
                       <FormLabel>{t('admin_settings_form_primary_color')}</FormLabel>
                       <div className="flex items-center gap-2">
                           <FormControl><Input type="text" placeholder="hsl(154, 50%, 50%)" {...field} /></FormControl>
-                          <div className="w-8 h-8 rounded border" style={{ backgroundColor: field.value }}></div>
+                          <div className="w-8 h-8 rounded border" style={{ backgroundColor: field.value || 'transparent' }}></div>
                       </div>
                       <FormDescription>{t('admin_settings_form_primary_color_desc')}</FormDescription>
                       <FormMessage />
@@ -248,24 +256,39 @@ export default function AdminSettingsPage() {
                   </FormItem>
               )}/>
 
+              {/* Global Save Button - Now part of the form */}
+              <div className="flex justify-end">
+                 <Button
+                     type="submit" // Submit the form
+                     variant="destructive"
+                     disabled={isSubmitting || settingsLoading}
+                     className="min-w-[200px]"
+                 >
+                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                     {isSubmitting ? t('admin_settings_form_saving_button') : t('admin_settings_form_save_button')}
+                 </Button>
+              </div>
+
             </form>
           </Form>
         </CardContent>
       </Card>
 
-
-      {/* Global Save Button */}
-      <div className="flex justify-end max-w-3xl">
-         <Button
-             onClick={handleSaveCoreSettings} // Changed to save only core settings
-             variant="destructive"
-             disabled={isSubmitting || settingsLoading}
-             className="min-w-[200px]"
-         >
-             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-             {isSubmitting ? t('admin_settings_form_saving_button') : t('admin_settings_form_save_button')}
-         </Button>
-      </div>
+      {/* Save Button removed from here - It's now inside the form */}
+      {/* <div className="flex justify-end max-w-3xl"> ... </div> */}
     </div>
   );
 }
+
+// Added DEFAULT_SETTINGS definition used in useEffect
+const DEFAULT_SETTINGS: Settings = {
+  storeName: 'SamaBoutique',
+  supportEmail: 'support@samaboutique.com',
+  enableMaintenance: false,
+  storeDescription: 'Votre partenaire de confiance pour des produits et services de qualité.',
+  primaryColor: 'hsl(154, 50%, 50%)',
+  logoUrl: '',
+  faviconUrl: '',
+  carouselImages: [], // Defaults should be handled by useSettings hook itself now
+  partnerLogos: [],
+};
