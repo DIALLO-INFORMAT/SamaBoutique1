@@ -19,36 +19,16 @@ export interface Product {
   description: string;
   price: number;
   category: string;
-  // brand: string; // Removed brand
   imageUrl?: string; // Add optional imageUrl
 }
 
-const allProducts: Product[] = [
-  { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/1/400/300` },
-  { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", imageUrl: `https://picsum.photos/seed/2/400/300` },
-  { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", imageUrl: `https://picsum.photos/seed/3/400/300` },
-  { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", imageUrl: `https://picsum.photos/seed/4/400/300` },
-  { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/5/400/300` },
-  { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", imageUrl: `https://picsum.photos/seed/6/400/300` },
-  { id: '7', name: "Chemise Élégante", description: "Chemise pour occasions spéciales.", price: 35000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/7/400/300` },
-  { id: '8', name: "Maintenance Site Web", description: "Pack maintenance mensuel.", price: 50000, category: "Services", imageUrl: `https://picsum.photos/seed/8/400/300` },
-  { id: '9', name: "Autocollants Logo", description: "Lot de 50 autocollants.", price: 5000, category: "Accessoires", imageUrl: `https://picsum.photos/seed/9/400/300` },
-  { id: '10', name: "Pantalon Cargo", description: "Pantalon pratique et résistant.", price: 30000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/10/400/300` },
-  { id: '11', name: "Rédaction Contenu Web", description: "Service de rédaction SEO (500 mots).", price: 25000, category: "Services", imageUrl: `https://picsum.photos/seed/11/400/300` },
-  { id: '12', name: "Porte-clés Design", description: "Porte-clés en métal.", price: 3000, category: "Accessoires", imageUrl: `https://picsum.photos/seed/12/400/300` },
-];
+const allProducts: Product[] = []; // Empty array - products managed via admin
 
 
 // Simulate fetching the 6 "most purchased" products
 // In a real app, this would involve fetching data based on sales metrics
-const featuredProducts = [
-    allProducts[4], // Sweat
-    allProducts[0], // T-Shirt
-    allProducts[6], // Chemise
-    allProducts[2], // Casquette
-    allProducts[9], // Pantalon
-    allProducts[7]  // Maintenance
-];
+// For now, we'll just take the first 6 if available, or fewer.
+const featuredProducts = allProducts.slice(0, 6);
 
 
 // Partner logos are now fetched from settings

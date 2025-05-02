@@ -32,7 +32,6 @@ export interface ManagerProduct {
   description: string;
   price: number; // Assuming price is correct unit for XOF
   category: string;
-  // brand: string; // Removed brand
   imageUrl?: string; // Added imageUrl
 }
 
@@ -44,12 +43,7 @@ const fetchManagerProductsFromAPI = async (): Promise<ManagerProduct[]> => {
    // In a real app, this might fetch products the manager specifically has rights to edit,
    // or it might be the same endpoint as admin depending on backend logic.
    const storedProducts = localStorage.getItem(storageKey); // Use a separate key or same as admin
-   const demoProducts: ManagerProduct[] = [
-        // Example data if none exists (ensure prices are in XOF)
-      { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/1/64/64` },
-      { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", imageUrl: `https://picsum.photos/seed/3/64/64` },
-      { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/5/64/64` },
-   ];
+   const demoProducts: ManagerProduct[] = []; // Empty array - start fresh
     // Return stored products if they exist, otherwise return demo products
     const products = storedProducts ? JSON.parse(storedProducts) : demoProducts;
     // Ensure imageUrl exists for all products
@@ -93,16 +87,7 @@ export default function ManagerProductsPage() {
             setIsLoading(true);
             try {
                 let fetchedProducts = await fetchManagerProductsFromAPI();
-                // Simulate adding products if localStorage is empty for demo
-                if (fetchedProducts.length === 0 && !localStorage.getItem(storageKey)) {
-                     const demoProducts = [
-                          { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/1/64/64` },
-                          { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", imageUrl: `https://picsum.photos/seed/3/64/64` },
-                          { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/5/64/64` },
-                    ];
-                    localStorage.setItem(storageKey, JSON.stringify(demoProducts));
-                    fetchedProducts = demoProducts; // Use demo products if storage was empty
-                }
+                // Simulate adding products if localStorage is empty for demo - REMOVED
                  setProducts(fetchedProducts.map((p: any) => ({...p, imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/64/64`})));
 
             } catch (error) {
@@ -175,7 +160,6 @@ export default function ManagerProductsPage() {
                   <TableHead className="hidden w-[80px] sm:table-cell px-6">Image</TableHead>
                   <TableHead className="px-6">Nom</TableHead>
                   <TableHead className="px-6">Catégorie</TableHead>
-                   {/* <TableHead className="hidden md:table-cell px-6">Marque</TableHead> Removed Brand Header */}
                   <TableHead className="text-right px-6">Prix</TableHead>
                   <TableHead className="text-right px-6 w-[100px]">Actions</TableHead>
                 </TableRow>
@@ -195,7 +179,6 @@ export default function ManagerProductsPage() {
                     </TableCell>
                     <TableCell className="font-medium px-6 py-3">{product.name}</TableCell>
                     <TableCell className="px-6 py-3">{product.category}</TableCell>
-                     {/* <TableCell className="hidden md:table-cell px-6 py-3">{product.brand}</TableCell> Removed Brand Cell */}
                     <TableCell className="text-right px-6 py-3">{product.price.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
                     <TableCell className="text-right px-6 py-3">
                       <AlertDialog>
@@ -215,18 +198,17 @@ export default function ManagerProductsPage() {
                                         </Link>
                                    </DropdownMenuItem>
                                    {/* Manager might not have delete permission, or only for products they added */}
-                                    {/* NOTE: Delete functionality is currently commented out for Managers */}
-                                   {/* <DropdownMenuSeparator />
+                                    <DropdownMenuSeparator />
                                    <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                                      <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                                          <Trash2 className="mr-2 h-4 w-4"/>Supprimer
                                       </Button>
-                                   </AlertDialogTrigger> */}
+                                   </AlertDialogTrigger>
                                </DropdownMenuContent>
                            </DropdownMenu>
 
                            {/* Delete Confirmation (If managers can delete) */}
-                            {/* <AlertDialogContent>
+                            <AlertDialogContent>
                                 <AlertDialogHeader>
                                       <AlertDialogTitle>Supprimer "{product.name}"?</AlertDialogTitle>
                                       <AlertDialogDescription>Action irréversible.</AlertDialogDescription>
@@ -237,7 +219,7 @@ export default function ManagerProductsPage() {
                                         {isDeleting === product.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Supprimer
                                      </AlertDialogAction>
                                  </AlertDialogFooter>
-                           </AlertDialogContent> */}
+                           </AlertDialogContent>
                        </AlertDialog>
                     </TableCell>
                   </TableRow>

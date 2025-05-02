@@ -44,7 +44,6 @@ export interface AdminProduct {
   description: string;
   price: number;
   category: string; // Now references Category.id or name
-  // brand: string; // Removed brand
   imageUrl?: string; // Optional image URL
   tags?: string[]; // Array of Tag IDs or names
 }

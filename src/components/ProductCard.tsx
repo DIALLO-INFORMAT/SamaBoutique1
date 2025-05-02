@@ -10,7 +10,6 @@ export interface Product {
   description: string;
   price: number;
   category: string;
-  // brand: string; // Removed brand
   imageUrl?: string; // Make imageUrl optional
 }
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -90,20 +89,12 @@ export function ProductCard({ product, viewMode, href }: ProductCardProps) {
             "p-4 flex-grow space-y-2",
              viewMode === 'list' && "p-0" // Remove padding if already applied
         )}>
-             {/* Show brand/category differently in list view */}
+             {/* Show category differently in list view */}
              {viewMode === 'list' && (
                  <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground mb-1">
-                     {/* Removed brand display */}
-                     {/* <span className="flex items-center gap-1"><Building className="h-3 w-3" /> {product.brand}</span> */}
                      <span className="flex items-center gap-1"><Tag className="h-3 w-3"/> {product.category}</span>
                  </div>
              )}
-             {/* Removed Brand display from grid view */}
-             {/* {viewMode === 'grid' && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                     <Building className="h-3 w-3" /> {product.brand}
-                  </p>
-             )} */}
 
             <CardTitle className={cn(
                  "leading-snug",

@@ -19,26 +19,12 @@ export interface Product {
   description: string;
   price: number; // Should be in XOF already
   category: string;
-  // brand: string; // Removed brand
   imageUrl?: string; // Add optional imageUrl
 }
 
 const fetchAllProducts = async (): Promise<Product[]> => {
     await new Promise(resolve => setTimeout(resolve, 500)); // Simulate slightly longer load
-     const allProductsData: Product[] = [
-        { id: '1', name: "T-Shirt Classique", description: "Un t-shirt confortable en coton.", price: 10000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/1/400/300` },
-        { id: '2', name: "Service de Conception Web", description: "Création de site web sur mesure.", price: 300000, category: "Services", imageUrl: `https://picsum.photos/seed/2/400/300` },
-        { id: '3', name: "Casquette Logo", description: "Casquette brodée avec logo.", price: 15000, category: "Accessoires", imageUrl: `https://picsum.photos/seed/3/400/300` },
-        { id: '4', name: "Consultation Marketing", description: "1 heure de consultation stratégique.", price: 75000, category: "Services", imageUrl: `https://picsum.photos/seed/4/400/300` },
-        { id: '5', name: "Sweat à Capuche", description: "Sweat chaud et stylé.", price: 25000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/5/400/300` },
-        { id: '6', name: "Mug Personnalisé", description: "Mug avec votre design.", price: 8000, category: "Accessoires", imageUrl: `https://picsum.photos/seed/6/400/300` },
-        { id: '7', name: "Chemise Élégante", description: "Chemise pour occasions spéciales.", price: 35000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/7/400/300` },
-        { id: '8', name: "Maintenance Site Web", description: "Pack maintenance mensuel.", price: 50000, category: "Services", imageUrl: `https://picsum.photos/seed/8/400/300` },
-        { id: '9', name: "Autocollants Logo", description: "Lot de 50 autocollants.", price: 5000, category: "Accessoires", imageUrl: `https://picsum.photos/seed/9/400/300` },
-        { id: '10', name: "Pantalon Cargo", description: "Pantalon pratique et résistant.", price: 30000, category: "Vêtements", imageUrl: `https://picsum.photos/seed/10/400/300` },
-        { id: '11', name: "Rédaction Contenu Web", description: "Service de rédaction SEO (500 mots).", price: 25000, category: "Services", imageUrl: `https://picsum.photos/seed/11/400/300` },
-        { id: '12', name: "Porte-clés Design", description: "Porte-clés en métal.", price: 3000, category: "Accessoires", imageUrl: `https://picsum.photos/seed/12/400/300` },
-     ];
+     const allProductsData: Product[] = []; // Empty array to start fresh
      // Ensure products in localStorage also have imageUrl (for consistency)
      if (typeof window !== 'undefined') {
         const storedProducts = localStorage.getItem('admin_products'); // Or relevant key
@@ -51,9 +37,11 @@ const fetchAllProducts = async (): Promise<Product[]> => {
                  }));
             } catch (error) {
                 console.error("Error parsing stored products:", error);
+                 localStorage.removeItem('admin_products'); // Clear corrupted data if parsing fails
+                 return []; // Return empty if error
             }
         } else {
-             localStorage.setItem('admin_products', JSON.stringify(allProductsData)); // Store initial if empty
+             localStorage.setItem('admin_products', JSON.stringify(allProductsData)); // Store empty array initially
         }
      }
 
@@ -78,7 +66,6 @@ export default function BoutiquePage() {
     }, []);
 
     const categories = useMemo(() => [...new Set(allProducts.map(p => p.category))], [allProducts]);
-    // const brands = useMemo(() => [...new Set(allProducts.map(p => p.brand))], [allProducts]); // Removed brands memo
 
     if (isLoading) {
         return (
@@ -96,7 +83,7 @@ export default function BoutiquePage() {
         <div className="flex flex-col md:flex-row gap-6 md:gap-8">
             {/* Sidebar for Filters */}
             <aside className="hidden md:block md:w-1/4 lg:w-1/5 sticky top-24 self-start">
-                <BoutiqueSidebar categories={categories} /> {/* Removed brands prop */}
+                <BoutiqueSidebar categories={categories} />
             </aside>
 
             {/* Product Listing Area */}
@@ -117,7 +104,7 @@ export default function BoutiquePage() {
                                 </SheetTitle>
                             </SheetHeader>
                             <div className="p-4">
-                               <BoutiqueSidebar categories={categories} /> {/* Removed brands prop */}
+                               <BoutiqueSidebar categories={categories} />
                             </div>
                         </SheetContent>
                     </Sheet>
@@ -168,5 +155,4 @@ export { useMemo } from 'react';
 
 // Keep dynamic rendering if relying on searchParams client-side
 export const dynamic = 'force-dynamic';
-
 

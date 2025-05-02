@@ -41,7 +41,6 @@ const createProductSchema = (t: Function) => z.object({
   description: z.string().min(10, { message: t('admin_add_product_form_description') + " " + t('validation_min_chars', { count: 10 }) }).max(500, { message: t('admin_add_product_form_description') + " " + t('validation_max_chars', { count: 500 }) }),
   price: z.coerce.number().positive({ message: t('admin_add_product_form_price') + " " + t('validation_positive_number') }),
   category: z.string().min(1, { message: t('validation_required_field', { field: t('admin_add_product_form_category') }) }), // Keep as string ID/name
-  // brand: z.string().min(2, { message: t('admin_add_product_form_brand') + " " + t('validation_min_chars', { count: 2 }) }), // Removed brand
   tags: z.array(z.string()).optional(), // Array of tag IDs/names
   imageUrl: z.string().url({ message: t('admin_add_product_form_image_url_invalid') }).or(z.literal('')).optional(),
   imageFile: z.instanceof(File).optional().nullable(),
@@ -107,9 +106,7 @@ const updateProductAPI = async (productId: string, values: z.infer<ReturnType<ty
                 price: Number(productDataToSave.price),
                 imageUrl: finalImageUrl,
                 tags: values.tags || [], // Ensure tags array exists
-                // brand removed from saved object if it exists in the original
             };
-             delete (products[productIndex] as any).brand; // Ensure brand is fully removed
             localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(products));
         }
     }
@@ -131,6 +128,7 @@ export default function EditProductPage() {
   const [imageSourceType, setImageSourceType] = useState<'url' | 'file'>('url');
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [isLoadingTaxonomies, setIsLoadingTaxonomies] = useState(true);
 
   const form = useForm<z.infer<ReturnType<typeof createProductSchema>>>({
     resolver: zodResolver(productSchema),
@@ -156,6 +154,7 @@ export default function EditProductPage() {
   useEffect(() => {
     if (!productId) return;
     setIsLoading(true);
+    setIsLoadingTaxonomies(true);
     const loadData = async () => {
       try {
         const [foundProduct, fetchedCategories, fetchedTags] = await Promise.all([
@@ -166,13 +165,13 @@ export default function EditProductPage() {
 
         setCategories(fetchedCategories);
         setTags(fetchedTags);
+        setIsLoadingTaxonomies(false);
 
         if (foundProduct) {
           setProduct(foundProduct);
           form.reset({
             name: foundProduct.name, description: foundProduct.description, price: foundProduct.price,
             category: foundProduct.category, // Use category name/ID directly
-            // brand: foundProduct.brand, // Removed brand
             tags: foundProduct.tags || [], // Initialize tags
             imageUrl: foundProduct.imageUrl || '', imageFile: null,
           });
@@ -186,6 +185,7 @@ export default function EditProductPage() {
          console.error("Failed to fetch data:", error);
          toast({ title: t('general_error'), description: t('admin_products_toast_load_error_description'), variant: "destructive" });
          router.replace('/admin/products');
+         setIsLoadingTaxonomies(false);
       } finally { setIsLoading(false); }
     };
     loadData();
@@ -233,7 +233,7 @@ export default function EditProductPage() {
    const tagOptions = tags.map(tag => ({ value: tag.name, label: tag.name })); // Using name as value
 
 
-  if (isLoading) {
+  if (isLoading || isLoadingTaxonomies) {
     return (
          <div className="space-y-8">
               <div className="flex items-center gap-4 mb-6">
@@ -278,10 +278,10 @@ export default function EditProductPage() {
                      <FormField control={form.control} name="category" render={({ field }) => (
                          <FormItem>
                              <FormLabel>{t('admin_add_product_form_category')}</FormLabel>
-                             <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                             <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingTaxonomies}>
                                  <FormControl>
                                     <SelectTrigger>
-                                         <SelectValue placeholder={t('admin_add_product_form_category_select')} />
+                                         <SelectValue placeholder={isLoadingTaxonomies ? t('loading') : t('admin_add_product_form_category_select')} />
                                      </SelectTrigger>
                                  </FormControl>
                                  <SelectContent>
@@ -293,7 +293,6 @@ export default function EditProductPage() {
                              <FormMessage />
                          </FormItem>
                      )}/>
-                     {/* Brand Input Removed */}
                      {/* Tags MultiSelect - spans full width */}
                      <FormField control={form.control} name="tags" render={({ field }) => (
                          <FormItem className="md:col-span-2"> {/* Make tags span 2 cols */}
@@ -303,8 +302,10 @@ export default function EditProductPage() {
                                      options={tagOptions}
                                      selected={field.value || []}
                                      onChange={field.onChange}
-                                     placeholder={t('admin_add_product_form_tags_select')}
+                                     placeholder={isLoadingTaxonomies ? t('loading') : t('admin_add_product_form_tags_select')}
                                      className="w-full"
+                                     triggerClassName="min-h-10 h-auto"
+                                     disabled={isLoadingTaxonomies}
                                  />
                              </FormControl>
                              <FormMessage />
@@ -335,7 +336,7 @@ export default function EditProductPage() {
 
 
               <div className="flex justify-end pt-4">
-                  <Button type="submit" className="w-full md:w-auto min-w-[200px]" variant="destructive" disabled={isSubmitting} >
+                  <Button type="submit" className="w-full md:w-auto min-w-[200px]" variant="destructive" disabled={isSubmitting || isLoadingTaxonomies} >
                      {isSubmitting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('admin_edit_product_submitting_button')}</>) : ( t('admin_edit_product_submit_button') )}
                   </Button>
               </div>

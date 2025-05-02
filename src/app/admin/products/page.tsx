@@ -33,7 +33,6 @@ export interface AdminProduct {
   description: string;
   price: number; // Assuming price is in the smallest unit or correctly formatted number for XOF
   category: string;
-  // brand: string; // Removed brand
   imageUrl?: string; // Optional image URL
   // Add other fields like stock, etc. if needed
 }
@@ -63,9 +62,7 @@ const fetchProductsFromAPI = async (): Promise<AdminProduct[]> => {
        }
    }
    // Fallback mock data if localStorage is empty or SSR
-   const mockProducts: AdminProduct[] = [
-      // Fallback data is removed as localStorage should be populated by adding products
-   ];
+   const mockProducts: AdminProduct[] = []; // Empty array - products should be added via admin
    // Initialize localStorage if empty
    if (typeof window !== 'undefined' && !localStorage.getItem(ADMIN_PRODUCTS_STORAGE_KEY)) {
        localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(mockProducts));
@@ -185,8 +182,6 @@ export default function AdminProductsPage() {
                   <TableHead className="hidden w-[80px] sm:table-cell px-6">{t('admin_products_table_image')}</TableHead>
                   <TableHead className="px-6">{t('admin_products_table_name')}</TableHead>
                   <TableHead className="px-6">{t('admin_products_table_category')}</TableHead>
-                  {/* <TableHead className="hidden md:table-cell px-6">{t('admin_products_table_brand')}</TableHead> Removed Brand Header */}
-                  {/* <TableHead className="hidden lg:table-cell px-6">Description</TableHead> */}
                   <TableHead className="text-right px-6">{t('admin_products_table_price')}</TableHead>
                   <TableHead className="text-right px-6 w-[100px]">{t('admin_products_table_actions')}</TableHead>
                 </TableRow>
@@ -206,8 +201,6 @@ export default function AdminProductsPage() {
                     </TableCell>
                     <TableCell className="font-medium px-6 py-3">{product.name}</TableCell>
                     <TableCell className="px-6 py-3">{product.category}</TableCell>
-                    {/* <TableCell className="hidden md:table-cell px-6 py-3">{product.brand}</TableCell> Removed Brand Cell */}
-                    {/* <TableCell className="hidden lg:table-cell max-w-xs truncate px-6 py-3">{product.description}</TableCell> */}
                     <TableCell className="text-right px-6 py-3">{product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
                     <TableCell className="text-right px-6 py-3">
                       <AlertDialog>
@@ -268,5 +261,4 @@ export default function AdminProductsPage() {
     </div>
   );
 }
-
 

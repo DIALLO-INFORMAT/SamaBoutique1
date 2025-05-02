@@ -8,7 +8,6 @@ export interface Product {
   description: string;
   price: number;
   category: string;
-  // brand: string; // Removed brand
   imageUrl?: string; // Make imageUrl optional
 }
 
