@@ -132,39 +132,7 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
             </main>
             <WelcomePopup />
             {/* Add CookieConsent component here if created */}
-            {/* <CookieConsent /> */}
             <Footer />
         </>
     );
 }
-
-// TODO: Create CookieConsent component
-// This component should use a state to track if consent has been given (e.g., stored in localStorage)
-// If consent not given, display a banner/dialog with accept/decline buttons.
-// On accept, set the localStorage flag.
-// This component would be conditionally rendered in ClientLayoutContent.
-// Example placeholder:
-// const CookieConsent = () => {
-//     const [showConsent, setShowConsent] = useState(false);
-//     useEffect(() => {
-//         if (!localStorage.getItem('cookie_consent')) {
-//             setShowConsent(true);
-//         }
-//     }, []);
-//
-//     const handleAccept = () => {
-//         localStorage.setItem('cookie_consent', 'true');
-//         setShowConsent(false);
-//     }
-//
-//     if (!showConsent) return null;
-//
-//     return (
-//         <div className="fixed bottom-0 left-0 right-0 bg-secondary p-4 border-t shadow-lg z-50">
-//             <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-//                 <p className="text-sm text-secondary-foreground">Ce site utilise des cookies pour améliorer votre expérience.</p>
-//                 <Button onClick={handleAccept} variant="destructive" size="sm">Accepter</Button>
-//             </div>
-//         </div>
-//     );
-// }
