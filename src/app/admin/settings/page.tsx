@@ -23,7 +23,7 @@ import {Textarea} from '@/components/ui/textarea';
 import {useEffect, useState, useCallback} from 'react'; // Import useCallback
 import Image from 'next/image';
 import {ImageIcon, Loader2, Trash2, PlusCircle} from 'lucide-react'; // Added Trash2, PlusCircle
-import { useSettings, saveSettings, CarouselImage, PartnerLogo } from '@/hooks/useSettings'; // Import settings hooks and types
+import { useSettings, saveSettings, CarouselImage, PartnerLogo, Settings } from '@/hooks/useSettings'; // Import settings hooks and types
 import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
 import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
 import { Label } from "@/components/ui/label"; // Import Label
@@ -171,9 +171,10 @@ function ImageManagementCard<T extends ImageItem>({
                      <Button size="sm" variant="outline" onClick={handleAddImage} disabled={!newImageUrl || !newImageAlt || !newImageHint} className="w-full sm:w-auto">
                          <PlusCircle className="mr-2 h-4 w-4" /> {t('admin_settings_add_image_button')}
                      </Button>
-                     <FormDescription className="text-xs">
+                      {/* Replaced FormDescription with a simple p tag */}
+                     <p className="text-xs text-muted-foreground">
                         {itemType === 'carousel' ? t('admin_settings_carousel_hint_desc') : t('admin_settings_partner_hint_desc')}
-                     </FormDescription>
+                     </p>
                 </div>
             </CardContent>
         </Card>
