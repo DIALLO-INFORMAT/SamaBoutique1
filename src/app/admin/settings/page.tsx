@@ -1,4 +1,3 @@
-// src/app/admin/settings/page.tsx
 'use client';
 
 import {zodResolver} from '@hookform/resolvers/zod';
@@ -23,7 +22,7 @@ import {Textarea} from '@/components/ui/textarea';
 import {useEffect, useState, useCallback} from 'react';
 import Image from 'next/image';
 import {Loader2 } from 'lucide-react';
-import { useSettings, saveSettings, Settings } from '@/hooks/useSettings';
+import { useSettings, saveSettings, Settings, DEFAULT_SETTINGS } from '@/hooks/useSettings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -55,13 +54,22 @@ export default function AdminSettingsPage() {
 
   const form = useForm<z.infer<typeof settingsSchema>>({
     resolver: zodResolver(settingsSchema),
-    defaultValues: {
-        storeName: '', supportEmail: '', enableMaintenance: false,
-        storeDescription: '', primaryColor: '', logoUrl: '', faviconUrl: '',
+    defaultValues: { // Use default values initially
+        storeName: currentSettings.storeName || DEFAULT_SETTINGS.storeName,
+        supportEmail: currentSettings.supportEmail || DEFAULT_SETTINGS.supportEmail,
+        enableMaintenance: currentSettings.enableMaintenance || DEFAULT_SETTINGS.enableMaintenance,
+        storeDescription: currentSettings.storeDescription || DEFAULT_SETTINGS.storeDescription,
+        primaryColor: currentSettings.primaryColor || DEFAULT_SETTINGS.primaryColor,
+        logoUrl: currentSettings.logoUrl || DEFAULT_SETTINGS.logoUrl,
+        faviconUrl: currentSettings.faviconUrl || DEFAULT_SETTINGS.faviconUrl,
     },
   });
 
-  // Initialize form when settings load
+  // Preview states
+   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | undefined>(undefined);
+   const [faviconPreviewUrl, setFaviconPreviewUrl] = useState<string | undefined>(undefined);
+
+  // Initialize form when settings load and aren't loading anymore
   useEffect(() => {
       if (!settingsLoading && currentSettings) {
           const settingsToApply = {
@@ -73,15 +81,12 @@ export default function AdminSettingsPage() {
                 logoUrl: currentSettings.logoUrl || DEFAULT_SETTINGS.logoUrl,
                 faviconUrl: currentSettings.faviconUrl || DEFAULT_SETTINGS.faviconUrl,
             };
-           form.reset(settingsToApply);
+           form.reset(settingsToApply); // Use reset to update form state
            setLogoPreviewUrl(settingsToApply.logoUrl || undefined);
            setFaviconPreviewUrl(settingsToApply.faviconUrl || undefined);
       }
-  }, [settingsLoading, currentSettings, form]); // form should be stable, but added form.reset dependency was causing issues
+  }, [settingsLoading, currentSettings, form.reset]); // Depend on settingsLoading, currentSettings, and form.reset
 
-  // Preview states
-   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | undefined>(undefined);
-   const [faviconPreviewUrl, setFaviconPreviewUrl] = useState<string | undefined>(undefined);
 
    // Update previews based on form values - Use useEffect with watched values
    const watchedLogoUrl = form.watch('logoUrl');
@@ -96,21 +101,21 @@ export default function AdminSettingsPage() {
     }, [watchedFaviconUrl]);
 
 
-  const handleSaveCoreSettings = useCallback(async () => {
+  const handleSaveCoreSettings = useCallback(async (values: z.infer<typeof settingsSchema>) => {
     setIsSubmitting(true);
-    // Validate core settings form
-    const coreValuesValid = await form.trigger();
-    if (!coreValuesValid) {
-        toast({ title: t('general_error'), description: t('admin_settings_validation_error'), variant: 'destructive' });
-        setIsSubmitting(false);
-        return;
-    }
-    const coreValues = form.getValues();
+    // Validation is already done by react-hook-form on submit
+    // const coreValuesValid = await form.trigger();
+    // if (!coreValuesValid) {
+    //     toast({ title: t('general_error'), description: t('admin_settings_validation_error'), variant: 'destructive' });
+    //     setIsSubmitting(false);
+    //     return;
+    // }
+    // const coreValues = form.getValues(); // Values are passed directly to the handler
 
     try {
         // Only save core settings here
         const coreSettingsToSave: Partial<Settings> = {
-            ...coreValues,
+            ...values, // Use the validated values passed to the function
             // Ensure we don't accidentally overwrite image lists if they were somehow included
             carouselImages: undefined,
             partnerLogos: undefined,
@@ -134,7 +139,7 @@ export default function AdminSettingsPage() {
     } finally {
         setIsSubmitting(false);
     }
-  }, [form, t, toast]);
+  }, [t, toast]);
 
 
    // Show loading skeleton if settings are loading
@@ -241,20 +246,25 @@ export default function AdminSettingsPage() {
               <Separator />
 
               {/* Maintenance Mode */}
-              <FormField control={form.control} name="enableMaintenance" render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+               <FormField
+                  control={form.control}
+                  name="enableMaintenance"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                       <div className="space-y-0.5">
-                          <FormLabel className="text-base">{t('admin_settings_form_maintenance_mode')}</FormLabel>
-                          <FormDescription>{t('admin_settings_form_maintenance_mode_desc')}</FormDescription>
+                        <FormLabel className="text-base">{t('admin_settings_form_maintenance_mode')}</FormLabel>
+                        <FormDescription>{t('admin_settings_form_maintenance_mode_desc')}</FormDescription>
                       </div>
                       <FormControl>
-                         <Switch
-                             checked={field.value}
-                             onCheckedChange={field.onChange}
-                         />
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          aria-label={t('admin_settings_form_maintenance_mode')}
+                        />
                       </FormControl>
-                  </FormItem>
-              )}/>
+                    </FormItem>
+                  )}
+               />
 
               {/* Global Save Button - Now part of the form */}
               <div className="flex justify-end">
@@ -274,21 +284,6 @@ export default function AdminSettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Save Button removed from here - It's now inside the form */}
-      {/* <div className="flex justify-end max-w-3xl"> ... </div> */}
     </div>
   );
 }
-
-// Added DEFAULT_SETTINGS definition used in useEffect
-const DEFAULT_SETTINGS: Settings = {
-  storeName: 'SamaBoutique',
-  supportEmail: 'support@samaboutique.com',
-  enableMaintenance: false,
-  storeDescription: 'Votre partenaire de confiance pour des produits et services de qualité.',
-  primaryColor: 'hsl(154, 50%, 50%)',
-  logoUrl: '',
-  faviconUrl: '',
-  carouselImages: [], // Defaults should be handled by useSettings hook itself now
-  partnerLogos: [],
-};

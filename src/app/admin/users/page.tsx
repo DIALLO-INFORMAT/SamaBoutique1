@@ -77,6 +77,11 @@ export default function AdminUsersPage() {
   const [isResetting, setIsResetting] = useState<string | null>(null); // Track resetting user ID
   const { toast } = useToast();
 
+  // State to manage which dialog is open and for which user
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedUserForAction, setSelectedUserForAction] = useState<AdminUser | null>(null);
+
   // Fetch users on mount
   useEffect(() => {
     const loadUsers = async () => {
@@ -118,16 +123,22 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleDeleteUser = async (userId: string, userName: string) => {
+  const confirmDeleteUser = async () => {
+     if (!selectedUserForAction) return;
+     const { id: userId, name: userName } = selectedUserForAction;
+
      if (userId === loggedInUser?.id) {
         toast({ title: t('admin_users_toast_delete_self_error_title'), description: t('admin_users_toast_delete_self_error_description'), variant: "destructive" });
+        setDeleteDialogOpen(false);
+        setSelectedUserForAction(null);
         return;
      }
-     if (userId === 'admin-default') { // Specific check for the default admin
+     if (userId === 'admin-default') {
        toast({ title: t('admin_users_toast_delete_default_admin_error_title'), description: t('admin_users_toast_delete_default_admin_error_description'), variant: "destructive" });
+       setDeleteDialogOpen(false);
+       setSelectedUserForAction(null);
        return;
      }
-     // Prevent deleting the last admin? (Add logic if needed)
 
      setIsDeleting(userId);
      try {
@@ -139,32 +150,38 @@ export default function AdminUsersPage() {
          toast({ title: t('general_error'), description: t('admin_users_toast_delete_error_description'), variant: "destructive" });
      } finally {
         setIsDeleting(null);
+        setDeleteDialogOpen(false);
+        setSelectedUserForAction(null);
      }
   };
 
-   const handleResetPassword = async (userId: string, userName: string) => {
+   const confirmResetPassword = async () => {
+     if (!selectedUserForAction) return;
+     const { id: userId, name: userName } = selectedUserForAction;
+
      if (userId === loggedInUser?.id) {
         toast({ title: t('admin_users_toast_reset_self_error_title', { userName: 'votre' }), description: t('admin_users_toast_reset_self_error_description'), variant: "destructive" });
+         setResetDialogOpen(false);
+         setSelectedUserForAction(null);
         return;
      }
-     // Optional: Add check if trying to reset default admin's password unnecessarily
 
      setIsResetting(userId);
      try {
         await resetPassword(userId);
         toast({
             title: t('admin_users_toast_reset_success_title'),
-            // WARNING: Do not show the default password in a real application toast.
-            // Send an email instead. This is for simulation only.
             description: t('admin_users_toast_reset_success_description', { userName }),
             className: "bg-primary text-primary-foreground border-primary",
-            duration: 7000 // Longer duration for important info
+            duration: 7000
         });
      } catch (error: any) {
          console.error("Failed to reset password:", error);
          toast({ title: t('general_error'), description: error.message || t('admin_users_toast_reset_error_description'), variant: "destructive" });
      } finally {
         setIsResetting(null);
+         setResetDialogOpen(false);
+         setSelectedUserForAction(null);
      }
   };
 
@@ -194,18 +211,11 @@ export default function AdminUsersPage() {
              <h1 className="text-3xl font-bold text-primary">{t('admin_users_page_title')}</h1>
              <p className="text-muted-foreground">{t('admin_users_description')}</p>
          </div>
-        {/* Optional: Button to invite/add new users directly - requires a form/modal */}
-        {/* <Link href="/admin/users/new">
-            <Button variant="destructive" size="sm">
-            <PlusCircle className="mr-2 h-4 w-4" /> Ajouter
-            </Button>
-        </Link> */}
       </div>
 
       <Card className="shadow-md border-border">
         <CardHeader className="border-b border-border px-6 py-4">
           <CardTitle>{t('admin_users_table_title')}</CardTitle>
-           {/* Optional: Add search/filter input */}
         </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
@@ -249,7 +259,6 @@ export default function AdminUsersPage() {
                         {user.createdAt ? user.createdAt.toLocaleDateString('fr-FR') : 'N/A'}
                     </TableCell>
                     <TableCell className="text-right px-6 py-3">
-                      <AlertDialog>
                          <DropdownMenu>
                            <DropdownMenuTrigger asChild>
                              <Button
@@ -264,11 +273,10 @@ export default function AdminUsersPage() {
                            </DropdownMenuTrigger>
                            <DropdownMenuContent align="end">
                              <DropdownMenuLabel>{t('admin_users_action_change_role')}</DropdownMenuLabel>
-                              {/* Role Change Options */}
                               {user.role !== 'admin' && (
                                 <DropdownMenuItem
                                    onClick={() => handleRoleChange(user.id, user.name, user.role, 'admin')}
-                                   disabled={user.id === 'admin-default'} // Disable changing default admin role
+                                   disabled={user.id === 'admin-default'}
                                    className="cursor-pointer flex items-center text-green-600 focus:text-green-700 focus:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   <ShieldCheck className="mr-2 h-4 w-4" /> {t('admin_users_action_promote_admin')}
@@ -282,7 +290,7 @@ export default function AdminUsersPage() {
                                {user.role !== 'customer' && (
                                 <DropdownMenuItem
                                     onClick={() => handleRoleChange(user.id, user.name, user.role, 'customer')}
-                                    disabled={user.id === 'admin-default'} // Disable demoting default admin
+                                    disabled={user.id === 'admin-default'}
                                     className="cursor-pointer flex items-center text-orange-600 focus:text-orange-700 focus:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   <UserX className="mr-2 h-4 w-4" /> {t('admin_users_action_demote_customer')}
@@ -291,58 +299,23 @@ export default function AdminUsersPage() {
                              <DropdownMenuSeparator />
                              <DropdownMenuLabel>{t('admin_users_action_other_actions')}</DropdownMenuLabel>
                              {/* Reset Password */}
-                             <AlertDialogTrigger asChild>
-                                <Button variant="ghost" data-alert-type="reset" className="w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                                     <KeyRound className="mr-2 h-4 w-4"/>{t('admin_users_action_reset_password')}
-                                </Button>
-                             </AlertDialogTrigger>
+                             <DropdownMenuItem
+                                 onSelect={() => { setSelectedUserForAction(user); setResetDialogOpen(true); }}
+                                 className="cursor-pointer flex items-center"
+                                 disabled={isResetting === user.id}
+                             >
+                                 <KeyRound className="mr-2 h-4 w-4"/>{t('admin_users_action_reset_password')}
+                             </DropdownMenuItem>
                               {/* Delete Option */}
-                             <AlertDialogTrigger asChild>
-                                <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                                   <Trash2 className="mr-2 h-4 w-4"/>{t('admin_users_action_delete_account')}
-                                </Button>
-                             </AlertDialogTrigger>
+                             <DropdownMenuItem
+                                onSelect={() => { setSelectedUserForAction(user); setDeleteDialogOpen(true); }}
+                                className="cursor-pointer flex items-center text-destructive focus:text-destructive focus:bg-destructive/10"
+                                disabled={isDeleting === user.id}
+                             >
+                               <Trash2 className="mr-2 h-4 w-4"/>{t('admin_users_action_delete_account')}
+                             </DropdownMenuItem>
                            </DropdownMenuContent>
                          </DropdownMenu>
-
-                         {/* Separate AlertDialogContent for each action type */}
-                         {/* Delete Confirmation */}
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle data-alert-type="delete">{t('admin_users_delete_confirm_title')}</AlertDialogTitle>
-                              <AlertDialogTitle data-alert-type="reset">{t('admin_users_reset_confirm_title')}</AlertDialogTitle>
-                              <AlertDialogDescription data-alert-type="delete">
-                                {t('admin_users_delete_confirm_description', { userName: user.name, userEmail: user.email })}
-                              </AlertDialogDescription>
-                               <AlertDialogDescription data-alert-type="reset">
-                                {t('admin_users_reset_confirm_description', { userName: user.name, userEmail: user.email })}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>{t('general_cancel')}</AlertDialogCancel>
-                              {/* Delete Action */}
-                              <AlertDialogAction
-                                 data-alert-type="delete"
-                                 onClick={() => handleDeleteUser(user.id, user.name)}
-                                 className={buttonVariants({ variant: "destructive" })}
-                                 disabled={isDeleting === user.id}
-                              >
-                                  {isDeleting === user.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                  {t('general_delete')}
-                              </AlertDialogAction>
-                              {/* Reset Password Action */}
-                               <AlertDialogAction
-                                 data-alert-type="reset"
-                                 onClick={() => handleResetPassword(user.id, user.name)}
-                                 className={buttonVariants({ variant: "destructive" })}
-                                 disabled={isResetting === user.id}
-                              >
-                                  {isResetting === user.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                  {t('admin_users_action_reset_password')}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                      </AlertDialog>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -350,38 +323,54 @@ export default function AdminUsersPage() {
             </Table>
           )}
         </CardContent>
-         {/* Optional: Pagination */}
-        {/* <CardFooter className="p-4 border-t"> Pagination Controls </CardFooter> */}
       </Card>
 
-       {/* CSS to conditionally hide AlertDialog parts based on trigger */}
-       <style jsx global>{`
-        [data-radix-alert-dialog-content]:not([data-triggered-by="delete"]) [data-alert-type="reset"],
-        [data-radix-alert-dialog-content]:not([data-triggered-by="reset"]) [data-alert-type="delete"] {
-            display: none;
-         }
-       `}</style>
-       <script dangerouslySetInnerHTML={{ __html: `
-         document.addEventListener('click', function(event) {
-           // Find the closest menu item trigger that has dialog controls
-           const trigger = event.target.closest('[data-radix-collection-item][role="menuitem"][aria-haspopup="dialog"]');
-           if (trigger) {
-             const alertType = trigger.dataset.alertType;
-             const contentId = trigger.getAttribute('aria-controls');
-             // Find the associated dialog content using the ID
-             const content = document.querySelector(\`[data-radix-alert-dialog-content][id='\${contentId}']\`);
-             if (content) {
-                 console.log("Setting triggeredBy:", alertType, "on", content)
-               // Set the triggered-by attribute on the content itself
-               content.setAttribute('data-triggered-by', alertType);
-             } else {
-                console.log("Content not found for id:", contentId);
-             }
-           }
-         }, true);
-       `}}/>
+        {/* Reset Password Dialog */}
+         <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+            <AlertDialogContent>
+                 <AlertDialogHeader>
+                     <AlertDialogTitle>{t('admin_users_reset_confirm_title')}</AlertDialogTitle>
+                     <AlertDialogDescription>
+                         {t('admin_users_reset_confirm_description', { userName: selectedUserForAction?.name, userEmail: selectedUserForAction?.email })}
+                     </AlertDialogDescription>
+                 </AlertDialogHeader>
+                 <AlertDialogFooter>
+                     <AlertDialogCancel onClick={() => setSelectedUserForAction(null)}>{t('general_cancel')}</AlertDialogCancel>
+                     <AlertDialogAction
+                         onClick={confirmResetPassword}
+                         className={buttonVariants({ variant: "destructive" })}
+                         disabled={isResetting === selectedUserForAction?.id}
+                     >
+                         {isResetting === selectedUserForAction?.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                         {t('admin_users_action_reset_password')}
+                     </AlertDialogAction>
+                 </AlertDialogFooter>
+            </AlertDialogContent>
+         </AlertDialog>
 
-
+         {/* Delete User Dialog */}
+          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+             <AlertDialogContent>
+                 <AlertDialogHeader>
+                     <AlertDialogTitle>{t('admin_users_delete_confirm_title')}</AlertDialogTitle>
+                     <AlertDialogDescription>
+                         {t('admin_users_delete_confirm_description', { userName: selectedUserForAction?.name, userEmail: selectedUserForAction?.email })}
+                     </AlertDialogDescription>
+                 </AlertDialogHeader>
+                 <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => setSelectedUserForAction(null)}>{t('general_cancel')}</AlertDialogCancel>
+                      <AlertDialogAction
+                         onClick={confirmDeleteUser}
+                         className={buttonVariants({ variant: "destructive" })}
+                         disabled={isDeleting === selectedUserForAction?.id}
+                      >
+                          {isDeleting === selectedUserForAction?.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          {t('general_delete')}
+                      </AlertDialogAction>
+                 </AlertDialogFooter>
+             </AlertDialogContent>
+          </AlertDialog>
     </div>
   );
 }
+```

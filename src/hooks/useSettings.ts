@@ -1,4 +1,3 @@
-
 'use client';
 
 import {useState, useEffect, useCallback} from 'react';
@@ -30,7 +29,7 @@ export interface Settings {
   partnerLogos: PartnerLogo[];   // Add partner logos
 }
 
-const DEFAULT_SETTINGS: Settings = {
+export const DEFAULT_SETTINGS: Settings = {
   storeName: 'SamaBoutique',
   supportEmail: 'support@samaboutique.com',
   enableMaintenance: false,
