@@ -3,7 +3,7 @@
 
 import type { ReactNode } from 'react';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
-import { User, Package, LogOut, LayoutDashboard, Box, Settings, FileText, Tags, FolderTree } from 'lucide-react'; // Added FolderTree, Tags
+import { User, Package, LogOut, LayoutDashboard, Box, Settings, FileText, Tags, FolderTree, Palette } from 'lucide-react'; // Added Palette
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import { usePathname, useRouter } from 'next/navigation'; // Import usePathname
@@ -118,6 +118,15 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                      <SidebarMenuButton tooltip="Gérer Commandes" className="text-base" isActive={pathname?.startsWith('/dashboard/manage-orders')}> {/* Increased font size */}
                          <Package />
                          <span>Gérer Commandes</span>
+                     </SidebarMenuButton>
+                 </Link>
+             </SidebarMenuItem>
+             {/* Appearance Link for Manager */}
+             <SidebarMenuItem>
+                 <Link href="/dashboard/appearance">
+                     <SidebarMenuButton tooltip="Apparence Accueil" className="text-base" isActive={pathname === '/dashboard/appearance'}>
+                         <Palette />
+                         <span>Apparence Accueil</span>
                      </SidebarMenuButton>
                  </Link>
              </SidebarMenuItem>

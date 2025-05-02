@@ -1,4 +1,4 @@
-
+// src/app/admin/settings/page.tsx
 'use client';
 
 import {zodResolver} from '@hookform/resolvers/zod';
@@ -20,13 +20,13 @@ import {useToast} from '@/hooks/use-toast';
 import {Switch} from '@/components/ui/switch';
 import {Separator} from '@/components/ui/separator';
 import {Textarea} from '@/components/ui/textarea';
-import {useEffect, useState, useCallback} from 'react'; // Import useCallback
+import {useEffect, useState, useCallback} from 'react';
 import Image from 'next/image';
-import {ImageIcon, Loader2, Trash2, PlusCircle} from 'lucide-react'; // Added Trash2, PlusCircle
-import { useSettings, saveSettings, CarouselImage, PartnerLogo, Settings } from '@/hooks/useSettings'; // Import settings hooks and types
-import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
-import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
-import { Label } from "@/components/ui/label"; // Import Label
+import {Loader2 } from 'lucide-react'; // Removed image related icons
+import { useSettings, saveSettings, CarouselImage, PartnerLogo, Settings } from '@/hooks/useSettings';
+import { useTranslation } from '@/hooks/useTranslation';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ImageManagementCard } from '@/components/ui/image-management-card'; // Import the reusable component
 
 // Define Zod schema for CORE settings form validation (excluding image lists)
 const createSettingsSchema = (t: Function) => z.object({
@@ -42,144 +42,6 @@ const createSettingsSchema = (t: Function) => z.object({
   logoUrl: z.string().url({message: t('admin_settings_form_logo_url') + ' Doit être une URL valide.'}).or(z.literal('')).optional(), // Allow empty string
   faviconUrl: z.string().url({message: t('admin_settings_form_favicon_url') + ' Doit être une URL valide.'}).or(z.literal('')).optional(), // Allow empty string
 });
-
-// --- Helper: Image Management Card ---
-interface ImageItem {
-  id?: string; // Optional ID for partner logos
-  src: string;
-  alt: string;
-  hint: string;
-}
-
-interface ImageManagementCardProps<T extends ImageItem> {
-  title: string;
-  description: string;
-  images: T[];
-  onImagesChange: (images: T[]) => void;
-  itemType: 'carousel' | 'partner'; // To handle ID for partners
-}
-
-function ImageManagementCard<T extends ImageItem>({
-  title,
-  description,
-  images,
-  onImagesChange,
-  itemType,
-}: ImageManagementCardProps<T>) {
-    const { t } = useTranslation();
-    const [newImageUrl, setNewImageUrl] = useState('');
-    const [newImageAlt, setNewImageAlt] = useState('');
-    const [newImageHint, setNewImageHint] = useState('');
-    const [error, setError] = useState('');
-
-    const handleAddImage = () => {
-        setError('');
-        // Basic URL validation (can be more robust)
-        if (!newImageUrl.startsWith('http://') && !newImageUrl.startsWith('https://')) {
-            setError(t('admin_settings_form_image_url_invalid'));
-            return;
-        }
-        if (!newImageAlt) {
-             setError(t('admin_settings_form_alt_text_required'));
-             return;
-        }
-        if (!newImageHint) {
-            setError(t('admin_settings_form_ai_hint_required'));
-             return;
-        }
-
-        const newItem: T = {
-            src: newImageUrl,
-            alt: newImageAlt,
-            hint: newImageHint,
-            ...(itemType === 'partner' && { id: `logo-${Date.now()}` }), // Add ID for partners
-        } as T;
-
-        onImagesChange([...images, newItem]);
-        setNewImageUrl('');
-        setNewImageAlt('');
-        setNewImageHint('');
-    };
-
-    const handleRemoveImage = (index: number) => {
-        onImagesChange(images.filter((_, i) => i !== index));
-    };
-
-    return (
-        <Card className="shadow-md border-border">
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
-                <CardDescription>{description}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {/* List Current Images */}
-                {images.length > 0 ? (
-                    <div className="space-y-3 max-h-60 overflow-y-auto pr-2 border rounded-md p-3">
-                        {images.map((img, index) => (
-                            <div key={img.id || index} className="flex items-center justify-between gap-2 border-b pb-2 last:border-b-0">
-                                <div className="flex items-center gap-2 flex-grow min-w-0">
-                                    <Image
-                                        src={img.src}
-                                        alt={img.alt}
-                                        width={itemType === 'carousel' ? 80 : 60}
-                                        height={itemType === 'carousel' ? 40 : 30}
-                                        className="rounded border object-contain bg-muted"
-                                        onError={(e) => (e.currentTarget.style.display = 'none')} // Hide if image fails
-                                    />
-                                    <div className="text-xs flex-grow min-w-0">
-                                        <p className="font-medium truncate" title={img.alt}>{img.alt}</p>
-                                        <p className="text-muted-foreground truncate" title={img.src}>{img.src}</p>
-                                        <p className="text-muted-foreground truncate" title={img.hint}>Hint: {img.hint}</p>
-                                    </div>
-                                </div>
-                                <Button variant="ghost" size="icon" onClick={() => handleRemoveImage(index)} className="text-destructive h-7 w-7">
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-sm text-muted-foreground text-center py-4">{t('admin_settings_no_images')}</p>
-                )}
-
-                <Separator />
-
-                {/* Add New Image Form */}
-                <div className="space-y-2">
-                    <Label className="text-sm font-medium">{t('admin_settings_add_new_image')}</Label>
-                     <Input
-                         type="url"
-                         placeholder={t('admin_settings_form_image_url')}
-                         value={newImageUrl}
-                         onChange={(e) => setNewImageUrl(e.target.value)}
-                     />
-                     <Input
-                         type="text"
-                         placeholder={t('admin_settings_form_alt_text')}
-                         value={newImageAlt}
-                         onChange={(e) => setNewImageAlt(e.target.value)}
-                         maxLength={50}
-                     />
-                      <Input
-                         type="text"
-                         placeholder={t('admin_settings_form_ai_hint')}
-                         value={newImageHint}
-                         onChange={(e) => setNewImageHint(e.target.value)}
-                         maxLength={30}
-                         />
-                     {error && <p className="text-xs text-destructive">{error}</p>}
-                     <Button size="sm" variant="outline" onClick={handleAddImage} disabled={!newImageUrl || !newImageAlt || !newImageHint} className="w-full sm:w-auto">
-                         <PlusCircle className="mr-2 h-4 w-4" /> {t('admin_settings_add_image_button')}
-                     </Button>
-                      {/* Replaced FormDescription with a simple p tag */}
-                     <p className="text-xs text-muted-foreground">
-                        {itemType === 'carousel' ? t('admin_settings_carousel_hint_desc') : t('admin_settings_partner_hint_desc')}
-                     </p>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
 
 
 // --- Main Settings Page Component ---
@@ -400,7 +262,7 @@ export default function AdminSettingsPage() {
         </CardContent>
       </Card>
 
-       {/* Carousel Image Management Card */}
+       {/* Use the reusable ImageManagementCard for Carousel Images */}
        <ImageManagementCard<CarouselImage>
           title={t('admin_settings_carousel_title')}
           description={t('admin_settings_carousel_description')}
@@ -409,7 +271,7 @@ export default function AdminSettingsPage() {
           itemType="carousel"
        />
 
-        {/* Partner Logos Management Card */}
+        {/* Use the reusable ImageManagementCard for Partner Logos */}
         <ImageManagementCard<PartnerLogo>
            title={t('admin_settings_partners_title')}
            description={t('admin_settings_partners_description')}

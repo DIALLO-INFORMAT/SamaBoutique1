@@ -3,7 +3,7 @@
 
 import type { ReactNode } from 'react';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset, SidebarFooter } from '@/components/ui/sidebar';
-import { LayoutGrid, Box, Settings, Users, LogOut, Package, FileText, BarChart3, Tags, FolderTree } from 'lucide-react'; // Added FolderTree, Tags
+import { LayoutGrid, Box, Settings, Users, LogOut, Package, FileText, BarChart3, Tags, FolderTree, Palette } from 'lucide-react'; // Added Palette icon
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import { useRouter, usePathname } from 'next/navigation'; // Import useRouter, usePathname
@@ -123,12 +123,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
+                             {/* Appearance Link */}
+                             <SidebarMenuItem>
+                                 <Link href="/admin/appearance">
+                                     <SidebarMenuButton tooltip="Apparence" className="text-base" isActive={pathname === '/admin/appearance'}> {/* Increased font size */}
+                                         <Palette />
+                                         <span>Apparence</span>
+                                     </SidebarMenuButton>
+                                 </Link>
+                             </SidebarMenuItem>
                             {/* Statistics Link Removed - Integrated into Dashboard */}
                             <SidebarMenuItem>
                                 <Link href="/admin/settings" >
                                     <SidebarMenuButton tooltip="Paramètres" className="text-base" isActive={pathname === '/admin/settings'}> {/* Increased font size */}
                                         <Settings />
-                                        <span>Paramètres</span>
+                                        <span>Paramètres Généraux</span> {/* Renamed slightly */}
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
