@@ -186,8 +186,7 @@ function ImageManagementCard<T extends ImageItem>({
 export default function AdminSettingsPage() {
   const { toast } = useToast();
   const { t } = useTranslation();
-  const currentSettings = useSettings();
-  const settingsLoading = currentSettings.isLoading;
+  const {isLoading: settingsLoading, ...currentSettings } = useSettings(); // Destructure isLoading separately
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Local state for image lists, initialized from global settings

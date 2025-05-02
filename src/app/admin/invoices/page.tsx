@@ -40,51 +40,54 @@ const fetchInvoiceableOrdersFromAPI = async (): Promise<Order[]> => {
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Sort newest first
 };
 
-// Function for viewing/sharing invoice
-const handleInvoiceAction = async (order: Order, action: 'view' | 'share') => {
-    const { t } = useTranslation(); // Get t function inside the handler
 
-    if (action === 'view') {
-        try {
-            // Generate the PDF blob
-            const pdfBlob = await generateInvoicePDF(order, t);
-
-            // Create a URL for the blob
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-
-            // Open the PDF in a new tab for viewing/printing
-            window.open(pdfUrl, '_blank');
-            // Revoke the URL after a short delay to allow the new tab to load
-            setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
-
-        } catch (error) {
-            console.error("Error generating or handling PDF:", error);
-            alert(t('invoice_generate_error')); // Show a user-friendly error
-        }
-    } else if (action === 'share') {
-        // Basic share functionality (can be expanded)
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: `${t('invoice_share_title')} ${order.orderNumber}`,
-                    text: `${t('invoice_share_text')} ${order.orderNumber}. Total: ${order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 })}`,
-                    // url: window.location.href // Or a link to the order tracking page
-                });
-            } catch (error) {
-                console.error('Share failed:', error);
-            }
-        } else {
-            alert(t('invoice_share_not_supported'));
-        }
-    }
-};
 
 // --- Component ---
 export default function AdminInvoicesPage() {
     const [invoices, setInvoices] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
-    const { t } = useTranslation(); // Use translation hook
+    const { t } = useTranslation(); // Use translation hook here
+
+    // Function for viewing/sharing invoice - Moved outside to use the hook correctly
+    const handleInvoiceAction = async (order: Order, action: 'view' | 'share') => {
+        // 't' is already available from the outer scope
+
+        if (action === 'view') {
+            try {
+                // Generate the PDF blob
+                const pdfBlob = await generateInvoicePDF(order, t);
+
+                // Create a URL for the blob
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+
+                // Open the PDF in a new tab for viewing/printing
+                window.open(pdfUrl, '_blank');
+                // Revoke the URL after a short delay to allow the new tab to load
+                setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+
+            } catch (error) {
+                console.error("Error generating or handling PDF:", error);
+                alert(t('invoice_generate_error')); // Show a user-friendly error
+            }
+        } else if (action === 'share') {
+            // Basic share functionality (can be expanded)
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: `${t('invoice_share_title')} ${order.orderNumber}`,
+                        text: `${t('invoice_share_text')} ${order.orderNumber}. Total: ${order.total.toLocaleString('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 })}`,
+                        // url: window.location.href // Or a link to the order tracking page
+                    });
+                } catch (error) {
+                    console.error('Share failed:', error);
+                }
+            } else {
+                alert(t('invoice_share_not_supported'));
+            }
+        }
+    };
+
 
     useEffect(() => {
         const loadInvoices = async () => {
@@ -135,7 +138,7 @@ export default function AdminInvoicesPage() {
                                     <TableHead className="px-6">{t('admin_invoices_table_customer')}</TableHead>
                                     <TableHead className="hidden md:table-cell px-6">{t('admin_invoices_table_order_date')}</TableHead>
                                     <TableHead className="text-right px-6">{t('admin_invoices_table_total')}</TableHead>
-                                    <TableHead className="text-right px-6 w-[120px]">{t('admin_invoices_table_actions')}</TableHead> {/* Adjusted width */}
+                                    <TableHead className="text-right px-6 w-[120px]">{t('admin_invoices_table_actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

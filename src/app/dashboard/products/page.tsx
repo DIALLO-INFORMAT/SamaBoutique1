@@ -51,6 +51,12 @@ const fetchManagerProductsFromAPI = async (): Promise<ManagerProduct[]> => {
     // Return stored products if they exist, otherwise return demo products
     const products = storedProducts ? JSON.parse(storedProducts) : demoProducts;
     // Ensure imageUrl exists for all products and isOnSale
+     // If empty, initialize localStorage
+     if (!products) {
+        localStorage.setItem(storageKey, JSON.stringify([]));
+        return [];
+     }
+
     return products.map((p: any) => ({
         ...p,
         imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/64/64`,
@@ -162,12 +168,12 @@ export default function ManagerProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="hidden w-[64px] sm:table-cell px-6 text-base">Image</TableHead> {/* Increased font */}
-                  <TableHead className="px-6 text-base">{t('dashboard_manage_products_table_name')}</TableHead> {/* Increased font */}
-                  <TableHead className="px-6 text-base">{t('dashboard_manage_products_table_category')}</TableHead> {/* Increased font */}
-                  <TableHead className="text-center px-6 hidden lg:table-cell text-base">Promo</TableHead> {/* Added Promo column, Increased font */}
-                  <TableHead className="text-right px-6 text-base">{t('dashboard_manage_products_table_price')}</TableHead> {/* Increased font */}
-                  <TableHead className="text-right px-6 w-[100px] text-base">{t('dashboard_manage_products_table_actions')}</TableHead> {/* Increased font */}
+                  <TableHead className="hidden w-[64px] sm:table-cell px-6 text-base">Image</TableHead>
+                  <TableHead className="px-6 text-base">{t('dashboard_manage_products_table_name')}</TableHead>
+                  <TableHead className="px-6 text-base">{t('dashboard_manage_products_table_category')}</TableHead>
+                  <TableHead className="text-center px-6 hidden lg:table-cell text-base">Promo</TableHead>
+                  <TableHead className="text-right px-6 text-base">{t('dashboard_manage_products_table_price')}</TableHead>
+                  <TableHead className="text-right px-6 w-[100px] text-base">{t('dashboard_manage_products_table_actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -183,19 +189,19 @@ export default function ManagerProductsPage() {
                          data-ai-hint={product.category === 'Services' ? 'service tech icon' : product.name.toLowerCase().split(' ')[0]}
                        />
                     </TableCell>
-                    <TableCell className="font-medium px-6 py-3 text-base">{product.name}</TableCell> {/* Increased font */}
-                    <TableCell className="px-6 py-3 text-base">{product.category}</TableCell> {/* Increased font */}
+                    <TableCell className="font-medium px-6 py-3 text-base">{product.name}</TableCell>
+                    <TableCell className="px-6 py-3 text-base">{product.category}</TableCell>
                      {/* Promo Status Cell */}
                     <TableCell className="text-center px-6 py-3 hidden lg:table-cell">
                        {product.isOnSale ? (
-                         <Badge variant="destructive" className="bg-orange-500 text-white border-orange-600 text-sm"> {/* Increased font */}
+                         <Badge variant="destructive" className="bg-orange-500 text-white border-orange-600 text-sm">
                            <Percent className="mr-1 h-3 w-3" /> Promo
                          </Badge>
                        ) : (
                          <span className="text-muted-foreground">-</span>
                        )}
                     </TableCell>
-                    <TableCell className="text-right px-6 py-3 text-base">{product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell> {/* Increased font */}
+                    <TableCell className="text-right px-6 py-3 text-base">{product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
                     <TableCell className="text-right px-6 py-3">
                       <AlertDialog>
                            <DropdownMenu>
@@ -209,14 +215,14 @@ export default function ManagerProductsPage() {
                                    <DropdownMenuLabel>{t('dashboard_manage_products_table_actions')}</DropdownMenuLabel>
                                    <DropdownMenuItem asChild>
                                         {/* Link to manager's edit page */}
-                                        <Link href={`/dashboard/products/edit/${product.id}`} className="flex items-center cursor-pointer w-full text-base"> {/* Increased font */}
+                                        <Link href={`/dashboard/products/edit/${product.id}`} className="flex items-center cursor-pointer w-full text-base">
                                             <Edit className="mr-2 h-4 w-4"/>{t('dashboard_manage_products_edit_action')}
                                         </Link>
                                    </DropdownMenuItem>
                                    {/* Manager might not have delete permission, or only for products they added */}
                                     <DropdownMenuSeparator />
                                    <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-base font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50"> {/* Increased font */}
+                                      <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-base font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
                                          <Trash2 className="mr-2 h-4 w-4"/>{t('dashboard_manage_products_delete_action')}
                                       </Button>
                                    </AlertDialogTrigger>

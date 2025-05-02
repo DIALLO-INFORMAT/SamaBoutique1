@@ -198,16 +198,16 @@ export default function AdminCategoriesPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="px-6 text-base">{t('admin_categories_table_name')}</TableHead> {/* Increased font */}
-                                    <TableHead className="px-6 hidden sm:table-cell text-base">{t('admin_categories_table_description')}</TableHead> {/* Increased font */}
-                                    <TableHead className="text-right px-6 w-[100px] text-base">{t('admin_categories_table_actions')}</TableHead> {/* Increased font */}
+                                    <TableHead className="px-6 text-base">{t('admin_categories_table_name')}</TableHead>
+                                    <TableHead className="px-6 hidden sm:table-cell text-base">{t('admin_categories_table_description')}</TableHead>
+                                    <TableHead className="text-right px-6 w-[100px] text-base">{t('admin_categories_table_actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {categories.map((category) => (
                                     <TableRow key={category.id} className="hover:bg-muted/50">
-                                        <TableCell className="font-medium px-6 py-3 text-base">{category.name}</TableCell> {/* Increased font */}
-                                        <TableCell className="px-6 py-3 hidden sm:table-cell text-base text-muted-foreground truncate max-w-xs">{category.description}</TableCell> {/* Increased font */}
+                                        <TableCell className="font-medium px-6 py-3 text-base">{category.name}</TableCell>
+                                        <TableCell className="px-6 py-3 hidden sm:table-cell text-base text-muted-foreground truncate max-w-xs">{category.description}</TableCell>
                                         <TableCell className="text-right px-6 py-3">
                                             <AlertDialog>
                                                 <DropdownMenu>
@@ -216,10 +216,10 @@ export default function AdminCategoriesPage() {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>{t('admin_categories_table_actions')}</DropdownMenuLabel>
-                                                        <DropdownMenuItem onClick={() => openEditDialog(category)} className="cursor-pointer text-base"><Edit className="mr-2 h-4 w-4" /> {t('admin_products_action_edit')}</DropdownMenuItem> {/* Increased font */}
+                                                        <DropdownMenuItem onClick={() => openEditDialog(category)} className="cursor-pointer text-base"><Edit className="mr-2 h-4 w-4" /> {t('admin_products_action_edit')}</DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-base font-normal cursor-pointer"><Trash2 className="mr-2 h-4 w-4" /> {t('admin_products_action_delete')}</Button> {/* Increased font */}
+                                                            <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-base font-normal cursor-pointer"><Trash2 className="mr-2 h-4 w-4" /> {t('admin_products_action_delete')}</Button>
                                                         </AlertDialogTrigger>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
@@ -250,8 +250,8 @@ export default function AdminCategoriesPage() {
                         <DialogTitle>{editingCategory ? t('admin_categories_edit_dialog_title') : t('admin_categories_add_dialog_title')}</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="space-y-2"><Label htmlFor="cat-name" className="text-base">{t('admin_categories_table_name')}</Label><Input id="cat-name" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="Nom de la catégorie" className="text-base"/></div> {/* Increased font */}
-                        <div className="space-y-2"><Label htmlFor="cat-desc" className="text-base">{t('admin_categories_table_description')} ({t('checkout_form_optional')})</Label><Textarea id="cat-desc" value={categoryDescription} onChange={(e) => setCategoryDescription(e.target.value)} placeholder="Courte description..." rows={3} className="text-base"/></div> {/* Increased font */}
+                        <div className="space-y-2"><Label htmlFor="cat-name" className="text-base">{t('admin_categories_table_name')}</Label><Input id="cat-name" value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="Nom de la catégorie" className="text-base"/></div>
+                        <div className="space-y-2"><Label htmlFor="cat-desc" className="text-base">{t('admin_categories_table_description')} ({t('checkout_form_optional')})</Label><Textarea id="cat-desc" value={categoryDescription} onChange={(e) => setCategoryDescription(e.target.value)} placeholder="Courte description..." rows={3} className="text-base"/></div>
                         {dialogError && <p className="text-sm text-destructive">{dialogError}</p>}
                     </div>
                     <DialogFooter>

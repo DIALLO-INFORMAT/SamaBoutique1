@@ -56,8 +56,7 @@ const TableRow = React.forwardRef<
   React.HTMLAttributes<HTMLTableRowElement>
 >(({ className, children, ...props }, ref) => {
   // Filter out pure whitespace text nodes to prevent hydration errors.
-  // Also ensure children are valid elements (e.g., TableCell, TableHead).
-  const filteredChildren = React.Children.toArray(children).filter(child =>
+  const validChildren = React.Children.toArray(children).filter(child =>
     React.isValidElement(child) || (typeof child === 'string' && child.trim() !== '')
   );
 
@@ -70,7 +69,7 @@ const TableRow = React.forwardRef<
       )}
       {...props}
     >
-      {filteredChildren} {/* Render only valid, non-whitespace children */}
+      {validChildren} {/* Render only valid children */}
     </tr>
   );
 });

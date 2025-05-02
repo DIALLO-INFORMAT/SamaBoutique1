@@ -42,15 +42,15 @@ export const useTranslation = () => {
   const isLoading = false; // No async loading needed anymore
   const currentLocale = 'fr'; // Hardcode locale to French
 
-  // The translation function `t`
-   const t = useCallback((key: string, options?: TOptions<string>): string => {
+  // The translation function `t` - Remove useCallback here
+   const t = (key: string, options?: TOptions<string>): string => {
        const value = getNestedValue(translations, key);
        if (value === undefined) {
            console.warn(`Translation key "${key}" not found for locale "fr"`);
            return key; // Return the key itself as fallback
        }
        return interpolate(value, options);
-   }, [translations]); // Depend only on translations (which is now static)
+   }; // Removed useCallback wrapper
 
   return { t, isLoading, currentLocale };
 };
