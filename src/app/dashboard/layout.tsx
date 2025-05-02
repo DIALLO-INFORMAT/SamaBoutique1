@@ -60,7 +60,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
         <>
             <SidebarMenuItem>
                 <Link href="/dashboard/orders" >
-                    <SidebarMenuButton tooltip="Mes Commandes" className="text-sm" isActive={pathname === '/dashboard/orders'}>
+                    <SidebarMenuButton tooltip="Mes Commandes" className="text-base" isActive={pathname === '/dashboard/orders'}> {/* Increased font size */}
                         <Package />
                         <span>Mes Commandes</span>
                     </SidebarMenuButton>
@@ -69,7 +69,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
             {/* Invoices Link Removed for Customer/Manager */}
             {/* <SidebarMenuItem>
                 <Link href="/dashboard/invoices" >
-                    <SidebarMenuButton tooltip="Mes Factures" className="text-sm" isActive={pathname === '/dashboard/invoices'}>
+                    <SidebarMenuButton tooltip="Mes Factures" className="text-base" isActive={pathname === '/dashboard/invoices'}>
                         <FileText />
                         <span>Mes Factures</span>
                     </SidebarMenuButton>
@@ -77,7 +77,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
             </SidebarMenuItem> */}
              <SidebarMenuItem>
                 <Link href="/dashboard/profile" >
-                    <SidebarMenuButton tooltip="Mon Profil" className="text-sm" isActive={pathname === '/dashboard/profile'}>
+                    <SidebarMenuButton tooltip="Mon Profil" className="text-base" isActive={pathname === '/dashboard/profile'}> {/* Increased font size */}
                         <User />
                         <span>Mon Profil</span>
                     </SidebarMenuButton>
@@ -91,7 +91,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
          <>
              <SidebarMenuItem>
                  <Link href="/dashboard/products" >
-                     <SidebarMenuButton tooltip="Gérer Produits" className="text-sm" isActive={pathname?.startsWith('/dashboard/products')}>
+                     <SidebarMenuButton tooltip="Gérer Produits" className="text-base" isActive={pathname?.startsWith('/dashboard/products')}> {/* Increased font size */}
                          <Box />
                          <span>Gérer Produits</span>
                      </SidebarMenuButton>
@@ -99,7 +99,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
              </SidebarMenuItem>
              <SidebarMenuItem>
                  <Link href="/dashboard/categories" > {/* Added Categories Link */}
-                     <SidebarMenuButton tooltip="Catégories" className="text-sm" isActive={pathname?.startsWith('/dashboard/categories')}>
+                     <SidebarMenuButton tooltip="Catégories" className="text-base" isActive={pathname?.startsWith('/dashboard/categories')}> {/* Increased font size */}
                          <FolderTree />
                          <span>Catégories</span>
                      </SidebarMenuButton>
@@ -107,7 +107,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
              </SidebarMenuItem>
               <SidebarMenuItem>
                  <Link href="/dashboard/tags" > {/* Added Tags Link */}
-                     <SidebarMenuButton tooltip="Étiquettes" className="text-sm" isActive={pathname?.startsWith('/dashboard/tags')}>
+                     <SidebarMenuButton tooltip="Étiquettes" className="text-base" isActive={pathname?.startsWith('/dashboard/tags')}> {/* Increased font size */}
                          <Tags />
                          <span>Étiquettes</span>
                      </SidebarMenuButton>
@@ -115,7 +115,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
              </SidebarMenuItem>
              <SidebarMenuItem>
                  <Link href="/dashboard/manage-orders" >
-                     <SidebarMenuButton tooltip="Gérer Commandes" className="text-sm" isActive={pathname?.startsWith('/dashboard/manage-orders')}>
+                     <SidebarMenuButton tooltip="Gérer Commandes" className="text-base" isActive={pathname?.startsWith('/dashboard/manage-orders')}> {/* Increased font size */}
                          <Package />
                          <span>Gérer Commandes</span>
                      </SidebarMenuButton>
@@ -132,13 +132,13 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                 <Sidebar side="left" variant="sidebar" collapsible="icon" className="border-r border-border">
                     <SidebarHeader className="items-center justify-between p-2 border-b border-border">
                          <SidebarTrigger className="md:hidden"/>
-                         <span className="font-semibold text-lg hidden group-data-[state=expanded]:inline text-primary">Mon Espace</span>
+                         <span className="font-semibold text-xl hidden group-data-[state=expanded]:inline text-primary">Mon Espace</span> {/* Increased font size */}
                     </SidebarHeader>
                     <SidebarContent className="p-2">
                         <SidebarMenu>
                              <SidebarMenuItem>
                                 <Link href="/dashboard" >
-                                    <SidebarMenuButton tooltip="Tableau de bord" className="text-sm" isActive={pathname === '/dashboard'}>
+                                    <SidebarMenuButton tooltip="Tableau de bord" className="text-base" isActive={pathname === '/dashboard'}> {/* Increased font size */}
                                         <LayoutDashboard />
                                         <span>Tableau de bord</span>
                                     </SidebarMenuButton>
@@ -159,7 +159,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                                 <SidebarMenuButton
                                      tooltip="Déconnexion"
                                      onClick={handleLogout}
-                                     className="text-destructive hover:bg-destructive/10 hover:text-destructive text-sm"
+                                     className="text-destructive hover:bg-destructive/10 hover:text-destructive text-base" /* Increased font size */
                                 >
                                      <LogOut />
                                      <span>Déconnexion</span>
@@ -170,7 +170,7 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                 </Sidebar>
                  <SidebarInset>
                     {/* Main content area for user dashboard pages */}
-                    <div className="p-4 md:p-8 bg-background min-h-full"> {/* Ensure background color */}
+                    <div className="p-4 md:p-8 bg-background min-h-full text-base"> {/* Ensure background color, added text-base */}
                         {children}
                     </div>
                 </SidebarInset>

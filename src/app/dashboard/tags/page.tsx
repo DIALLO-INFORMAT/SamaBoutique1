@@ -223,14 +223,14 @@ export default function ManagerTagsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="px-6">{t('manager_tags_table_name')}</TableHead>
-                                    <TableHead className="text-right px-6 w-[100px]">{t('manager_tags_table_actions')}</TableHead>
+                                    <TableHead className="px-6 text-base">{t('manager_tags_table_name')}</TableHead> {/* Increased font */}
+                                    <TableHead className="text-right px-6 w-[100px] text-base">{t('manager_tags_table_actions')}</TableHead> {/* Increased font */}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {tags.map((tag) => (
                                     <TableRow key={tag.id} className="hover:bg-muted/50">
-                                        <TableCell className="font-medium px-6 py-3">{tag.name}</TableCell>
+                                        <TableCell className="font-medium px-6 py-3 text-base">{tag.name}</TableCell> {/* Increased font */}
                                         <TableCell className="text-right px-6 py-3">
                                             <AlertDialog>
                                                 <DropdownMenu>
@@ -242,12 +242,12 @@ export default function ManagerTagsPage() {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>{t('manager_tags_table_actions')}</DropdownMenuLabel>
-                                                        <DropdownMenuItem onClick={() => openEditDialog(tag)} className="cursor-pointer">
+                                                        <DropdownMenuItem onClick={() => openEditDialog(tag)} className="cursor-pointer text-base"> {/* Increased font */}
                                                             <Edit className="mr-2 h-4 w-4" /> {t('admin_products_action_edit')}
                                                         </DropdownMenuItem>
                                                         <DropdownMenuSeparator />
                                                         <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer">
+                                                            <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-base font-normal cursor-pointer"> {/* Increased font */}
                                                                 <Trash2 className="mr-2 h-4 w-4" /> {t('admin_products_action_delete')}
                                                             </Button>
                                                         </AlertDialogTrigger>
@@ -291,12 +291,13 @@ export default function ManagerTagsPage() {
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="space-y-2">
-                            <Label htmlFor="tag-name">{t('manager_tags_table_name')}</Label>
+                            <Label htmlFor="tag-name" className="text-base">{t('manager_tags_table_name')}</Label> {/* Increased font */}
                             <Input
                                 id="tag-name"
                                 value={tagName}
                                 onChange={(e) => setTagName(e.target.value)}
                                 placeholder="Nom de l'étiquette"
+                                className="text-base" /* Increased font */
                             />
                         </div>
                         {dialogError && <p className="text-sm text-destructive">{dialogError}</p>}

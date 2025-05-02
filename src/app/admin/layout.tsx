@@ -60,13 +60,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <Sidebar side="left" variant="sidebar" collapsible="icon" className="border-r border-border">
                     <SidebarHeader className="items-center justify-between p-2 border-b border-border">
                          <SidebarTrigger className="md:hidden"/>
-                         <span className="font-semibold text-lg hidden group-data-[state=expanded]:inline text-primary">Admin</span>
+                         <span className="font-semibold text-xl hidden group-data-[state=expanded]:inline text-primary">Admin</span> {/* Increased font size */}
                     </SidebarHeader>
                     <SidebarContent className="p-2">
                         <SidebarMenu>
                             <SidebarMenuItem>
                                 <Link href="/admin" >
-                                    <SidebarMenuButton tooltip="Tableau de bord" className="text-sm" isActive={pathname === '/admin'}>
+                                    <SidebarMenuButton tooltip="Tableau de bord" className="text-base" isActive={pathname === '/admin'}> {/* Increased font size */}
                                         <LayoutGrid />
                                         <span>Tableau de bord</span>
                                     </SidebarMenuButton>
@@ -74,7 +74,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             </SidebarMenuItem>
                              <SidebarMenuItem>
                                 <Link href="/admin/products" >
-                                    <SidebarMenuButton tooltip="Produits" className="text-sm" isActive={pathname?.startsWith('/admin/products')}>
+                                    <SidebarMenuButton tooltip="Produits" className="text-base" isActive={pathname?.startsWith('/admin/products')}> {/* Increased font size */}
                                         <Box />
                                         <span>Produits</span>
                                     </SidebarMenuButton>
@@ -82,7 +82,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             </SidebarMenuItem>
                              <SidebarMenuItem>
                                 <Link href="/admin/categories" > {/* Added Categories Link */}
-                                    <SidebarMenuButton tooltip="Catégories" className="text-sm" isActive={pathname?.startsWith('/admin/categories')}>
+                                    <SidebarMenuButton tooltip="Catégories" className="text-base" isActive={pathname?.startsWith('/admin/categories')}> {/* Increased font size */}
                                         <FolderTree />
                                         <span>Catégories</span>
                                     </SidebarMenuButton>
@@ -90,7 +90,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             </SidebarMenuItem>
                              <SidebarMenuItem>
                                 <Link href="/admin/tags" > {/* Added Tags Link */}
-                                    <SidebarMenuButton tooltip="Étiquettes" className="text-sm" isActive={pathname?.startsWith('/admin/tags')}>
+                                    <SidebarMenuButton tooltip="Étiquettes" className="text-base" isActive={pathname?.startsWith('/admin/tags')}> {/* Increased font size */}
                                         <Tags />
                                         <span>Étiquettes</span>
                                     </SidebarMenuButton>
@@ -99,7 +99,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                              {/* Orders Link */}
                              <SidebarMenuItem>
                                 <Link href="/admin/orders" >
-                                    <SidebarMenuButton tooltip="Commandes" className="text-sm" isActive={pathname?.startsWith('/admin/orders')}>
+                                    <SidebarMenuButton tooltip="Commandes" className="text-base" isActive={pathname?.startsWith('/admin/orders')}> {/* Increased font size */}
                                         <Package />
                                         <span>Commandes</span>
                                     </SidebarMenuButton>
@@ -108,7 +108,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                              {/* Invoices Link */}
                              <SidebarMenuItem>
                                 <Link href="/admin/invoices" >
-                                    <SidebarMenuButton tooltip="Factures" className="text-sm" isActive={pathname?.startsWith('/admin/invoices')}>
+                                    <SidebarMenuButton tooltip="Factures" className="text-base" isActive={pathname?.startsWith('/admin/invoices')}> {/* Increased font size */}
                                         <FileText />
                                         <span>Factures</span>
                                     </SidebarMenuButton>
@@ -116,7 +116,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             </SidebarMenuItem>
                              <SidebarMenuItem>
                                 <Link href="/admin/users" >
-                                    <SidebarMenuButton tooltip="Utilisateurs" className="text-sm" isActive={pathname === '/admin/users'}>
+                                    <SidebarMenuButton tooltip="Utilisateurs" className="text-base" isActive={pathname === '/admin/users'}> {/* Increased font size */}
                                         <Users />
                                         <span>Utilisateurs</span>
                                     </SidebarMenuButton>
@@ -125,7 +125,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             {/* Statistics Link Removed - Integrated into Dashboard */}
                             <SidebarMenuItem>
                                 <Link href="/admin/settings" >
-                                    <SidebarMenuButton tooltip="Paramètres" className="text-sm" isActive={pathname === '/admin/settings'}>
+                                    <SidebarMenuButton tooltip="Paramètres" className="text-base" isActive={pathname === '/admin/settings'}> {/* Increased font size */}
                                         <Settings />
                                         <span>Paramètres</span>
                                     </SidebarMenuButton>
@@ -140,7 +140,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                 <SidebarMenuButton
                                      tooltip="Déconnexion"
                                      onClick={handleLogout}
-                                     className="text-destructive hover:bg-destructive/10 hover:text-destructive text-sm"
+                                     className="text-destructive hover:bg-destructive/10 hover:text-destructive text-base" /* Increased font size */
                                 >
                                      <LogOut />
                                      <span>Déconnexion</span>
@@ -151,7 +151,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </Sidebar>
                  <SidebarInset>
                     {/* Main content area for admin pages */}
-                    <div className="p-4 md:p-8 bg-background min-h-screen"> {/* Added bg-background */}
+                    <div className="p-4 md:p-8 bg-background min-h-screen text-base"> {/* Added text-base for potentially larger content font */}
                         {children}
                     </div>
                 </SidebarInset>

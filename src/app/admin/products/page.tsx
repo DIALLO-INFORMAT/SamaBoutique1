@@ -1,4 +1,4 @@
-
+// src/app/admin/products/page.tsx
 'use client'; // Required for interactions like delete confirmation
 
 import { useState, useEffect } from 'react';
@@ -183,12 +183,12 @@ export default function AdminProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="hidden w-[64px] sm:table-cell px-6">Image</TableHead>
-                  <TableHead className="px-6">{t('admin_products_table_name')}</TableHead>
-                  <TableHead className="px-6">{t('admin_products_table_category')}</TableHead>
-                   <TableHead className="text-center px-6 hidden lg:table-cell">Promo</TableHead> {/* Added Promo column */}
-                  <TableHead className="text-right px-6">{t('admin_products_table_price')}</TableHead>
-                  <TableHead className="text-right px-6 w-[100px]">{t('admin_products_table_actions')}</TableHead>
+                  <TableHead className="hidden w-[64px] sm:table-cell px-6 text-base">Image</TableHead> {/* Increased font */}
+                  <TableHead className="px-6 text-base">{t('admin_products_table_name')}</TableHead> {/* Increased font */}
+                  <TableHead className="px-6 text-base">{t('admin_products_table_category')}</TableHead> {/* Increased font */}
+                   <TableHead className="text-center px-6 hidden lg:table-cell text-base">Promo</TableHead> {/* Added Promo column, Increased font */}
+                  <TableHead className="text-right px-6 text-base">{t('admin_products_table_price')}</TableHead> {/* Increased font */}
+                  <TableHead className="text-right px-6 w-[100px] text-base">{t('admin_products_table_actions')}</TableHead> {/* Increased font */}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -204,19 +204,19 @@ export default function AdminProductsPage() {
                          data-ai-hint={product.category === 'Services' ? 'service tech icon' : product.name.toLowerCase().split(' ')[0]}
                        />
                     </TableCell>
-                    <TableCell className="font-medium px-6 py-3">{product.name}</TableCell>
-                    <TableCell className="px-6 py-3">{product.category}</TableCell>
+                    <TableCell className="font-medium px-6 py-3 text-base">{product.name}</TableCell> {/* Increased font */}
+                    <TableCell className="px-6 py-3 text-base">{product.category}</TableCell> {/* Increased font */}
                     {/* Promo Status Cell */}
                     <TableCell className="text-center px-6 py-3 hidden lg:table-cell">
                        {product.isOnSale ? (
-                         <Badge variant="destructive" className="bg-orange-500 text-white border-orange-600">
+                         <Badge variant="destructive" className="bg-orange-500 text-white border-orange-600 text-sm"> {/* Increased font */}
                            <Percent className="mr-1 h-3 w-3" /> Promo
                          </Badge>
                        ) : (
                          <span className="text-muted-foreground">-</span>
                        )}
                     </TableCell>
-                    <TableCell className="text-right px-6 py-3">{product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
+                    <TableCell className="text-right px-6 py-3 text-base">{product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell> {/* Increased font */}
                     <TableCell className="text-right px-6 py-3">
                       <AlertDialog>
                            <DropdownMenu>
@@ -229,13 +229,13 @@ export default function AdminProductsPage() {
                                <DropdownMenuContent align="end">
                                    <DropdownMenuLabel>{t('admin_products_table_actions')}</DropdownMenuLabel>
                                    <DropdownMenuItem asChild>
-                                        <Link href={`/admin/products/edit/${product.id}`} className="flex items-center cursor-pointer w-full">
+                                        <Link href={`/admin/products/edit/${product.id}`} className="flex items-center cursor-pointer w-full text-base"> {/* Increased font */}
                                             <Edit className="mr-2 h-4 w-4"/>{t('admin_products_action_edit')}
                                         </Link>
                                    </DropdownMenuItem>
                                    <DropdownMenuSeparator />
                                    <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-sm font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                                      <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-base font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50"> {/* Increased font */}
                                          <Trash2 className="mr-2 h-4 w-4"/>{t('admin_products_action_delete')}
                                       </Button>
                                    </AlertDialogTrigger>
