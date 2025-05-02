@@ -55,15 +55,11 @@ const TableRow = React.forwardRef<
   HTMLTableRowElement,
   React.HTMLAttributes<HTMLTableRowElement>
 >(({ className, children, ...props }, ref) => {
-  // Filter out pure whitespace text nodes to prevent hydration errors
-  const filteredChildren = React.Children.toArray(children).filter(child => {
-    // Keep non-string children (components, elements)
-    if (typeof child !== 'string') {
-      return true;
-    }
-    // Keep string children only if they contain non-whitespace characters
-    return child.trim() !== '';
-  });
+  // Filter out pure whitespace text nodes to prevent hydration errors.
+  // Also ensure children are valid elements (e.g., TableCell, TableHead).
+  const filteredChildren = React.Children.toArray(children).filter(child =>
+    React.isValidElement(child) || (typeof child === 'string' && child.trim() !== '')
+  );
 
   return (
     <tr
@@ -74,7 +70,7 @@ const TableRow = React.forwardRef<
       )}
       {...props}
     >
-      {filteredChildren} {/* Render only non-whitespace children */}
+      {filteredChildren} {/* Render only valid, non-whitespace children */}
     </tr>
   );
 });
@@ -129,4 +125,3 @@ export {
   TableCell,
   TableCaption,
 }
-

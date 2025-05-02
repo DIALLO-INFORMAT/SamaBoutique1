@@ -62,7 +62,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                          <SidebarTrigger className="md:hidden"/>
                          <span className="font-semibold text-xl hidden group-data-[state=expanded]:inline text-primary">Admin</span> {/* Increased font size */}
                     </SidebarHeader>
-                    <SidebarContent className="p-2">
+                    {/* Added pt-2 for top padding */}
+                    <SidebarContent className="p-2 pt-4">
                         <SidebarMenu>
                             <SidebarMenuItem>
                                 <Link href="/admin" >

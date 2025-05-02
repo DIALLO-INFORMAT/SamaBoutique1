@@ -134,7 +134,8 @@ export default function UserDashboardLayout({ children }: UserDashboardLayoutPro
                          <SidebarTrigger className="md:hidden"/>
                          <span className="font-semibold text-xl hidden group-data-[state=expanded]:inline text-primary">Mon Espace</span> {/* Increased font size */}
                     </SidebarHeader>
-                    <SidebarContent className="p-2">
+                    {/* Added pt-4 for top padding */}
+                    <SidebarContent className="p-2 pt-4">
                         <SidebarMenu>
                              <SidebarMenuItem>
                                 <Link href="/dashboard" >
