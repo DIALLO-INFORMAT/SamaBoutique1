@@ -1,4 +1,3 @@
-
 {
   "site_name": "SamaBoutique",
   "developed_by": "Développé par WKB",
@@ -601,7 +600,7 @@
   "admin_settings_toast_save_success_description": "Les paramètres généraux ont été mis à jour.",
   "admin_settings_toast_save_error_title": "Erreur",
   "admin_settings_toast_save_error_description": "Impossible d'enregistrer les paramètres généraux.",
-  "admin_settings_carousel_title": "Images du Carrousel",
+  "admin_settings_carousel_title": "Images",
   "admin_settings_carousel_description": "Gérez les images du carrousel de la page d'accueil.",
   "admin_settings_partners_title": "Logos Partenaires",
   "admin_settings_partners_description": "Gérez les logos des partenaires affichés sur la page d'accueil.",

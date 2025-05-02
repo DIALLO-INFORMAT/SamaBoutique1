@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, ImagePlus } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useSettings, saveSettings, CarouselImage, PartnerLogo, Settings } from '@/hooks/useSettings';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -39,6 +39,16 @@ export default function ManagerAppearancePage() {
     }
   }, [settingsLoading, currentSettings, user]);
 
+   // Callback function to update carousel images in local state
+  const handleCarouselImagesChange = useCallback((newImages: CarouselImage[]) => {
+      setCarouselImages(newImages);
+  }, []);
+
+  // Callback function to update partner logos in local state
+  const handlePartnerLogosChange = useCallback((newLogos: PartnerLogo[]) => {
+      setPartnerLogos(newLogos);
+  }, []);
+
   const handleSaveChanges = useCallback(async () => {
     setIsSaving(true);
     try {
@@ -51,14 +61,14 @@ export default function ManagerAppearancePage() {
 
       toast({
         title: t('admin_settings_toast_save_success_title'),
-        description: "Les images du carrousel et les logos partenaires ont été mis à jour.",
+        description: t('manager_appearance_toast_save_success_description'), // Specific description key added
         className: 'bg-primary text-primary-foreground border-primary',
       });
     } catch (error) {
       console.error("Failed to save appearance settings:", error);
       toast({
         title: t('admin_settings_toast_save_error_title'),
-        description: "Impossible d'enregistrer les modifications d'apparence.",
+        description: t('manager_appearance_toast_save_error_description'), // Specific description key added
         variant: 'destructive',
       });
     } finally {
@@ -90,10 +100,10 @@ export default function ManagerAppearancePage() {
       <p className="text-muted-foreground">{t('manager_appearance_description')}</p>
 
       <ImageManagementCard<CarouselImage>
-        title={t('admin_settings_carousel_title')}
+        title={t('admin_settings_carousel_title')} // Title changed to "Images" in fr.json
         description={t('admin_settings_carousel_description')}
         images={carouselImages}
-        onImagesChange={setCarouselImages}
+        onImagesChange={handleCarouselImagesChange} // Use the specific handler
         itemType="carousel"
       />
 
@@ -101,7 +111,7 @@ export default function ManagerAppearancePage() {
         title={t('admin_settings_partners_title')}
         description={t('admin_settings_partners_description')}
         images={partnerLogos}
-        onImagesChange={setPartnerLogos}
+        onImagesChange={handlePartnerLogosChange} // Use the specific handler
         itemType="partner"
       />
 
