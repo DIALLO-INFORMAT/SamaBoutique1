@@ -43,8 +43,8 @@ const createFormSchema = (t: Function) => z.object({
   name: z.string().min(2, {
     message: t('checkout_form_name') + " must contain at least 2 characters.",
   }),
-  address: z.string().min(10, {
-    message: t('checkout_form_address') + " must contain at least 10 characters.",
+  address: z.string().min(1, { // Changed from min(10) to min(1) to effectively remove the practical limit
+    message: t('checkout_form_address') + " " + t('validation_required_field', { field: t('checkout_form_address')}),
   }),
   phone: z.string().min(8, {
     message: t('checkout_form_phone') + " must be a valid phone number.",
