@@ -46,9 +46,13 @@ export function ProductCard({ product, viewMode, href }: ProductCardProps) {
 
   const discountedPrice = calculateDiscountedPrice(product.price, product.discountType, product.discountValue);
   const displayPrice = product.isOnSale ? discountedPrice : product.price;
+  const originalPriceForDisplay = product.isOnSale ? product.price : null;
 
-  const getDiscountBadgeText = () => {
-    if (!product.isOnSale || !product.discountType || !product.discountValue) return null;
+
+  const getDiscountBadgeText = (): string | null => {
+    if (!product.isOnSale || !product.discountType || !product.discountValue || product.discountValue <= 0) {
+      return null;
+    }
     if (product.discountType === 'percentage') {
       return `-${product.discountValue}%`;
     }
@@ -56,7 +60,7 @@ export function ProductCard({ product, viewMode, href }: ProductCardProps) {
       // Format fixed amount as currency
       return `-${product.discountValue.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
     }
-    return null;
+    return t('product_card_on_sale'); // Fallback, though should be covered
   };
   const discountBadgeText = getDiscountBadgeText();
 
@@ -139,9 +143,9 @@ export function ProductCard({ product, viewMode, href }: ProductCardProps) {
              viewMode === 'list' && "p-0 pt-3 border-none bg-transparent mt-auto"
         )}>
           <div className="flex flex-col items-start">
-            {product.isOnSale && (
+            {originalPriceForDisplay && originalPriceForDisplay > displayPrice && (
               <span className="text-xs text-muted-foreground line-through">
-                {product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                {originalPriceForDisplay.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </span>
             )}
             <span className={cn("font-semibold text-primary", viewMode === 'grid' ? "text-xl" : "text-lg")}>
@@ -167,3 +171,4 @@ export function ProductCard({ product, viewMode, href }: ProductCardProps) {
   }
   return cardContent;
 }
+

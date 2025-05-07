@@ -37,6 +37,8 @@ export interface ManagerProduct {
   category: string;
   imageUrl?: string; // Added imageUrl
   isOnSale?: boolean; // Added isOnSale flag
+  discountType?: 'percentage' | 'fixed_amount';
+  discountValue?: number;
 }
 
 // Mock data fetching/deleting functions (similar to admin page, but potentially scoped)
@@ -61,6 +63,8 @@ const fetchManagerProductsFromAPI = async (): Promise<ManagerProduct[]> => {
         ...p,
         imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/64/64`,
         isOnSale: p.isOnSale || false, // Ensure isOnSale defaults to false
+        discountType: p.discountType,
+        discountValue: p.discountValue,
     }));
 }
 
@@ -133,6 +137,19 @@ export default function ManagerProductsPage() {
     }
   };
 
+  const getDiscountBadgeText = (product: ManagerProduct): string | null => {
+    if (!product.isOnSale || !product.discountType || !product.discountValue || product.discountValue <=0) {
+      return null;
+    }
+    if (product.discountType === 'percentage') {
+      return `-${product.discountValue}%`;
+    }
+    if (product.discountType === 'fixed_amount') {
+      return `-${product.discountValue.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    }
+    return t('product_card_on_sale'); // Fallback
+  };
+
    // Render loading or unauthorized state
   if (isLoading || authLoading) {
       return <div className="p-6"><Skeleton className="h-10 w-1/2 mb-4" /> <Skeleton className="h-64 w-full" /></div>;
@@ -177,78 +194,81 @@ export default function ManagerProductsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product.id} className="hover:bg-muted/50">
-                    <TableCell className="hidden sm:table-cell px-6 py-3">
-                       <Image
-                         alt={product.name}
-                         className="aspect-square rounded-md object-cover border border-border"
-                         height="48"
-                         src={product.imageUrl || `https://picsum.photos/seed/${product.id}/64/64`} // Use actual or fallback
-                         width="48"
-                         data-ai-hint={product.category === 'Services' ? 'service tech icon' : product.name.toLowerCase().split(' ')[0]}
-                       />
-                    </TableCell>
-                    <TableCell className="font-medium px-6 py-3 text-base">{product.name}</TableCell>
-                    <TableCell className="px-6 py-3 text-base">{product.category}</TableCell>
-                     {/* Promo Status Cell */}
-                    <TableCell className="text-center px-6 py-3 hidden lg:table-cell">
-                       {product.isOnSale ? (
-                         <Badge variant="destructive" className="bg-orange-500 text-white border-orange-600 text-sm">
-                           <Percent className="mr-1 h-3 w-3" /> Promo
-                         </Badge>
-                       ) : (
-                         <span className="text-muted-foreground">-</span>
-                       )}
-                    </TableCell>
-                    <TableCell className="text-right px-6 py-3 text-base">{product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
-                    <TableCell className="text-right px-6 py-3">
-                      <AlertDialog>
-                           <DropdownMenu>
-                               <DropdownMenuTrigger asChild>
-                                   <Button aria-haspopup="true" size="icon" variant="ghost" disabled={isDeleting === product.id}>
-                                       {isDeleting === product.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
-                                       <span className="sr-only">Toggle menu</span>
-                                   </Button>
-                               </DropdownMenuTrigger>
-                               <DropdownMenuContent align="end">
-                                   <DropdownMenuLabel>{t('dashboard_manage_products_table_actions')}</DropdownMenuLabel>
-                                   <DropdownMenuItem asChild>
-                                        {/* Link to manager's edit page */}
-                                        <Link href={`/dashboard/products/edit/${product.id}`} className="flex items-center cursor-pointer w-full text-base">
-                                            <Edit className="mr-2 h-4 w-4"/>{t('dashboard_manage_products_edit_action')}
-                                        </Link>
-                                   </DropdownMenuItem>
-                                   {/* Manager might not have delete permission, or only for products they added */}
-                                    <DropdownMenuSeparator />
-                                   <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-base font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                                         <Trash2 className="mr-2 h-4 w-4"/>{t('dashboard_manage_products_delete_action')}
-                                      </Button>
-                                   </AlertDialogTrigger>
-                               </DropdownMenuContent>
-                           </DropdownMenu>
+                {products.map((product) => {
+                  const discountText = getDiscountBadgeText(product);
+                  return (
+                    <TableRow key={product.id} className="hover:bg-muted/50">
+                      <TableCell className="hidden sm:table-cell px-6 py-3">
+                        <Image
+                          alt={product.name}
+                          className="aspect-square rounded-md object-cover border border-border"
+                          height="48"
+                          src={product.imageUrl || `https://picsum.photos/seed/${product.id}/64/64`} // Use actual or fallback
+                          width="48"
+                          data-ai-hint={product.category === 'Services' ? 'service tech icon' : product.name.toLowerCase().split(' ')[0]}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium px-6 py-3 text-base">{product.name}</TableCell>
+                      <TableCell className="px-6 py-3 text-base">{product.category}</TableCell>
+                      {/* Promo Status Cell */}
+                      <TableCell className="text-center px-6 py-3 hidden lg:table-cell">
+                        {discountText ? (
+                          <Badge variant="destructive" className="bg-orange-500 text-white border-orange-600 text-sm">
+                            <Percent className="mr-1 h-3 w-3" /> {discountText.startsWith('-') ? discountText.substring(1) : discountText}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right px-6 py-3 text-base">{product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
+                      <TableCell className="text-right px-6 py-3">
+                        <AlertDialog>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button aria-haspopup="true" size="icon" variant="ghost" disabled={isDeleting === product.id}>
+                                {isDeleting === product.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                                <span className="sr-only">Toggle menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>{t('dashboard_manage_products_table_actions')}</DropdownMenuLabel>
+                              <DropdownMenuItem asChild>
+                                {/* Link to manager's edit page */}
+                                <Link href={`/dashboard/products/edit/${product.id}`} className="flex items-center cursor-pointer w-full text-base">
+                                  <Edit className="mr-2 h-4 w-4" />{t('dashboard_manage_products_edit_action')}
+                                </Link>
+                              </DropdownMenuItem>
+                              {/* Manager might not have delete permission, or only for products they added */}
+                              <DropdownMenuSeparator />
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-base font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                                  <Trash2 className="mr-2 h-4 w-4" />{t('dashboard_manage_products_delete_action')}
+                                </Button>
+                              </AlertDialogTrigger>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
 
-                           {/* Delete Confirmation (If managers can delete) */}
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                      <AlertDialogTitle>{t('dashboard_manage_products_delete_confirm_title', { productName: product.name })}</AlertDialogTitle>
-                                      <AlertDialogDescription>{t('dashboard_manage_products_delete_confirm_description')}</AlertDialogDescription>
-                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                     <AlertDialogCancel>{t('general_cancel')}</AlertDialogCancel>
-                                     <AlertDialogAction onClick={() => handleDeleteProduct(product.id, product.name)} className={buttonVariants({ variant: "destructive" })} disabled={isDeleting === product.id}>
-                                        {isDeleting === product.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {t('general_delete')}
-                                     </AlertDialogAction>
-                                 </AlertDialogFooter>
-                           </AlertDialogContent>
-                       </AlertDialog>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          {/* Delete Confirmation (If managers can delete) */}
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{t('dashboard_manage_products_delete_confirm_title', { productName: product.name })}</AlertDialogTitle>
+                              <AlertDialogDescription>{t('dashboard_manage_products_delete_confirm_description')}</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{t('general_cancel')}</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteProduct(product.id, product.name)} className={buttonVariants({ variant: "destructive" })} disabled={isDeleting === product.id}>
+                                {isDeleting === product.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {t('general_delete')}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
-           )}
+          )}
         </CardContent>
       </Card>
     </div>

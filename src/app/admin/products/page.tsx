@@ -37,6 +37,8 @@ export interface AdminProduct {
   category: string;
   imageUrl?: string; // Optional image URL
   isOnSale?: boolean; // Add isOnSale flag
+  discountType?: 'percentage' | 'fixed_amount';
+  discountValue?: number;
   // Add other fields like stock, etc. if needed
 }
 
@@ -62,6 +64,8 @@ const fetchProductsFromAPI = async (): Promise<AdminProduct[]> => {
                     ...p,
                     imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/64/64`,
                     isOnSale: p.isOnSale || false, // Ensure isOnSale has a default value
+                    discountType: p.discountType,
+                    discountValue: p.discountValue,
                 }));
             } catch (error) {
                  console.error("Error parsing products from localStorage:", error);
@@ -145,6 +149,19 @@ export default function AdminProductsPage() {
     }
   };
 
+  const getDiscountBadgeText = (product: AdminProduct): string | null => {
+    if (!product.isOnSale || !product.discountType || !product.discountValue || product.discountValue <= 0) {
+      return null;
+    }
+    if (product.discountType === 'percentage') {
+      return `-${product.discountValue}%`;
+    }
+    if (product.discountType === 'fixed_amount') {
+      return `-${product.discountValue.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    }
+    return t('product_card_on_sale'); // Fallback
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
@@ -196,83 +213,86 @@ export default function AdminProductsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products.map((product) => (
-                  <TableRow key={product.id} className="hover:bg-muted/50">
-                    <TableCell className="hidden sm:table-cell px-6 py-3">
-                       <Image
-                         alt={product.name}
-                         className="aspect-square rounded-md object-cover border border-border"
-                         height="48" // Smaller image
-                         src={product.imageUrl || `https://picsum.photos/seed/${product.id}/64/64`} // Use stored URL or fallback
-                         width="48"
-                         data-ai-hint={product.category === 'Services' ? 'service tech icon' : product.name.toLowerCase().split(' ')[0]}
-                       />
-                    </TableCell>
-                    <TableCell className="font-medium px-6 py-3 text-base">{product.name}</TableCell>
-                    <TableCell className="px-6 py-3 text-base">{product.category}</TableCell>
-                    {/* Promo Status Cell */}
-                    <TableCell className="text-center px-6 py-3 hidden lg:table-cell">
-                       {product.isOnSale ? (
-                         <Badge variant="destructive" className="bg-orange-500 text-white border-orange-600 text-sm">
-                           <Percent className="mr-1 h-3 w-3" /> Promo
-                         </Badge>
-                       ) : (
-                         <span className="text-muted-foreground">-</span>
-                       )}
-                    </TableCell>
-                    <TableCell className="text-right px-6 py-3 text-base">{product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
-                    <TableCell className="text-right px-6 py-3">
-                      <AlertDialog>
-                           <DropdownMenu>
-                               <DropdownMenuTrigger asChild>
-                                   <Button aria-haspopup="true" size="icon" variant="ghost" disabled={isDeleting === product.id}>
-                                       {isDeleting === product.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
-                                       <span className="sr-only">Toggle menu</span>
-                                   </Button>
-                               </DropdownMenuTrigger>
-                               <DropdownMenuContent align="end">
-                                   <DropdownMenuLabel>{t('admin_products_table_actions')}</DropdownMenuLabel>
-                                   <DropdownMenuItem asChild>
-                                        <Link href={`/admin/products/edit/${product.id}`} className="flex items-center cursor-pointer w-full text-base">
-                                            <Edit className="mr-2 h-4 w-4"/>{t('admin_products_action_edit')}
-                                        </Link>
-                                   </DropdownMenuItem>
-                                   <DropdownMenuSeparator />
-                                   <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-base font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                                         <Trash2 className="mr-2 h-4 w-4"/>{t('admin_products_action_delete')}
-                                      </Button>
-                                   </AlertDialogTrigger>
-                               </DropdownMenuContent>
-                           </DropdownMenu>
+                {products.map((product) => {
+                  const discountText = getDiscountBadgeText(product);
+                  return (
+                    <TableRow key={product.id} className="hover:bg-muted/50">
+                      <TableCell className="hidden sm:table-cell px-6 py-3">
+                        <Image
+                          alt={product.name}
+                          className="aspect-square rounded-md object-cover border border-border"
+                          height="48" // Smaller image
+                          src={product.imageUrl || `https://picsum.photos/seed/${product.id}/64/64`} // Use stored URL or fallback
+                          width="48"
+                          data-ai-hint={product.category === 'Services' ? 'service tech icon' : product.name.toLowerCase().split(' ')[0]}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium px-6 py-3 text-base">{product.name}</TableCell>
+                      <TableCell className="px-6 py-3 text-base">{product.category}</TableCell>
+                      {/* Promo Status Cell */}
+                      <TableCell className="text-center px-6 py-3 hidden lg:table-cell">
+                        {discountText ? (
+                          <Badge variant="destructive" className="bg-orange-500 text-white border-orange-600 text-sm">
+                            <Percent className="mr-1 h-3 w-3" /> {discountText.startsWith('-') ? discountText.substring(1) : discountText}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right px-6 py-3 text-base">{product.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
+                      <TableCell className="text-right px-6 py-3">
+                        <AlertDialog>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button aria-haspopup="true" size="icon" variant="ghost" disabled={isDeleting === product.id}>
+                                {isDeleting === product.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                                <span className="sr-only">Toggle menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>{t('admin_products_table_actions')}</DropdownMenuLabel>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/admin/products/edit/${product.id}`} className="flex items-center cursor-pointer w-full text-base">
+                                  <Edit className="mr-2 h-4 w-4" />{t('admin_products_action_edit')}
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" data-alert-type="delete" className="text-destructive focus:text-destructive hover:bg-destructive/10 w-full justify-start px-2 py-1.5 h-auto text-base font-normal cursor-pointer relative flex select-none items-center rounded-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                                  <Trash2 className="mr-2 h-4 w-4" />{t('admin_products_action_delete')}
+                                </Button>
+                              </AlertDialogTrigger>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
 
-                           {/* Delete Confirmation Dialog */}
-                           <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>{t('admin_products_delete_confirm_title')}</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    {t('admin_products_delete_confirm_description', { productName: product.name })}
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>{t('general_cancel')}</AlertDialogCancel>
-                                  <AlertDialogAction
-                                     onClick={() => handleDeleteProduct(product.id, product.name)}
-                                     className={buttonVariants({ variant: "destructive" })}
-                                     disabled={isDeleting === product.id}
-                                  >
-                                      {isDeleting === product.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                      {t('general_delete')}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                       </AlertDialog>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          {/* Delete Confirmation Dialog */}
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{t('admin_products_delete_confirm_title')}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t('admin_products_delete_confirm_description', { productName: product.name })}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{t('general_cancel')}</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteProduct(product.id, product.name)}
+                                className={buttonVariants({ variant: "destructive" })}
+                                disabled={isDeleting === product.id}
+                              >
+                                {isDeleting === product.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {t('general_delete')}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
-           )}
+          )}
         </CardContent>
         {/* Optional: Add pagination controls here */}
         {/* <CardFooter className="p-4 border-t"> Pagination </CardFooter> */}
@@ -280,3 +300,4 @@ export default function AdminProductsPage() {
     </div>
   );
 }
+
