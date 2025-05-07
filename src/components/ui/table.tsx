@@ -55,6 +55,14 @@ const TableRow = React.forwardRef<
   HTMLTableRowElement,
   React.HTMLAttributes<HTMLTableRowElement>
 >(({ className, children, ...props }, ref) => {
+  // Filter out whitespace-only string children to prevent hydration errors
+  const validChildren = React.Children.toArray(children).filter(child => {
+    if (typeof child === 'string' && child.trim() === '') {
+      return false; // Remove whitespace-only strings
+    }
+    return true;
+  });
+
   return (
     <tr
       ref={ref}
@@ -64,7 +72,7 @@ const TableRow = React.forwardRef<
       )}
       {...props}
     >
-      {children} {/* Render children directly */}
+      {validChildren}
     </tr>
   );
 });

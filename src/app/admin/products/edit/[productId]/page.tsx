@@ -17,42 +17,73 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Loader2, Image as ImageIcon, LinkIcon, Percent } from "lucide-react"; // Added Percent icon
+import { ArrowLeft, Loader2, Image as ImageIcon, LinkIcon, Percent } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { AdminProduct, Category, Tag } from '@/lib/types'; // Import types
-import { MultiSelect } from '@/components/ui/multi-select'; // Import MultiSelect
-import { Switch } from '@/components/ui/switch'; // Import Switch
-
-// Storage keys (assuming they are the same for now)
-const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products';
-const CATEGORIES_STORAGE_KEY = 'sama_boutique_categories';
-const TAGS_STORAGE_KEY = 'sama_boutique_tags';
+import type { AdminProduct, Category, Tag } from '@/lib/types';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { Switch } from '@/components/ui/switch';
 
 // --- Zod Schema Update ---
 const createProductSchema = (t: Function) => z.object({
   name: z.string().min(3, { message: t('admin_add_product_form_name') + " " + t('validation_min_chars', { count: 3 }) }),
   description: z.string().min(10, { message: t('admin_add_product_form_description') + " " + t('validation_min_chars', { count: 10 }) }).max(500, { message: t('admin_add_product_form_description') + " " + t('validation_max_chars', { count: 500 }) }),
   price: z.coerce.number().positive({ message: t('admin_add_product_form_price') + " " + t('validation_positive_number') }),
-  category: z.string().min(1, { message: t('validation_required_field', { field: t('admin_add_product_form_category') }) }), // Keep as string ID/name
-  tags: z.array(z.string()).optional(), // Array of tag IDs/names
+  category: z.string().min(1, { message: t('validation_required_field', { field: t('admin_add_product_form_category') }) }),
+  tags: z.array(z.string()).optional(),
   imageUrl: z.string().url({ message: t('admin_add_product_form_image_url_invalid') }).or(z.literal('')).optional(),
   imageFile: z.instanceof(File).optional().nullable(),
-  isOnSale: z.boolean().default(false), // Add isOnSale field
+  isOnSale: z.boolean().default(false),
+  discountType: z.enum(['percentage', 'fixed_amount'], {
+    errorMap: () => ({ message: "Veuillez sélectionner un type de remise." })
+  }).optional(),
+  discountValue: z.coerce.number().positive({ message: "La valeur de la remise doit être positive." }).optional(),
 }).superRefine((data, ctx) => {
   if (data.imageUrl && data.imageFile) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: t('admin_add_product_form_image_source_error'), path: ["imageUrl"] });
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: t('admin_add_product_form_image_source_error'), path: ["imageFile"] });
   }
+  if (data.isOnSale) {
+    if (!data.discountType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Le type de remise est requis si le produit est en promotion.",
+        path: ["discountType"],
+      });
+    }
+    if (data.discountValue === undefined || data.discountValue === null || data.discountValue <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "La valeur de la remise est requise et doit être positive si le produit est en promotion.",
+        path: ["discountValue"],
+      });
+    }
+    if (data.discountType === 'percentage' && (data.discountValue < 1 || data.discountValue > 100)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "La remise en pourcentage doit être entre 1 et 100.",
+        path: ["discountValue"],
+      });
+    }
+  }
+  if (!data.isOnSale) {
+    data.discountType = undefined;
+    data.discountValue = undefined;
+  }
 });
 
+
+// Storage keys
+const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products';
+const CATEGORIES_STORAGE_KEY = 'sama_boutique_categories';
+const TAGS_STORAGE_KEY = 'sama_boutique_tags';
 
 // --- Mock Data Fetching Functions ---
 const fetchProductById = async (productId: string): Promise<AdminProduct | null> => {
@@ -107,8 +138,10 @@ const updateProductAPI = async (productId: string, values: z.infer<ReturnType<ty
                 ...productDataToSave,
                 price: Number(productDataToSave.price),
                 imageUrl: finalImageUrl,
-                tags: values.tags || [], // Ensure tags array exists
-                isOnSale: values.isOnSale, // Save promotion status
+                tags: values.tags || [],
+                isOnSale: values.isOnSale,
+                discountType: values.isOnSale ? values.discountType : undefined,
+                discountValue: values.isOnSale ? values.discountValue : undefined,
             };
             localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(products));
         }
@@ -137,9 +170,18 @@ export default function EditProductPage() {
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: "", description: "", price: 0, category: "",
-      tags: [], imageUrl: "", imageFile: null, isOnSale: false, // Default isOnSale
+      tags: [], imageUrl: "", imageFile: null, isOnSale: false, discountType: undefined, discountValue: undefined,
     },
   });
+
+  const isOnSale = form.watch('isOnSale');
+
+  useEffect(() => {
+    if (!isOnSale) {
+      form.setValue('discountType', undefined);
+      form.setValue('discountValue', undefined);
+    }
+  }, [isOnSale, form]);
 
    // Watch form values for preview updates
     const watchedImageUrl = form.watch('imageUrl');
@@ -174,10 +216,12 @@ export default function EditProductPage() {
           setProduct(foundProduct);
           form.reset({
             name: foundProduct.name, description: foundProduct.description, price: foundProduct.price,
-            category: foundProduct.category, // Use category name/ID directly
-            tags: foundProduct.tags || [], // Initialize tags
+            category: foundProduct.category,
+            tags: foundProduct.tags || [],
             imageUrl: foundProduct.imageUrl || '', imageFile: null,
-            isOnSale: foundProduct.isOnSale || false, // Initialize isOnSale
+            isOnSale: foundProduct.isOnSale || false,
+            discountType: foundProduct.discountType,
+            discountValue: foundProduct.discountValue,
           });
            setImagePreview(foundProduct.imageUrl || null);
            setImageSourceType(foundProduct.imageUrl ? 'url' : 'file');
@@ -193,7 +237,7 @@ export default function EditProductPage() {
       } finally { setIsLoading(false); }
     };
     loadData();
-  }, [productId, form, router, toast, t]); // form.reset removed from deps
+  }, [productId, form, router, toast, t]);
 
 
   async function onSubmit(values: z.infer<ReturnType<typeof createProductSchema>>) {
@@ -214,7 +258,6 @@ export default function EditProductPage() {
     }
   }
 
-  // Image Management Handlers (same as before)
    const handleImageFileChange = (event: ChangeEvent<HTMLInputElement>) => {
      const file = event.target.files?.[0];
      if (file) { form.setValue('imageFile', file, { shouldValidate: true }); form.setValue('imageUrl', '', { shouldValidate: true }); setImageSourceType('file'); }
@@ -232,9 +275,8 @@ export default function EditProductPage() {
        setImagePreview(product?.imageUrl || null);
    };
 
-   // Prepare options for Select components
-   const categoryOptions = categories.map(cat => ({ value: cat.name, label: cat.name })); // Using name as value for simplicity
-   const tagOptions = tags.map(tag => ({ value: tag.name, label: tag.name })); // Using name as value
+   const categoryOptions = categories.map(cat => ({ value: cat.name, label: cat.name }));
+   const tagOptions = tags.map(tag => ({ value: tag.name, label: tag.name }));
 
 
   if (isLoading || isLoadingTaxonomies) {
@@ -264,7 +306,6 @@ export default function EditProductPage() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {/* General Info Card */}
             <Card className="shadow-md border-border overflow-hidden">
                  <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><CardTitle>{t('admin_add_product_general_info_title')}</CardTitle></CardHeader>
                  <CardContent className="p-6 space-y-6">
@@ -273,12 +314,10 @@ export default function EditProductPage() {
                  </CardContent>
              </Card>
 
-            {/* Pricing, Categorization, Tags, Promotion Card */}
              <Card className="shadow-md border-border overflow-hidden">
                  <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><CardTitle>{t('admin_add_product_pricing_category_title')}</CardTitle></CardHeader>
                  <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                      <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>{t('admin_add_product_form_price')}</FormLabel><FormControl><Input type="number" step="1" {...field} /></FormControl><FormMessage /></FormItem> )}/>
-                     {/* Category Select */}
                      <FormField control={form.control} name="category" render={({ field }) => (
                          <FormItem>
                              <FormLabel>{t('admin_add_product_form_category')}</FormLabel>
@@ -297,7 +336,6 @@ export default function EditProductPage() {
                              <FormMessage />
                          </FormItem>
                      )}/>
-                     {/* Tags MultiSelect */}
                      <FormField control={form.control} name="tags" render={({ field }) => (
                          <FormItem className="md:col-span-2">
                              <FormLabel>{t('admin_add_product_form_tags')}</FormLabel>
@@ -315,7 +353,6 @@ export default function EditProductPage() {
                              <FormMessage />
                          </FormItem>
                      )}/>
-                      {/* Promotion Switch */}
                      <FormField
                          control={form.control}
                          name="isOnSale"
@@ -323,23 +360,58 @@ export default function EditProductPage() {
                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 md:col-span-2">
                              <div className="space-y-0.5">
                                  <FormLabel className="text-base flex items-center gap-2"><Percent className="h-4 w-4"/> Mettre en Promotion</FormLabel>
-                                 <FormDescription>Activer pour afficher une étiquette "Promo" sur le produit.</FormDescription>
+                                 <FormDescription>Activer pour appliquer une remise et afficher une étiquette "Promo".</FormDescription>
                              </div>
                              <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                          </FormItem>
                          )}
                      />
+                    {isOnSale && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="discountType"
+                          render={({ field }) => (
+                            <FormItem className="md:col-span-1">
+                              <FormLabel>Type de Remise</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Sélectionnez un type" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="percentage">Pourcentage (%)</SelectItem>
+                                  <SelectItem value="fixed_amount">Montant Fixe (FCFA)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="discountValue"
+                          render={({ field }) => (
+                            <FormItem className="md:col-span-1">
+                              <FormLabel>Valeur de la Remise</FormLabel>
+                              <FormControl>
+                                <Input type="number" placeholder="Ex: 15 ou 5000" {...field} value={field.value ?? ''}/>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
                  </CardContent>
             </Card>
 
-            {/* Image Management Card */}
             <Card className="shadow-md border-border overflow-hidden">
                  <CardHeader className="bg-muted/30 border-b border-border px-6 py-4"><CardTitle>{t('admin_add_product_image_title')}</CardTitle></CardHeader>
                  <CardContent className="p-6 space-y-4">
-                       {/* Image Preview */}
                        {imagePreview && <div className="mb-4"><p className="text-sm font-medium mb-2">{t('admin_settings_form_preview_label')}</p><Image src={imagePreview} alt={product.name} width={200} height={150} className="rounded-md border border-border object-cover" onError={() => setImagePreview(null)} /></div>}
                        {!imagePreview && product?.imageUrl && <div className="mb-4"><p className="text-sm font-medium mb-2">{t('admin_edit_product_current_image_label')}</p><Image src={product.imageUrl} alt={product.name} width={200} height={150} className="rounded-md border border-border object-cover"/></div>}
-                     {/* Image Source Tabs */}
                      <Tabs value={imageSourceType} onValueChange={handleImageSourceChange} className="w-full">
                         <TabsList className="grid w-full grid-cols-2 mb-4"><TabsTrigger value="url">{t('admin_add_product_image_source_url')}</TabsTrigger><TabsTrigger value="file">{t('admin_add_product_image_source_file')}</TabsTrigger></TabsList>
                         <TabsContent value="url">

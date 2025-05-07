@@ -47,6 +47,8 @@ export interface AdminProduct {
   imageUrl?: string; // Optional image URL
   tags?: string[]; // Array of Tag IDs or names
   isOnSale?: boolean; // Flag to indicate if the product is on promotion
+  discountType?: 'percentage' | 'fixed_amount'; // Type of discount
+  discountValue?: number; // Value of the discount
 }
 
 // Interface for Categories

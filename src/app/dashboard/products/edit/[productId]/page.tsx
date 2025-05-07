@@ -17,20 +17,20 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Loader2, Image as ImageIcon, LinkIcon, Percent } from "lucide-react"; // Added Percent
+import { ArrowLeft, Loader2, Image as ImageIcon, LinkIcon, Percent } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { AdminProduct, Category, Tag } from '@/lib/types'; // Use AdminProduct, add Category, Tag
-import { MultiSelect } from '@/components/ui/multi-select'; // Import MultiSelect
-import { Switch } from '@/components/ui/switch'; // Import Switch
+import type { AdminProduct, Category, Tag } from '@/lib/types';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { Switch } from '@/components/ui/switch';
 
 
 // --- Zod Schema Update ---
@@ -39,23 +39,54 @@ const createProductSchema = (t: Function) => z.object({
   description: z.string().min(10, { message: t('dashboard_edit_product_form_description') + " " + t('validation_min_chars', { count: 10 }) }).max(500, { message: t('dashboard_edit_product_form_description') + " " + t('validation_max_chars', { count: 500 }) }),
   price: z.coerce.number().positive({ message: t('dashboard_edit_product_form_price') + " " + t('validation_positive_number') }),
   category: z.string().min(1, { message: t('validation_required_field', { field: t('dashboard_edit_product_form_category') }) }),
-  tags: z.array(z.string()).optional(), // Array of tag IDs/names
+  tags: z.array(z.string()).optional(),
   imageUrl: z.string().url({ message: t('admin_add_product_form_image_url_invalid') }).or(z.literal('')).optional(),
   imageFile: z.instanceof(File).optional().nullable(),
-  isOnSale: z.boolean().default(false), // Add isOnSale field
+  isOnSale: z.boolean().default(false),
+  discountType: z.enum(['percentage', 'fixed_amount'], {
+    errorMap: () => ({ message: "Veuillez sélectionner un type de remise." })
+  }).optional(),
+  discountValue: z.coerce.number().positive({ message: "La valeur de la remise doit être positive." }).optional(),
 }).superRefine((data, ctx) => {
   if (data.imageUrl && data.imageFile) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: t('admin_add_product_form_image_source_error'), path: ["imageUrl"] });
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: t('admin_add_product_form_image_source_error'), path: ["imageFile"] });
   }
+  if (data.isOnSale) {
+    if (!data.discountType) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Le type de remise est requis si le produit est en promotion.",
+        path: ["discountType"],
+      });
+    }
+    if (data.discountValue === undefined || data.discountValue === null || data.discountValue <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "La valeur de la remise est requise et doit être positive si le produit est en promotion.",
+        path: ["discountValue"],
+      });
+    }
+    if (data.discountType === 'percentage' && (data.discountValue < 1 || data.discountValue > 100)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "La remise en pourcentage doit être entre 1 et 100.",
+        path: ["discountValue"],
+      });
+    }
+  }
+  if (!data.isOnSale) {
+    data.discountType = undefined;
+    data.discountValue = undefined;
+  }
 });
 
-// Storage keys (use admin keys for simplicity)
+// Storage keys
 const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products';
 const CATEGORIES_STORAGE_KEY = 'sama_boutique_categories';
 const TAGS_STORAGE_KEY = 'sama_boutique_tags';
 
-// --- Mock Data Fetching (Use admin versions) ---
+// --- Mock Data Fetching ---
 const fetchProductById = async (productId: string): Promise<AdminProduct | null> => {
     await new Promise(resolve => setTimeout(resolve, 700));
     if (typeof window === 'undefined') return null;
@@ -80,7 +111,6 @@ const fetchTags = async (): Promise<Tag[]> => {
     return stored ? JSON.parse(stored) : [];
 };
 
-// Use admin update API
 const updateProductAPI = async (productId: string, values: z.infer<ReturnType<typeof createProductSchema>>, originalImageUrl?: string): Promise<void> => {
     console.log("Manager updating Product via API:", productId, values);
     await new Promise(resolve => setTimeout(resolve, 1200));
@@ -97,8 +127,10 @@ const updateProductAPI = async (productId: string, values: z.infer<ReturnType<ty
             products[productIndex] = {
                 ...products[productIndex], ...productDataToSave,
                 price: Number(productDataToSave.price), imageUrl: finalImageUrl,
-                tags: values.tags || [], // Ensure tags array exists
-                isOnSale: values.isOnSale, // Save promotion status
+                tags: values.tags || [],
+                isOnSale: values.isOnSale,
+                discountType: values.isOnSale ? values.discountType : undefined,
+                discountValue: values.isOnSale ? values.discountValue : undefined,
             };
             localStorage.setItem(ADMIN_PRODUCTS_STORAGE_KEY, JSON.stringify(products));
         }
@@ -122,9 +154,8 @@ export default function ManagerEditProductPage() {
   const [imageSourceType, setImageSourceType] = useState<'url' | 'file'>('url');
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
-  const [isLoadingTaxonomies, setIsLoadingTaxonomies] = useState(true); // Separate loading for taxonomies
+  const [isLoadingTaxonomies, setIsLoadingTaxonomies] = useState(true);
 
-  // Redirect or show error if not a manager
   useEffect(() => {
     if (!authLoading && user?.role !== 'manager') {
         toast({ title: t('dashboard_manager_unauthorized_access_toast_title'), description: t('dashboard_manager_unauthorized_access_toast_description'), variant: "destructive" });
@@ -134,10 +165,18 @@ export default function ManagerEditProductPage() {
 
   const form = useForm<z.infer<ReturnType<typeof createProductSchema>>>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: "", description: "", price: 0, category: "", tags: [], imageUrl: "", imageFile: null, isOnSale: false }, // Default isOnSale
+    defaultValues: { name: "", description: "", price: 0, category: "", tags: [], imageUrl: "", imageFile: null, isOnSale: false, discountType: undefined, discountValue: undefined },
   });
 
-   // Watch form values for preview updates
+  const isOnSale = form.watch('isOnSale');
+
+  useEffect(() => {
+    if (!isOnSale) {
+      form.setValue('discountType', undefined);
+      form.setValue('discountValue', undefined);
+    }
+  }, [isOnSale, form]);
+
    const watchedImageUrl = form.watch('imageUrl');
    const watchedImageFile = form.watch('imageFile');
    useEffect(() => {
@@ -147,11 +186,10 @@ export default function ManagerEditProductPage() {
    }, [watchedImageUrl, watchedImageFile, imageSourceType, product?.imageUrl]);
 
 
-  // Fetch product, categories, and tags data
   useEffect(() => {
     if (!productId || user?.role !== 'manager') return;
     setIsLoading(true);
-    setIsLoadingTaxonomies(true); // Start loading taxonomies too
+    setIsLoadingTaxonomies(true);
     const loadData = async () => {
       try {
         const [foundProduct, fetchedCategories, fetchedTags] = await Promise.all([
@@ -161,16 +199,18 @@ export default function ManagerEditProductPage() {
         ]);
         setCategories(fetchedCategories);
         setTags(fetchedTags);
-        setIsLoadingTaxonomies(false); // Finish loading taxonomies
+        setIsLoadingTaxonomies(false);
 
         if (foundProduct) {
           setProduct(foundProduct);
           form.reset({
             name: foundProduct.name, description: foundProduct.description, price: foundProduct.price,
             category: foundProduct.category,
-            tags: foundProduct.tags || [], // Initialize tags
+            tags: foundProduct.tags || [],
             imageUrl: foundProduct.imageUrl || '', imageFile: null,
-            isOnSale: foundProduct.isOnSale || false, // Initialize isOnSale
+            isOnSale: foundProduct.isOnSale || false,
+            discountType: foundProduct.discountType,
+            discountValue: foundProduct.discountValue,
           });
            setImagePreview(foundProduct.imageUrl || null);
            setImageSourceType(foundProduct.imageUrl ? 'url' : 'file');
@@ -181,11 +221,11 @@ export default function ManagerEditProductPage() {
       } catch (error) {
          toast({ title: t('dashboard_edit_product_toast_error_title'), description: "Impossible de charger les données.", variant: "destructive" });
          router.replace('/dashboard/products');
-         setIsLoadingTaxonomies(false); // Also stop loading taxonomies on error
-      } finally { setIsLoading(false); } // Finish loading product data
+         setIsLoadingTaxonomies(false);
+      } finally { setIsLoading(false); }
     };
     loadData();
-  }, [productId, user, form, router, toast, t]); // form.reset removed
+  }, [productId, user, form, router, toast, t]);
 
 
   async function onSubmit(values: z.infer<ReturnType<typeof createProductSchema>>) {
@@ -204,17 +244,14 @@ export default function ManagerEditProductPage() {
     }
   }
 
-  // Image Management Handlers (same as admin)
    const handleImageFileChange = (event: ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (file) { form.setValue('imageFile', file, { shouldValidate: true }); form.setValue('imageUrl', '', { shouldValidate: true }); setImageSourceType('file'); } else { form.setValue('imageFile', null, { shouldValidate: true }); setImagePreview(product?.imageUrl || null); } };
    const handleImageUrlChange = (event: ChangeEvent<HTMLInputElement>) => { const url = event.target.value; form.setValue('imageUrl', url, { shouldValidate: true }); if (url) { form.setValue('imageFile', null, { shouldValidate: true }); setImageSourceType('url'); } else { setImagePreview(product?.imageUrl || null); } };
    const handleImageSourceChange = (value: string) => { const newType = value as 'url' | 'file'; setImageSourceType(newType); if (newType === 'url') form.setValue('imageFile', null, { shouldValidate: true }); else form.setValue('imageUrl', '', { shouldValidate: true }); setImagePreview(product?.imageUrl || null); };
 
-   // Prepare options for Select components
    const categoryOptions = categories.map(cat => ({ value: cat.name, label: cat.name }));
    const tagOptions = tags.map(tag => ({ value: tag.name, label: tag.name }));
 
 
-  // Render loading or unauthorized state
   if (isLoading || authLoading || !user) {
       return <div className="p-6"><Skeleton className="h-10 w-1/2 mb-4" /><Skeleton className="h-[500px] w-full" /></div>;
   }
@@ -231,7 +268,6 @@ export default function ManagerEditProductPage() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {/* General Info Card */}
             <Card className="shadow-md border-border">
                  <CardHeader className="bg-muted/30 border-b"><CardTitle>{t('dashboard_edit_product_general_info_title')}</CardTitle></CardHeader>
                  <CardContent className="p-6 space-y-6">
@@ -240,12 +276,10 @@ export default function ManagerEditProductPage() {
                  </CardContent>
             </Card>
 
-            {/* Pricing, Categorization, Tags, Promotion Card */}
             <Card className="shadow-md border-border">
                  <CardHeader className="bg-muted/30 border-b"><CardTitle>{t('dashboard_edit_product_pricing_category_title')}</CardTitle></CardHeader>
                  <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                      <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>{t('dashboard_edit_product_form_price')}</FormLabel><FormControl><Input type="number" step="1" placeholder="0" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                     {/* Category Select */}
                      <FormField control={form.control} name="category" render={({ field }) => (
                          <FormItem>
                              <FormLabel>{t('dashboard_add_product_form_category')}</FormLabel>
@@ -264,7 +298,6 @@ export default function ManagerEditProductPage() {
                              <FormMessage />
                          </FormItem>
                      )}/>
-                      {/* Tags MultiSelect */}
                       <FormField control={form.control} name="tags" render={({ field }) => (
                          <FormItem className="md:col-span-2">
                              <FormLabel>{t('dashboard_add_product_form_tags')}</FormLabel>
@@ -282,7 +315,6 @@ export default function ManagerEditProductPage() {
                              <FormMessage />
                          </FormItem>
                      )}/>
-                      {/* Promotion Switch */}
                      <FormField
                          control={form.control}
                          name="isOnSale"
@@ -290,16 +322,53 @@ export default function ManagerEditProductPage() {
                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 md:col-span-2">
                              <div className="space-y-0.5">
                                  <FormLabel className="text-base flex items-center gap-2"><Percent className="h-4 w-4"/> Mettre en Promotion</FormLabel>
-                                 <FormDescription>Activer pour afficher une étiquette "Promo" sur le produit.</FormDescription>
+                                 <FormDescription>Activer pour appliquer une remise et afficher une étiquette "Promo".</FormDescription>
                              </div>
                              <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                          </FormItem>
                          )}
                      />
+                    {isOnSale && (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="discountType"
+                          render={({ field }) => (
+                            <FormItem className="md:col-span-1">
+                              <FormLabel>Type de Remise</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Sélectionnez un type" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="percentage">Pourcentage (%)</SelectItem>
+                                  <SelectItem value="fixed_amount">Montant Fixe (FCFA)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="discountValue"
+                          render={({ field }) => (
+                            <FormItem className="md:col-span-1">
+                              <FormLabel>Valeur de la Remise</FormLabel>
+                              <FormControl>
+                                <Input type="number" placeholder="Ex: 15 ou 5000" {...field} value={field.value ?? ''}/>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
                  </CardContent>
             </Card>
 
-            {/* Image Management Card */}
             <Card className="shadow-md border-border">
                  <CardHeader className="bg-muted/30 border-b"><CardTitle>{t('dashboard_edit_product_image_title')}</CardTitle></CardHeader>
                  <CardContent className="p-6 space-y-4">
