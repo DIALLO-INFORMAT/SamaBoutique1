@@ -121,6 +121,7 @@
   "checkout_toast_error_title": "Erreur de commande",
   "checkout_toast_error_description": "Impossible de finaliser la commande. Veuillez réessayer.",
   "checkout_form_optional": "Optionnel",
+  "checkout_item_discounted": "Remise appliquée",
   "order_confirmation_title": "Merci pour votre commande !",
   "order_confirmation_success": "Votre commande a été passée avec succès.",
   "order_confirmation_contact_soon": "Nous vous contacterons bientôt pour la livraison.",

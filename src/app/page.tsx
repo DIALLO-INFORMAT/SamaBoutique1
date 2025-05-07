@@ -1,7 +1,7 @@
 // src/app/page.tsx
-'use client'; // Needs to be a client component to use the hook
+'use client';
 
-import { useState, useEffect } from 'react'; // Import useState and useEffect
+import { useState, useEffect } from 'react';
 import { ProductList } from "@/components/ProductList";
 import { HomeCarousel } from "@/components/HomeCarousel";
 import { Button } from "@/components/ui/button";
@@ -9,26 +9,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
-import { useTranslation } from '@/hooks/useTranslation'; // Import the hook
-import { useSettings } from '@/hooks/useSettings'; // Import useSettings
-import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton
+import { useTranslation } from '@/hooks/useTranslation';
+import { useSettings } from '@/hooks/useSettings';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { AdminProduct as Product } from '@/lib/types'; // Use AdminProduct as Product
 
-// Mock product data (replace with actual data fetching later)
-// Ensure Product interface includes imageUrl
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  imageUrl?: string; // Add optional imageUrl
-  // Assuming products are added with a timestamp or identifiable order
-  // createdAt?: Date; // Optional: Add if available for sorting
-}
+const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products';
 
-const ADMIN_PRODUCTS_STORAGE_KEY = 'admin_products'; // Key where products are stored
-
-// Simulate fetching ALL products and then filtering/sorting
 const fetchAllProductsFromStorage = (): Product[] => {
     if (typeof window === 'undefined') {
         return [];
@@ -37,30 +24,29 @@ const fetchAllProductsFromStorage = (): Product[] => {
     if (storedProducts) {
         try {
             const products: Product[] = JSON.parse(storedProducts);
-            // Ensure imageUrl exists for fallback and sort by assumed add order (reverse)
              return products.map(p => ({
                 ...p,
                 imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/400/300`,
-                // If createdAt exists, parse it:
-                // createdAt: p.createdAt ? new Date(p.createdAt) : new Date(0) // Fallback date
-            })).reverse(); // Reverse to get latest added first (simple approach)
-            // If using createdAt: .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+                // Ensure sale properties exist for all products
+                isOnSale: p.isOnSale || false,
+                discountType: p.discountType,
+                discountValue: p.discountValue,
+            })).reverse();
         } catch (error) {
             console.error("Error parsing stored products:", error);
-            localStorage.removeItem(ADMIN_PRODUCTS_STORAGE_KEY); // Clear corrupted data
+            localStorage.removeItem(ADMIN_PRODUCTS_STORAGE_KEY);
         }
     }
-    return []; // Return empty if no data or error
+    return [];
 };
 
 
 export default function Home() {
-  const { t } = useTranslation(); // Use the translation hook
-  const { carouselImages, partnerLogos, isLoading: settingsLoading } = useSettings(); // Get images from settings
+  const { t } = useTranslation();
+  const { carouselImages, partnerLogos, isLoading: settingsLoading } = useSettings();
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
-  // Fetch products on mount
   useEffect(() => {
      setIsLoadingProducts(true);
      const products = fetchAllProductsFromStorage();
@@ -68,27 +54,18 @@ export default function Home() {
      setIsLoadingProducts(false);
   }, []);
 
-
-  // Get the last 6 added products
   const featuredProducts = allProducts.slice(0, 6);
 
-  // Function to generate the link for a product
   const getProductLink = (product: Product): string => {
-      // Link to the boutique page and pre-fill the search query with the product name
       const params = new URLSearchParams();
       params.set('search', product.name);
       return `/boutique?${params.toString()}`;
   };
 
-  // Handle loading state for settings if needed
-  if (settingsLoading || isLoadingProducts) { // Check both loading states
-      // Render skeleton loaders
+  if (settingsLoading || isLoadingProducts) {
       return (
           <div className="space-y-10 md:space-y-16">
-               {/* Hero Skeleton */}
               <Skeleton className="w-full aspect-[12/5] bg-muted" />
-
-               {/* Featured Products Skeleton */}
                <section className="container mx-auto px-4">
                   <Skeleton className="h-8 w-1/3 mx-auto mb-6 bg-muted" />
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -111,13 +88,9 @@ export default function Home() {
                      <Skeleton className="h-11 w-48 mx-auto rounded-md bg-muted" />
                  </div>
               </section>
-
-              {/* CTA Skeleton */}
               <section className="container mx-auto px-4">
                   <Skeleton className="h-40 w-full rounded-lg bg-muted" />
               </section>
-
-               {/* Partner Logos Skeleton */}
               <section className="container mx-auto px-4 py-6 md:py-8">
                   <Skeleton className="h-6 w-1/4 mx-auto mb-4 bg-muted" />
                    <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6">
@@ -132,16 +105,12 @@ export default function Home() {
 
   return (
     <div className="space-y-10 md:space-y-16">
-      {/* Hero Section */}
       <section>
-        <HomeCarousel images={carouselImages} /> {/* Pass images to carousel */}
+        <HomeCarousel images={carouselImages} />
       </section>
 
-      {/* Featured Products Section */}
       <section className="container mx-auto px-4">
-        {/* Updated title */}
         <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 text-primary">{t('home_featured_products')}</h2>
-        {/* Pass featuredProducts (last 6 added), viewMode, and the link generator function */}
         <ProductList
             initialProducts={featuredProducts}
             viewMode="grid"
@@ -156,7 +125,6 @@ export default function Home() {
          </div>
       </section>
 
-      {/* Call to Action Section */}
       <section className="container mx-auto px-4">
         <Card className="bg-secondary border-primary shadow-lg">
           <CardHeader className="text-center">
@@ -176,7 +144,6 @@ export default function Home() {
         </Card>
       </section>
 
-      {/* Partner Logos Section */}
       <section className="container mx-auto px-4 py-6 md:py-8">
         <h2 className="text-xl md:text-2xl font-bold text-center mb-4 text-primary">{t('home_partners_title')}</h2>
         <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6">
@@ -189,7 +156,7 @@ export default function Home() {
                 height={70}
                 className="object-contain w-full h-full"
                 data-ai-hint={logo.hint}
-                 onError={(e) => (e.currentTarget.style.display = 'none')} // Hide if image fails
+                 onError={(e) => (e.currentTarget.style.display = 'none')}
               />
             </div>
           ))}

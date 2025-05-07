@@ -11,48 +11,39 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { ListFilter, Loader2, Grid, List } from 'lucide-react'; // Added Grid, List
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
-
-// Mock product data (replace with actual data fetching)
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number; // Should be in XOF already
-  category: string;
-  imageUrl?: string; // Add optional imageUrl
-}
+import type { AdminProduct as Product } from '@/lib/types'; // Use AdminProduct as Product
 
 const fetchAllProducts = async (): Promise<Product[]> => {
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate slightly longer load
-     const allProductsData: Product[] = []; // Empty array to start fresh
-     // Ensure products in localStorage also have imageUrl (for consistency)
-     if (typeof window !== 'undefined') {
-        const storedProducts = localStorage.getItem('admin_products'); // Or relevant key
-        if (storedProducts) {
-            try {
-                const parsedProducts: Product[] = JSON.parse(storedProducts);
-                 return parsedProducts.map(p => ({
-                     ...p,
-                     imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/400/300`
-                 }));
-            } catch (error) {
-                console.error("Error parsing stored products:", error);
-                 localStorage.removeItem('admin_products'); // Clear corrupted data if parsing fails
-                 return []; // Return empty if error
-            }
-        } else {
-             localStorage.setItem('admin_products', JSON.stringify(allProductsData)); // Store empty array initially
-        }
+    await new Promise(resolve => setTimeout(resolve, 500));
+     if (typeof window === 'undefined') return [];
+     const storedProducts = localStorage.getItem('admin_products');
+     if (storedProducts) {
+         try {
+             const parsedProducts: Product[] = JSON.parse(storedProducts);
+              return parsedProducts.map(p => ({
+                  ...p,
+                  imageUrl: p.imageUrl || `https://picsum.photos/seed/${p.id}/400/300`,
+                  // Ensure sale properties exist, defaulting if necessary
+                  isOnSale: p.isOnSale || false,
+                  discountType: p.discountType,
+                  discountValue: p.discountValue,
+              }));
+         } catch (error) {
+             console.error("Error parsing stored products:", error);
+              localStorage.removeItem('admin_products');
+              return [];
+         }
+     } else {
+          localStorage.setItem('admin_products', JSON.stringify([]));
+          return [];
      }
-
-    return allProductsData;
 }
 
 export default function BoutiquePage() {
     const { t } = useTranslation();
     const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid'); // State for view mode
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
     useEffect(() => {
         setIsLoading(true);
@@ -65,7 +56,10 @@ export default function BoutiquePage() {
         });
     }, []);
 
-    const categories = useMemo(() => [...new Set(allProducts.map(p => p.category))], [allProducts]);
+    const categories = useMemo(() => {
+        const uniqueCategories = [...new Set(allProducts.map(p => p.category))];
+        return uniqueCategories.filter(Boolean); // Filter out any undefined/null categories
+    }, [allProducts]);
 
     if (isLoading) {
         return (
@@ -81,16 +75,12 @@ export default function BoutiquePage() {
         <h1 className="text-3xl font-bold text-center mb-6 md:mb-8 text-primary">{t('shop_title')}</h1>
 
         <div className="flex flex-col md:flex-row gap-6 md:gap-8">
-            {/* Sidebar for Filters */}
             <aside className="hidden md:block md:w-1/4 lg:w-1/5 sticky top-24 self-start">
                 <BoutiqueSidebar categories={categories} />
             </aside>
 
-            {/* Product Listing Area */}
             <main className="w-full md:w-3/4 lg:w-4/5">
-                {/* Mobile Filter Trigger & Sorting & View Toggle */}
                 <div className="flex justify-between items-center mb-4 md:mb-6 gap-4">
-                    {/* Mobile Filter Drawer Trigger */}
                     <Sheet>
                         <SheetTrigger asChild>
                             <Button variant="outline" className="md:hidden flex items-center gap-2 shrink-0">
@@ -109,12 +99,10 @@ export default function BoutiquePage() {
                         </SheetContent>
                     </Sheet>
 
-                    {/* Sorting Controls */}
                     <div className="flex-grow flex justify-end">
                          <ShopSortControls />
                     </div>
 
-                     {/* View Mode Toggle */}
                     <div className="flex items-center gap-1 border rounded-md p-0.5 bg-secondary">
                        <Button
                          variant={viewMode === 'grid' ? 'background' : 'ghost'}
@@ -142,7 +130,6 @@ export default function BoutiquePage() {
                        </Button>
                      </div>
                 </div>
-                {/* Pass viewMode and products to ProductList */}
                 <ProductList initialProducts={allProducts} viewMode={viewMode} />
             </main>
         </div>
@@ -150,9 +137,5 @@ export default function BoutiquePage() {
     );
 }
 
-// Re-export useMemo from React
 export { useMemo } from 'react';
-
-// Keep dynamic rendering if relying on searchParams client-side
 export const dynamic = 'force-dynamic';
-

@@ -73,7 +73,6 @@ export default function CartPage() {
             <CardTitle>{t('cart_page_items_in_cart')}</CardTitle>
           </CardHeader>
           <CardContent className="p-0 md:p-6">
-            {/* Responsive Table */}
             <div className="hidden md:block">
                 <Table>
                 <TableHeader>
@@ -91,7 +90,7 @@ export default function CartPage() {
                     <TableRow key={item.id}>
                         <TableCell>
                            <Image
-                             src={item.imageUrl || `https://picsum.photos/seed/${item.id}/64/64`} // Use actual URL or fallback
+                             src={item.imageUrl || `https://picsum.photos/seed/${item.id}/64/64`}
                              alt={item.name}
                              width={64}
                              height={64}
@@ -112,7 +111,7 @@ export default function CartPage() {
                                 className="h-8 w-8"
                                 onClick={() => handleDecrement(item.id, item.quantity)}
                                 disabled={item.quantity <= 1}
-                                aria-label={`Diminuer la quantité pour ${item.name}`} // Keep specific aria-label
+                                aria-label={`Diminuer la quantité pour ${item.name}`}
                             >
                             <Minus className="h-4 w-4" />
                             </Button>
@@ -135,7 +134,14 @@ export default function CartPage() {
                             </Button>
                         </div>
                         </TableCell>
-                        <TableCell className="text-right">{item.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
+                        <TableCell className="text-right">
+                          {item.originalPrice && item.originalPrice > item.price && (
+                            <span className="text-xs text-muted-foreground line-through mr-1">
+                              {item.originalPrice.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </span>
+                          )}
+                          {item.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        </TableCell>
                         <TableCell className="text-right font-semibold">{(item.price * item.quantity).toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</TableCell>
                         <TableCell className="text-right">
                            <AlertDialog>
@@ -169,12 +175,11 @@ export default function CartPage() {
                 </Table>
             </div>
 
-            {/* Stacked List for small screens */}
             <div className="md:hidden divide-y divide-border">
                 {cart.map((item) => (
                     <div key={item.id} className="flex gap-4 p-4">
                         <Image
-                            src={item.imageUrl || `https://picsum.photos/seed/${item.id}/80/80`} // Use actual URL or fallback
+                            src={item.imageUrl || `https://picsum.photos/seed/${item.id}/80/80`}
                             alt={item.name}
                             width={80}
                             height={80}
@@ -245,7 +250,14 @@ export default function CartPage() {
                                 </div>
                                 <span className="font-semibold text-base">{(item.price * item.quantity).toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                             </div>
-                             <p className="text-xs text-muted-foreground">{item.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })} / {t('cart_table_unit_price')}</p>
+                             <p className="text-xs text-muted-foreground">
+                                {item.originalPrice && item.originalPrice > item.price && (
+                                  <span className="line-through mr-1">
+                                    {item.originalPrice.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                  </span>
+                                )}
+                                {item.price.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })} / {t('cart_table_unit_price')}
+                             </p>
                         </div>
                     </div>
                 ))}

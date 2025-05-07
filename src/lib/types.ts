@@ -1,5 +1,5 @@
 // src/lib/types.ts
-import type { CartItem } from '@/context/CartContext';
+import type { CartItem as ContextCartItem } from '@/context/CartContext'; // Renamed to avoid conflict
 
 export type OrderStatus =
     | 'En attente de paiement'
@@ -28,7 +28,7 @@ export interface Order {
     phone: string;
     address: string;
   };
-  items: CartItem[]; // CartItem already includes optional imageUrl
+  items: ContextCartItem[]; // Use the renamed CartItem from context
   total: number;
   status: OrderStatus;
   paymentMethod: PaymentMethod; // Use the specific type here
@@ -42,13 +42,15 @@ export interface AdminProduct {
   id: string;
   name: string;
   description: string;
-  price: number;
+  price: number; // This will represent the ORIGINAL price
   category: string; // Now references Category.id or name
   imageUrl?: string; // Optional image URL
   tags?: string[]; // Array of Tag IDs or names
   isOnSale?: boolean; // Flag to indicate if the product is on promotion
   discountType?: 'percentage' | 'fixed_amount'; // Type of discount
   discountValue?: number; // Value of the discount
+  // Calculated final price can be derived, not stored directly on product model
+  // but might be on CartItem or OrderItem for record keeping
 }
 
 // Interface for Categories
@@ -66,3 +68,12 @@ export interface Tag {
     name: string;
     createdAt: Date;
 }
+
+// Re-export CartItem from context if needed elsewhere, or define a specific OrderItem
+export type OrderItem = ContextCartItem & {
+    originalPrice?: number; // Price before discount
+    // The 'price' in CartItem from context is already the final unit price
+};
+
+// Ensure AdminProduct is the base for products in other contexts if necessary
+export type Product = AdminProduct;

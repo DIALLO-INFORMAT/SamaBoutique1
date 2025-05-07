@@ -27,10 +27,10 @@ import Image from 'next/image';
 import { Truck, CreditCard, User, Home, Phone, Mail, Loader2, Landmark, Smartphone, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import type { CartItem } from '@/context/CartContext';
+import type { CartItem } from '@/context/CartContext'; // CartItem now has originalPrice and price (final unit price)
 import type { Order, PaymentMethod } from '@/lib/types';
 import { Label } from "@/components/ui/label";
-import { useTranslation } from '@/hooks/useTranslation'; // Import useTranslation
+import { useTranslation } from '@/hooks/useTranslation';
 
 const paymentMethods: [PaymentMethod, ...PaymentMethod[]] = [
     'Paiement à la livraison',
@@ -79,10 +79,8 @@ const createFormSchema = (t: Function) => z.object({
 
 const ORDERS_STORAGE_KEY = 'sama_boutique_orders';
 
-// Function to generate a short, human-readable order number like SB-XXXXXX
 const generateOrderNumber = (): string => {
     const prefix = "SB";
-    // Generate 6 random alphanumeric characters (excluding confusing ones if desired)
     const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
     let randomPart = '';
     for (let i = 0; i < 6; i++) {
@@ -105,11 +103,10 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const { t, currentLocale } = useTranslation(); // Use translation hook
+  const { t, currentLocale } = useTranslation();
   const totalPrice = getTotalPrice();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Create schema inside component
   const formSchema = createFormSchema(t);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -117,7 +114,7 @@ export default function CheckoutPage() {
     defaultValues: {
       name: user?.name || "",
       address: "",
-      phone: user?.phone || "", // Pre-fill phone if available
+      phone: user?.phone || "",
       email: user?.email || "",
       notes: "",
       paymentMethod: 'Paiement à la livraison',
@@ -135,7 +132,7 @@ export default function CheckoutPage() {
         ...form.getValues(),
         name: user.name,
         email: user.email,
-        phone: user.phone || form.getValues().phone || "", // Prioritize user phone, then form value
+        phone: user.phone || form.getValues().phone || "",
       });
     }
   }, [user, form]);
@@ -149,19 +146,18 @@ export default function CheckoutPage() {
           });
           router.push('/panier');
       }
-  }, [cart, router, toast, isSubmitting, t]); // Added t to dependencies
+  }, [cart, router, toast, isSubmitting, t]);
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
 
-    // Generate unique ID for storage and short number for display/tracking
     const internalId = `order-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-    const displayOrderNumber = generateOrderNumber(); // Generate SB-XXXXXX format
+    const displayOrderNumber = generateOrderNumber();
 
     const newOrder: Order = {
-        id: internalId, // Use the full unique ID internally
-        orderNumber: displayOrderNumber, // Use the shorter number for display and tracking
+        id: internalId,
+        orderNumber: displayOrderNumber,
         userId: user?.id ?? 'guest',
         customerInfo: {
             name: values.name,
@@ -169,7 +165,12 @@ export default function CheckoutPage() {
             phone: values.phone,
             address: values.address,
         },
-        items: cart,
+        // Ensure items in the order reflect the final state (including possibly discounted prices)
+        // The `cart` items from context should already have the final `price` per unit.
+        items: cart.map(cartItem => ({
+            ...cartItem, // Spread all properties from CartItem
+            // `price` in CartItem is the final unit price
+        })),
         total: totalPrice,
         status: 'En attente de paiement',
         paymentMethod: values.paymentMethod,
@@ -188,7 +189,6 @@ export default function CheckoutPage() {
             window.dispatchEvent(event);
          }
         clearCart();
-        // Redirect using the displayOrderNumber
         router.push(`/order-confirmation?orderNumber=${newOrder.orderNumber}`);
     } catch (error) {
         console.error("Failed to save or process order:", error);
@@ -201,7 +201,7 @@ export default function CheckoutPage() {
     }
   }
 
-  if (cart.length === 0 && !isSubmitting) { // Added !isSubmitting check
+  if (cart.length === 0 && !isSubmitting) {
      return <div className="text-center py-10">{t('loading')}</div>;
   }
 
@@ -341,7 +341,7 @@ export default function CheckoutPage() {
                                 {t('checkout_payment_instructions_body')}
                                 <br />
                                 <strong className="text-secondary-foreground">
-                                   {t('checkout_payment_instructions_number', { number: '+221 XX XXX XX XX' })} {/* Replace with actual number */}
+                                   {t('checkout_payment_instructions_number', { number: '+221 XX XXX XX XX' })}
                                 </strong>
                             </div>
                          )}
@@ -350,7 +350,6 @@ export default function CheckoutPage() {
            </form>
         </Form>
 
-        {/* Order Summary Card */}
         <Card className="shadow-lg lg:col-span-2 sticky top-24">
           <CardHeader>
             <CardTitle>{t('checkout_order_summary_title')}</CardTitle>
@@ -361,7 +360,7 @@ export default function CheckoutPage() {
                    <div key={item.id} className="flex justify-between items-center text-sm gap-2">
                       <div className="flex items-center gap-2 flex-grow min-w-0">
                          <Image
-                           src={item.imageUrl || `https://picsum.photos/seed/${item.id}/40/40`} // Use actual URL or fallback
+                           src={item.imageUrl || `https://picsum.photos/seed/${item.id}/40/40`}
                            alt={item.name} width={40} height={40}
                            className="rounded object-cover flex-shrink-0 border"
                            data-ai-hint={item.category === 'Services' ? 'service tech icon' : item.name.toLowerCase().split(' ')[0]}
@@ -373,6 +372,12 @@ export default function CheckoutPage() {
                          <div className="min-w-0">
                             <p className="font-medium truncate">{item.name}</p>
                             <p className="text-muted-foreground text-xs">{t('cart_table_quantity')}: {item.quantity}</p>
+                             {item.originalPrice && item.originalPrice > item.price && (
+                                <p className="text-xs text-muted-foreground">
+                                  <span className="line-through">{item.originalPrice.toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                                  <span className="text-primary ml-1">({t('checkout_item_discounted')})</span>
+                                </p>
+                             )}
                          </div>
                       </div>
                       <p className="font-medium text-right flex-shrink-0">{(item.price * item.quantity).toLocaleString(currentLocale, { style: 'currency', currency: 'XOF', minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
@@ -390,7 +395,6 @@ export default function CheckoutPage() {
                  <div className="text-sm">
                      <p className="font-medium mb-1">{t('checkout_order_summary_chosen_method')}</p>
                      <p className="text-muted-foreground">
-                       {/* Corrected mapping */}
                         {selectedPaymentMethod === 'Paiement à la livraison' ? t('checkout_payment_cod') :
                          selectedPaymentMethod === 'Wave' ? t('checkout_payment_wave') :
                          selectedPaymentMethod === 'Orange Money' ? t('checkout_payment_orange_money') :
@@ -422,5 +426,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
-    
