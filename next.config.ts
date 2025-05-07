@@ -16,12 +16,18 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      { // Added pattern for i0.wp.com
+      { 
         protocol: 'https',
         hostname: 'i0.wp.com',
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        port: '',
+        pathname: '/**',
+      }
     ],
   },
 };

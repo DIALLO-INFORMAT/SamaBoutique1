@@ -60,7 +60,7 @@ export function ImageManagementCard<T extends ImageItem>({
     const [editError, setEditError] = useState('');
 
     const validateImageInput = (url: string, alt: string, hint: string): string | null => {
-        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        if (!url.trim() || (!url.startsWith('http://') && !url.startsWith('https://'))) {
             return t('admin_settings_form_image_url_invalid');
         }
         if (!alt.trim()) {
@@ -68,6 +68,9 @@ export function ImageManagementCard<T extends ImageItem>({
         }
         if (!hint.trim()) {
             return t('admin_settings_form_ai_hint_required');
+        }
+        if (hint.trim().split(' ').length > 2) {
+            return "L'indice IA ne doit pas dépasser 2 mots.";
         }
         return null; // No error
     };
@@ -81,7 +84,7 @@ export function ImageManagementCard<T extends ImageItem>({
             src: newImageUrl.trim(),
             alt: newImageAlt.trim(),
             hint: newImageHint.trim(),
-            ...(itemType === 'partner' && { id: `logo-${Date.now()}` }), // Add ID for partners
+            ...(itemType === 'partner' && { id: `logo-${Date.now()}-${Math.random().toString(36).substring(2, 7)}` }),
         } as T;
 
         onImagesChange([...images, newItem]);
@@ -92,7 +95,7 @@ export function ImageManagementCard<T extends ImageItem>({
 
     const handleRemoveImage = (index: number) => {
         onImagesChange(images.filter((_, i) => i !== index));
-        if (editingIndex === index) { // Cancel edit if removing the item being edited
+        if (editingIndex === index) { 
              setEditingIndex(null);
         }
     };
@@ -118,7 +121,7 @@ export function ImageManagementCard<T extends ImageItem>({
          const updatedImages = images.map((img, i) => {
             if (i === index) {
                 return {
-                    ...img, // Preserve ID if it exists (for partners)
+                    ...img, 
                     src: editImageUrl.trim(),
                     alt: editImageAlt.trim(),
                     hint: editImageHint.trim(),
@@ -137,13 +140,11 @@ export function ImageManagementCard<T extends ImageItem>({
                 <CardDescription>{description}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                {/* List Current Images */}
                 {images.length > 0 ? (
-                    <div className="space-y-3 max-h-60 overflow-y-auto pr-2 border rounded-md p-3">
+                    <div className="space-y-3 max-h-72 overflow-y-auto pr-2 border rounded-md p-3">
                         {images.map((img, index) => (
-                            <div key={img.id || index} className="flex items-start justify-between gap-2 border-b pb-2 last:border-b-0">
+                            <div key={img.id || index} className="flex items-start justify-between gap-2 border-b pb-3 last:border-b-0 last:pb-0">
                                 {editingIndex === index ? (
-                                    // --- Editing State ---
                                     <div className="flex-grow space-y-2 pr-2">
                                         <Input
                                              type="url"
@@ -162,7 +163,7 @@ export function ImageManagementCard<T extends ImageItem>({
                                          />
                                         <Input
                                              type="text"
-                                             placeholder={t('admin_settings_form_ai_hint')}
+                                             placeholder={t('admin_settings_form_ai_hint') + " (max 2 mots)"}
                                              value={editImageHint}
                                              onChange={(e) => setEditImageHint(e.target.value)}
                                              maxLength={30}
@@ -179,16 +180,29 @@ export function ImageManagementCard<T extends ImageItem>({
                                          </div>
                                     </div>
                                 ) : (
-                                    // --- Display State ---
                                     <>
                                         <div className="flex items-center gap-2 flex-grow min-w-0">
                                             <Image
                                                 src={img.src}
                                                 alt={img.alt}
                                                 width={itemType === 'carousel' ? 80 : 60}
-                                                height={itemType === 'carousel' ? 40 : 30}
+                                                height={itemType === 'carousel' ? 45 : 30} // Adjusted height for carousel for better aspect ratio
                                                 className="rounded border object-contain bg-muted flex-shrink-0"
-                                                onError={(e) => (e.currentTarget.style.display = 'none')}
+                                                onError={(e) => {
+                                                     // Attempt to load picsum fallback
+                                                     const fallbackSrc = `https://picsum.photos/seed/${img.id || index}/${itemType === 'carousel' ? 80 : 60}/${itemType === 'carousel' ? 45 : 30}`;
+                                                     if (e.currentTarget.src !== fallbackSrc) {
+                                                         e.currentTarget.src = fallbackSrc;
+                                                     } else {
+                                                         // If picsum also fails, hide or show placeholder text
+                                                         e.currentTarget.style.display = 'none';
+                                                         // Or replace with a placeholder div:
+                                                         // const placeholder = document.createElement('div');
+                                                         // placeholder.className = "w-full h-full bg-muted text-xs flex items-center justify-center text-muted-foreground";
+                                                         // placeholder.textContent = "Image error";
+                                                         // e.currentTarget.parentNode?.replaceChild(placeholder, e.currentTarget);
+                                                     }
+                                                 }}
                                             />
                                             <div className="text-xs flex-grow min-w-0">
                                                 <p className="font-medium truncate" title={img.alt}>{img.alt}</p>
@@ -196,21 +210,21 @@ export function ImageManagementCard<T extends ImageItem>({
                                                 <p className="text-muted-foreground truncate" title={img.hint}>Hint: {img.hint}</p>
                                             </div>
                                         </div>
-                                        <div className="flex flex-col items-end flex-shrink-0">
+                                        <div className="flex flex-col items-end flex-shrink-0 space-y-0.5">
                                              <Button variant="ghost" size="icon" onClick={() => startEditing(index)} className="h-7 w-7 text-muted-foreground hover:text-primary">
-                                                 <Edit className="h-4 w-4" />
+                                                 <Edit className="h-3.5 w-3.5" />
                                              </Button>
                                              <AlertDialog>
                                                 <AlertDialogTrigger asChild>
                                                     <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive h-7 w-7">
-                                                        <Trash2 className="h-4 w-4" />
+                                                        <Trash2 className="h-3.5 w-3.5" />
                                                     </Button>
                                                 </AlertDialogTrigger>
                                                  <AlertDialogContent>
                                                      <AlertDialogHeader>
-                                                         <AlertDialogTitle>Supprimer l'image ?</AlertDialogTitle>
+                                                         <AlertDialogTitle>{t('admin_settings_delete_image_title')}</AlertDialogTitle>
                                                          <AlertDialogDescription>
-                                                             Êtes-vous sûr de vouloir supprimer cette image ? ({img.alt})
+                                                             {t('admin_settings_delete_image_confirm', { altText: img.alt })}
                                                          </AlertDialogDescription>
                                                      </AlertDialogHeader>
                                                      <AlertDialogFooter>
@@ -236,7 +250,6 @@ export function ImageManagementCard<T extends ImageItem>({
 
                 <Separator />
 
-                {/* Add New Image Form */}
                 <div className="space-y-2 pt-2">
                     <Label className="text-sm font-medium">{t('admin_settings_add_new_image')}</Label>
                      <Input
@@ -256,7 +269,7 @@ export function ImageManagementCard<T extends ImageItem>({
                      />
                       <Input
                          type="text"
-                         placeholder={t('admin_settings_form_ai_hint')}
+                         placeholder={t('admin_settings_form_ai_hint') + " (max 2 mots)"}
                          value={newImageHint}
                          onChange={(e) => setNewImageHint(e.target.value)}
                          maxLength={30}
@@ -268,6 +281,7 @@ export function ImageManagementCard<T extends ImageItem>({
                      </Button>
                      <p className="text-xs text-muted-foreground">
                         {itemType === 'carousel' ? t('admin_settings_carousel_hint_desc') : t('admin_settings_partner_hint_desc')}
+                         {" " + t('admin_settings_direct_url_only_hint')}
                      </p>
                 </div>
             </CardContent>
